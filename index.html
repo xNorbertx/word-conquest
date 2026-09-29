@@ -4,13 +4,14 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Word Conquest — playable prototype</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath fill='%23296b64' d='M20 1 37 10 37 30 20 39 3 30 3 10Z'/%3E%3Ctext x='20' y='28' text-anchor='middle' fill='white' font-size='24'%3EW%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="style.css?v=2">
-  <script defer src="config.js?v=2"></script><script defer src="engine.js?v=2"></script><script defer src="app.js?v=2"></script>
+  <link rel="stylesheet" href="style.css?v=3">
+  <script defer src="config.js?v=3"></script><script defer src="engine.js?v=3"></script><script defer src="app.js?v=3"></script>
 </head>
 <body>
 <main>
   <header><div><span class="eyebrow">LOCAL TWO-PLAYER · PROTOTYPE</span><h1>Word Conquest<span>.</span></h1></div><button id="reset" class="secondary">New Game</button></header>
   <p id="dictionary" class="notice"></p>
+  <p id="edition" class="edition"></p>
   <section class="scores" aria-label="Scores"><div id="p1" class="score player1"><span>Player 1 · Teal</span><strong id="score1">3</strong><small id="turns1"></small></div><div id="p2" class="score player2"><span>Player 2 · Coral</span><strong id="score2">3</strong><small id="turns2"></small></div></section>
   <div class="layout"><section class="play-area" aria-label="Game board">
     <div class="turn-heading"><h2 id="turn"></h2><span id="round"></span></div>
@@ -19,8 +20,8 @@
     <div class="legend"><span><i class="neutral"></i>Neutral</span><span><i class="teal"></i>Player 1</span><span><i class="coral"></i>Player 2</span><span>♜ Castle · <b id="castle-value"></b> points</span></div>
   </section>
   <aside>
-    <section class="selection"><span class="eyebrow">YOUR WORD</span><div id="word" aria-live="polite">—</div><p id="preview">Start on your color. Trace a word.</p><p id="joker-help" hidden>Choose a letter for each ? before submitting.</p><div id="jokers"></div><div class="actions"><button id="submit" disabled>Submit Word</button><button id="cancel" class="secondary" disabled>Cancel Selection</button></div><p id="status" role="status"></p></section>
-    <details open><summary>How to play</summary><p id="rules"></p><p>Drag across letters, or tap them one at a time. Tap the previous tile to undo a step. You may reuse words on later turns.</p><p>Jokers (?) can be any A–Z letter. Trace your path, then fill in the joker letters below your word. Each joker can be a different letter every turn, even after capture.</p><p>Castles keep their value when captured. Most territory points after the final turn wins.</p></details>
+    <section class="selection"><span class="eyebrow">YOUR WORD</span><div id="word" aria-live="polite">—</div><p id="preview">Start on your color. Trace a word.</p><p id="joker-help" hidden>Choose a letter for each ? before submitting.</p><div id="jokers"></div><div class="actions"><button id="submit" disabled>Submit Word</button><button id="cancel" class="secondary" disabled>Cancel Selection</button></div><div class="refresh-action"><button id="refresh" class="secondary">Refresh letters · uses 1 turn</button></div><p id="status" role="status"></p></section>
+    <details open><summary>How to play</summary><p id="rules"></p><p id="letter-rules"></p><p>Drag across letters, or tap them one at a time. Tap the previous tile to undo a step. You may reuse words on later turns if you can find them again.</p><p>Jokers (?) can be any A–Z letter. Trace your path, then fill in the joker letters below your word. Each joker can be a different letter every turn, even after capture.</p><p>Castles keep their value when captured. Most territory points after the final turn wins.</p></details>
     <section class="history"><h2>Game log</h2><ol id="log"><li class="empty">The map is yours to contest.</li></ol></section>
   </aside></div>
   <footer>One word. A little more territory. Pass the screen.</footer>

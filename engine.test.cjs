@@ -1,20 +1,31 @@
 const assert = require('node:assert/strict');
 const E = require('./engine.js'), C = require('./config.js');
+function seeded(seed) { return ()=>{ seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296; }; }
 for(let n=0;n<100;n++) {
-  const s=E.newGame(C);
-  assert.equal(s.tiles.length,49);
-  assert.equal(s.tiles.filter(t=>t.letter==='?').length,5);
-  assert.equal(s.tiles.filter(t=>!t.owner && t.letter==='?').length,3);
+  const s=E.newGame(C,seeded(n));
+  assert.equal(s.tiles.length,69);
+  assert.equal(s.tiles.filter(t=>t.letter==='?').length,6);
+  assert.equal(s.tiles.filter(t=>!t.owner && t.letter==='?').length,4);
   assert.equal(s.tiles.filter(t=>t.castle).length,3);
   assert.deepEqual(E.scores(s,C),[3,3]);
+  for(const tile of s.tiles) {
+    const mirror=s.tiles.find(t=>t.q===-tile.q && t.r===tile.r);
+    assert.equal(tile.letter,mirror.letter);
+    assert.equal(tile.castle,mirror.castle);
+    assert.equal(mirror.owner,tile.owner?3-tile.owner:0);
+    assert.ok(s.tiles.filter(t=>E.adjacent(t,tile)).length>=4,'No tile has fewer than four neighbors');
+  }
   for(const p of [1,2]) {
     assert.equal(s.tiles.filter(t=>t.owner===p && t.letter==='?').length,1);
     const owned=s.tiles.filter(t=>t.owner===p), seen=new Set([owned[0]]);
     for(let i=0;i<owned.length;i++) owned.forEach(t=>{if([...seen].some(a=>E.adjacent(a,t)))seen.add(t);});
     assert.equal(seen.size,3);
+    assert.ok(owned.some(t=>'AEIOU'.includes(t.letter)));
+    assert.ok(owned.some(t=>t.letter!=='?' && !'AEIOU'.includes(t.letter)));
   }
 }
-assert.equal(E.generateBoard({...C,boardRadius:4}).length,81);
+assert.equal(E.generateBoard({...C,cornerCut:0}).length,81);
+assert.equal(E.generateBoard({...C,boardRadius:3}).length,37);
 assert.equal(E.generateBoard({...C,jokerCount:0}).filter(t=>t.letter==='?').length,0);
 const center={q:0,r:0};
 for(const q of [-1,0,1]) for(const r of [-1,0,1]) assert.equal(E.adjacent(center,{q,r}),q!==0 || r!==0);
@@ -30,7 +41,14 @@ assert.match(E.validatePath(s,['b','c','d'],C),/Start/);
 assert.match(E.validatePath(s,['a','c','b'],C),/adjacent/);
 assert.match(E.validatePath(s,['a','b','a'],C),/once/);
 assert.match(E.validatePath(s,['a','b'],C),/at least/);
-assert.match(E.validatePath(s,['a','b','c','d'],C),/enemy/);
+assert.equal(E.validatePath(s,['a','b','c','d'],C),null);
+assert.match(E.validatePath(s,['a','b','c','d'],{...C,maxEnemyTilesPerWord:1}),/enemy/);
+const battle={...s,tiles:[0,1,2,3,4].map(q=>({id:String(q),q,r:0,owner:q?2:1,letter:'ABCDE'[q],castle:q===2}))};
+const assault=E.submit(battle,['0','1','2','3'],C);
+assert.equal(assault.state.log[0].enemy,3);
+assert.equal(assault.state.log[0].castles,1);
+assert.deepEqual(E.scores(assault.state,C),[6,1]);
+assert.match(E.submit(battle,['0','1','2','3','4'],C).error,/enemy/);
 assert.match(E.validatePath(s,['a','b','c'],{...C,dictionaryEnabled:true}),/unavailable/);
 assert.match(E.validatePath(s,['a','b','c'],{...C,dictionaryEnabled:true},true,new Set(['dog'])),/not in/);
 assert.equal(E.validatePath(s,['a','b','c'],{...C,dictionaryEnabled:true},true,new Set(['cat'])),null);
@@ -40,6 +58,13 @@ assert.deepEqual(E.scores(result.state,C),[5,1]);
 assert.equal(result.state.player,2);
 assert.deepEqual(result.state.turns,[1,0]);
 assert.equal(s.tiles[1].owner,0);
+assert.equal(s.tiles.map(t=>t.letter).join(''),'CATS','Submission must not mutate old letters');
+assert.equal(result.state.log[0].word,'CAT','Log records the submitted word, not refreshed letters');
+for(const id of ['a','b','c'])assert.notEqual(result.state.tiles.find(t=>t.id===id).letter,s.tiles.find(t=>t.id===id).letter);
+assert.equal(result.state.tiles[3].letter,'S','Unused letters stay put');
+assert.equal(E.submit(s,['a','b','c'],{...C,refreshUsedLetters:false}).state.tiles[1].letter,'A');
+const invalid=E.submit(s,['a','b'],C,null,{},()=>{throw new Error('Invalid moves must not draw letters');});
+assert.ok(invalid.error);
 const jokerState={...s,tiles:tiles.map(t=>t.id==='b'?{...t,letter:'?'}:t)};
 for(const choice of ['', 'AB', '1', 'a']) assert.match(E.submit(jokerState,['a','b','c'],C,null,{b:choice}).error,/joker/);
 const jokerResult=E.submit(jokerState,['a','b','c'],{...C,dictionaryEnabled:true},new Set(['cat']),{b:'A'});
@@ -53,12 +78,43 @@ assert.equal(E.submit(twoJokers,['a','b','c'],C,null,{a:'H',b:'I'}).state.log[0]
 assert.match(E.submit(twoJokers,['a','b','c'],C,null,{a:'H'}).error,/joker/);
 const diagonal={...s,tiles:tiles.map((t,i)=>({...t,q:i,r:i}))};
 assert.equal(E.submit(diagonal,['a','b','c'],C).state.log[0].word,'CAT');
-const last={...s,player:2,turns:[15,14]};
+const last={...s,player:2,turns:[12,11]};
 const end=E.submit(last,['c','b','a'],C).state;
 assert.equal(end.over,true);
-assert.deepEqual(end.turns,[15,15]);
+assert.deepEqual(end.turns,[12,12]);
 assert.match(E.submit(end,['c','b','a'],C).error,/ended/);
-let game=E.newGame(C);
+const refreshState=E.newGame(C,seeded(42)), before=JSON.stringify(refreshState);
+const refreshed=E.refreshTurn(refreshState,C,seeded(43));
+assert.equal(JSON.stringify(refreshState),before);
+assert.deepEqual(E.scores(refreshed.state,C),[3,3]);
+assert.equal(refreshed.state.player,2);
+assert.deepEqual(refreshed.state.turns,[1,0]);
+assert.equal(refreshed.state.log[0].type,'refresh');
+assert.equal(refreshed.refreshed.length,2);
+for(const tile of refreshState.tiles) {
+  const after=refreshed.state.tiles.find(t=>t.id===tile.id);
+  assert.equal(after.owner,tile.owner);
+  assert.equal(after.castle,tile.castle);
+  if(tile.owner===1 && tile.letter!=='?')assert.notEqual(after.letter,tile.letter);
+  else assert.equal(after.letter,tile.letter);
+}
+assert.ok(E.refreshTurn(refreshState,{...C,allowRefreshTurn:false}).error);
+assert.ok(E.refreshTurn(end,C).error);
+const lastRefresh=E.refreshTurn({...refreshState,player:2,turns:[12,11]},C);
+assert.equal(lastRefresh.state.over,true);
+assert.deepEqual(lastRefresh.state.turns,[12,12]);
+const wiped={...s,tiles:s.tiles.map(t=>({...t,owner:2}))};
+assert.equal(E.canReenter(wiped,C),true);
+assert.equal(E.submit(wiped,['a','b','c'],C).state.tiles.filter(t=>t.owner===1).length,3);
+assert.match(E.submit(wiped,['a','b','c','d'],C).error,/enemy/);
+assert.match(E.submit(wiped,['a','b','c'],{...C,allowReentry:false}).error,/Start/);
+assert.ok(E.refreshTurn(wiped,C).error);
+for(let n=0;n<100;n++) {
+  const batch=E.refreshLetters(s.tiles,['a','b','c'],C,seeded(n)).tiles.slice(0,3);
+  assert.ok(batch.some(t=>'AEIOU'.includes(t.letter)));
+  assert.ok(batch.some(t=>!'AEIOU'.includes(t.letter)));
+}
+let game=E.newGame(C,seeded(9));
 function findPath(game,path=[]) {
   if(path.length===3)return path;
   for(const tile of game.tiles) {
@@ -66,10 +122,11 @@ function findPath(game,path=[]) {
     if(!E.validatePath(game,next,C,false)){const found=findPath(game,next);if(found)return found;}
   }
 }
-for(let turn=0;turn<30;turn++) {
+for(let turn=0;turn<24;turn++) {
   const path=findPath(game); assert.ok(path,'A legal move exists');
   const jokerLetters=Object.fromEntries(path.map(id=>[id,'A']));
   game=E.submit(game,path,C,null,jokerLetters).state;
-  assert.equal(game.over,turn===29);
+  assert.equal(game.over,turn===23);
 }
-console.log('Passed: 100 49-tile boards, joker distribution and assignments, 8-way adjacency, capture/scoring, dictionary adapter, and a complete 30-turn game.');
+assert.deepEqual(game.turns,[12,12]);
+console.log('Passed: 100 symmetric 69-tile boards, 4+ neighbors, refreshed letter batches, three-enemy attacks, jokers, dictionary validation, refresh turns, re-entry, and a complete 24-turn game.');

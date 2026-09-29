@@ -11,14 +11,14 @@ function svgElement(tag, attrs, text) {
   if (text!==undefined) el.textContent=text;
   return el;
 }
-function drawBoard(captured=[]) {
+function drawBoard(captured=[],refreshed=[]) {
   const board=$('board'); board.replaceChildren();
   const positions=state.tiles.map(position), xs=positions.map(p=>p.x), ys=positions.map(p=>p.y);
   board.setAttribute('viewBox',`${Math.min(...xs)-38} ${Math.min(...ys)-40} ${Math.max(...xs)-Math.min(...xs)+76} ${Math.max(...ys)-Math.min(...ys)+80}`);
   state.tiles.forEach(t=>{
     const p=position(t), index=path.indexOf(t.id);
     const displayLetter=t.letter==='?' && index>=0 ? (jokerLetters[t.id] || '?') : t.letter;
-    const g=svgElement('g',{'data-id':t.id,class:`tile owner${t.owner}${t.castle?' castle':''}${t.letter==='?'?' joker':''}${index>=0?' selected':''}${captured.includes(t.id)?' captured':''}`,tabindex:state.over?-1:0,role:'button','aria-label':`${t.letter==='?'?'Joker '+displayLetter:t.letter}, ${t.owner?'Player '+t.owner:'neutral'}${t.castle?', castle':''}, tile ${t.id}`,'aria-pressed':index>=0});
+    const g=svgElement('g',{'data-id':t.id,class:`tile owner${t.owner}${t.castle?' castle':''}${t.letter==='?'?' joker':''}${index>=0?' selected':''}${captured.includes(t.id)?' captured':''}${refreshed.includes(t.id)?' refreshed':''}`,tabindex:state.over?-1:0,role:'button','aria-label':`${t.letter==='?'?'Joker '+displayLetter:t.letter}, ${t.owner?'Player '+t.owner:'neutral'}${t.castle?', castle':''}, tile ${t.id}`,'aria-pressed':index>=0});
     const points=Array.from({length:8},(_,i)=>{const a=(45*i+22.5)*Math.PI/180;return `${p.x+33*Math.cos(a)},${p.y+33*Math.sin(a)}`;}).join(' ');
     g.append(svgElement('polygon',{points}),svgElement('text',{x:p.x,y:p.y-2},displayLetter));
     g.append(svgElement('text',{x:p.x,y:p.y+18,class:'badge'},index>=0?`${index+1}${t.castle?' · ♜':t.letter==='?'?' · ?':''}`:t.castle?'♜':t.owner?`P${t.owner}`:''));
@@ -30,7 +30,8 @@ function drawBoard(captured=[]) {
 function selectionChanged() {
   $('word').textContent=path.length?Engine.wordForPath(state,path,jokerLetters):'—';
   const captured=Engine.capturedTiles(state,path), castles=captured.filter(t=>t.castle).length;
-  $('preview').textContent=path.length?`${path.length} letters · captures ${captured.length} territories${castles?` including ${castles} castle${castles>1?'s':''}`:''}`:'Start on your color. Trace a word.';
+  const enemy=captured.filter(t=>t.owner!==0).length;
+  $('preview').textContent=path.length?`${path.length} letters · captures ${captured.length} territories${enemy?` (${enemy} enemy)`:''}${castles?` · ${castles} castle${castles>1?'s':''}`:''}`:Engine.canReenter(state,config)?'No territory left? Start on any tile to return.':'Start on your color. Trace a word.';
   $('submit').disabled=!!Engine.validatePath(state,path,config,true,dictionary,jokerLetters);
   $('cancel').disabled=!path.length;
 }
@@ -53,15 +54,23 @@ function renderJokers() {
   });
   $('joker-help').hidden=!$('jokers').childElementCount;
 }
-function render(captured=[]) {
-  drawBoard(captured); renderJokers(); selectionChanged();
+function render(captured=[],refreshed=[]) {
+  drawBoard(captured,refreshed); renderJokers(); selectionChanged();
+  $('refresh').hidden=!config.allowRefreshTurn;
+  $('refresh').disabled=state.over || !state.tiles.some(t=>t.owner===state.player && t.letter!=='?');
   const scores=Engine.scores(state,config);
   [1,2].forEach(p=>{ $('score'+p).textContent=scores[p-1]; $('turns'+p).textContent=`${state.turns[p-1]} / ${config.turnsPerPlayer} turns played`; $('p'+p).classList.toggle('active',!state.over && state.player===p); });
   $('turn').textContent=state.over?(scores[0]===scores[1]?`It's a draw!`:`Player ${scores[0]>scores[1]?1:2} wins!`):`Player ${state.player}’s turn`;
   $('round').textContent=state.over?'Game complete':`Turn ${state.turns[state.player-1]+1} of ${config.turnsPerPlayer}`;
   $('log').replaceChildren();
   if (!state.log.length) { const li=document.createElement('li'); li.className='empty'; li.textContent='The map is yours to contest.'; $('log').append(li); }
-  state.log.forEach(move=>{ const li=document.createElement('li'), title=document.createElement('strong'), detail=document.createElement('small'); title.textContent=`Player ${move.player}: ${move.word}`; detail.textContent=`Captured ${move.captured} territor${move.captured===1?'y':'ies'}${move.castles?` · ${move.castles} castle${move.castles>1?'s':''}`:''}`; li.append(title,detail); $('log').append(li); });
+  state.log.forEach(move=>{
+    const li=document.createElement('li'), title=document.createElement('strong'), detail=document.createElement('small');
+    title.textContent=`Player ${move.player}: ${move.type==='refresh'?'Refreshed letters':move.word}`;
+    detail.textContent=move.type==='refresh'?`${move.refreshed} letters replaced · used one turn`:
+      `Captured ${move.captured} territor${move.captured===1?'y':'ies'}${move.enemy?` · ${move.enemy} enemy`:''}${move.castles?` · ${move.castles} castle${move.castles>1?'s':''}`:''}${move.refreshed?` · ${move.refreshed} fresh letters`:''}`;
+    li.append(title,detail); $('log').append(li);
+  });
 }
 function choose(id) {
   if (state.over || !id || id===path.at(-1)) return;
@@ -76,14 +85,20 @@ function stopDrag(){dragging=false;activePointer=null;}
 $('board').addEventListener('pointerup',stopDrag); $('board').addEventListener('pointercancel',stopDrag); $('board').addEventListener('lostpointercapture',stopDrag);
 $('board').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();const id=e.target.dataset.id;choose(id);Array.from($('board').querySelectorAll('[data-id]')).find(el=>el.dataset.id===id)?.focus();}});
 $('cancel').addEventListener('click',()=>{path=[];jokerLetters={};$('status').textContent='';drawBoard();renderJokers();selectionChanged();});
-$('submit').addEventListener('click',()=>{
-  const result=Engine.submit(state,path,config,dictionary,jokerLetters);
+function finishMove(result) {
   if(result.error){$('status').textContent=result.error;return;}
-  const player=state.player;state=result.state;path=[];jokerLetters={};render(result.captured);
-  $('status').textContent=state.over?`${$('turn').textContent} Final score: ${Engine.scores(state,config).join(' – ')}.`:`Player ${player} captured ${result.captured.length} territories. Pass to Player ${state.player}.`;
+  const player=state.player;state=result.state;path=[];jokerLetters={};stopDrag();render(result.captured,result.refreshed);
+  $('status').textContent=state.over?`${$('turn').textContent} Final score: ${Engine.scores(state,config).join(' – ')}.`:
+    `Player ${player} ${state.log[0].type==='refresh'?'spent a turn refreshing letters':`captured ${result.captured.length} territories`}. ${result.refreshed.length} letters replaced. Pass to Player ${state.player}.`;
+}
+$('submit').addEventListener('click',()=>finishMove(Engine.submit(state,path,config,dictionary,jokerLetters)));
+$('refresh').addEventListener('click',()=>{
+  if(window.confirm('Replace your ordinary owned letters and end this turn? Territory and jokers stay the same.'))finishMove(Engine.refreshTurn(state,config));
 });
 $('reset').addEventListener('click',()=>{if(state.log.length && !state.over && !window.confirm('End this game and generate a new board?'))return;state=Engine.newGame(config);path=[];jokerLetters={};stopDrag();$('status').textContent='New map. Player 1 begins.';render();});
 $('dictionary').textContent=config.dictionaryEnabled?'Dictionary validation enabled.':'DEVELOPMENT MODE · Dictionary validation is OFF. Any valid path of 3+ letters counts.';
 $('castle-value').textContent=config.castlePoints;
-$('rules').textContent=`Start on your territory. Move in any of 8 directions, including diagonals across the small gaps. Connect at least ${config.minimumWordLength} letters without repeating a tile. Use up to ${config.maxEnemyTilesPerWord} enemy tile per word. Every neutral or enemy tile you use becomes yours. Normal territory is worth ${config.normalTerritoryPoints} point; castles are worth ${config.castlePoints}. Each player gets ${config.turnsPerPlayer} turns.`;
+$('rules').textContent=`Start on your territory. Move in any of 8 directions, including diagonals across the small gaps. Connect at least ${config.minimumWordLength} letters without repeating a tile. Capture up to ${config.maxEnemyTilesPerWord} enemy tiles per word, plus any neutral tiles along your path. Normal territory is worth ${config.normalTerritoryPoints} point; castles are worth ${config.castlePoints}. Each player gets ${config.turnsPerPlayer} turns.${config.allowReentry?' If you lose all your territory, you may start anywhere; the enemy limit still applies.':''}`;
+$('edition').textContent=`${state.tiles.length} tiles · ${config.maxEnemyTilesPerWord} enemy captures per word · ${config.turnsPerPlayer} turns each`;
+$('letter-rules').textContent=`${config.mirrorStartingBoard?'Both sides start with mirrored letters and objectives. ':''}${config.refreshUsedLetters?'After every word, ordinary letters on its path are replaced; ownership stays. Jokers stay wild. New batches of two or more letters include a vowel and a consonant. ':''}${config.allowRefreshTurn?'Stuck? Refresh your owned letters instead of playing a word. It costs one turn.':''}`;
 render();

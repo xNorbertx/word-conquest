@@ -1,12 +1,17 @@
 /* Change rules here, then reload and start a new game. */
 const GAME_CONFIG = Object.freeze({
-  boardRadius: 3,
-  // A square of octagons: (2 * radius + 1)² tiles, with 8-way adjacency.
-  jokerCount: 5,
+  boardRadius: 4,
+  // 9 × 9 with two layers trimmed from each corner = 69 tiles.
+  cornerCut: 2,
+  mirrorStartingBoard: true,
+  jokerCount: 6,
   minimumWordLength: 3,
   startingTerritories: 3,
-  maxEnemyTilesPerWord: 1,
-  turnsPerPlayer: 15,
+  maxEnemyTilesPerWord: 3,
+  turnsPerPlayer: 12,
+  refreshUsedLetters: true,
+  allowRefreshTurn: true,
+  allowReentry: true,
   normalTerritoryPoints: 1,
   castlePoints: 3,
   castleCount: 3,
