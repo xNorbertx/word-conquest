@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Word Conquest — playable prototype</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath fill='%23296b64' d='M20 1 37 10 37 30 20 39 3 30 3 10Z'/%3E%3Ctext x='20' y='28' text-anchor='middle' fill='white' font-size='24'%3EW%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+  <script defer src="config.js"></script><script defer src="engine.js"></script><script defer src="app.js"></script>
+</head>
+<body>
+<main>
+  <header><div><span class="eyebrow">LOCAL TWO-PLAYER · PROTOTYPE</span><h1>Word Conquest<span>.</span></h1></div><button id="reset" class="secondary">New Game</button></header>
+  <p id="dictionary" class="notice"></p>
+  <section class="scores" aria-label="Scores"><div id="p1" class="score player1"><span>Player 1 · Teal</span><strong id="score1">3</strong><small id="turns1"></small></div><div id="p2" class="score player2"><span>Player 2 · Coral</span><strong id="score2">3</strong><small id="turns2"></small></div></section>
+  <div class="layout"><section class="play-area" aria-label="Game board">
+    <div class="turn-heading"><h2 id="turn"></h2><span id="round"></span></div>
+    <svg id="board" role="group" aria-label="Letter hex map"></svg>
+    <div class="legend"><span><i class="neutral"></i>Neutral</span><span><i class="teal"></i>Player 1</span><span><i class="coral"></i>Player 2</span><span>♜ Castle · <b id="castle-value"></b> points</span></div>
+  </section>
+  <aside>
+    <section class="selection"><span class="eyebrow">YOUR WORD</span><div id="word" aria-live="polite">—</div><p id="preview">Start on your color. Trace a word.</p><div class="actions"><button id="submit" disabled>Submit Word</button><button id="cancel" class="secondary" disabled>Cancel Selection</button></div><p id="status" role="status"></p></section>
+    <details open><summary>How to play</summary><p id="rules"></p><p>Drag across letters, or tap them one at a time. Tap the previous hex to undo a step. You may reuse words on later turns.</p><p>Castles keep their value when captured. Most territory points after the final turn wins.</p></details>
+    <section class="history"><h2>Game log</h2><ol id="log"><li class="empty">The map is yours to contest.</li></ol></section>
+  </aside></div>
+  <footer>One word. A little more territory. Pass the screen.</footer>
+</main>
+</body></html>
