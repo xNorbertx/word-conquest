@@ -1,0 +1,7 @@
+{
+  "version": "english-letterpress-v1-5b448e6b1ace",
+  "sha256": "5b448e6b1acea846c9ef1c17e153b2262fb1fad5eacb996363b4466c9cf7ae1e",
+  "words": 274804,
+  "source": "an-array-of-english-words@2.0.0",
+  "policy": "Exact lowercase ASCII entries, 3–69 letters. Inflections and slang accepted only when listed. No runtime stemming or additions. May contain offensive and archaic words; no family-safe claim."
+}

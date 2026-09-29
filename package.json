@@ -1,0 +1,28 @@
+{
+  "name": "word-conquest",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test": "node engine.test.cjs && node scoring.test.cjs && node supply.test.cjs && node --test test/*.test.cjs",
+    "build": "node scripts/build.cjs",
+    "dev": "node scripts/serve.cjs",
+    "mobile:sync": "npm run build && cap sync",
+    "mobile:android": "cap add android",
+    "mobile:ios": "cap add ios"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@capacitor/core": "7.6.9",
+    "@supabase/supabase-js": "2.57.4"
+  },
+  "devDependencies": {
+    "@capacitor/android": "7.6.9",
+    "@capacitor/cli": "7.6.9",
+    "@capacitor/ios": "7.6.9",
+    "@electric-sql/pglite": "0.3.10",
+    "an-array-of-english-words": "2.0.0",
+    "esbuild": "0.25.10"
+  }
+}

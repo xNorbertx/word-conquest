@@ -1,0 +1,10 @@
+project_id = "word-conquest"
+
+[functions.game-api]
+# Handler verifies the bearer JWT with Auth.getUser on every request.
+# Supports publishable keys without relying on legacy gateway JWT semantics.
+verify_jwt = false
+
+[functions.notify]
+# Dedicated secret required in handler; no browser/session access.
+verify_jwt = false

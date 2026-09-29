@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+online/config.local.js
+supabase/.temp/
+supabase/.branches/
+work/
+*.keystore
+*.jks
+*.p12
+*.mobileprovision
+android/
+ios/
+supabase/functions/_shared/
