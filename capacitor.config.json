@@ -1,0 +1,6 @@
+{
+  "appId": "com.wordconquest.app",
+  "appName": "Word Conquest",
+  "webDir": "dist/online",
+  "server": { "androidScheme": "https" }
+}

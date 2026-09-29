@@ -1,6 +1,29 @@
 # Word Conquest
 
-A small local two-player territory word game. Plain HTML, CSS and JavaScript; no dependencies, build step, backend or accounts.
+A territory word game with a preserved local prototype and a separate online implementation.
+
+## Online implementation (not yet deployed)
+
+The original root `index.html` still works without dependencies or accounts. The new
+`online/` client uses the approved Autumn Sunday direction; Supabase supplies identity,
+saved games and authoritative server turns. Capacitor packages the built web client.
+
+- Owner actions, all in one place: [setup checklist](docs/SETUP.md).
+- [Architecture and repository audit](docs/ARCHITECTURE.md).
+- [Implemented work, checks and remaining release gates](docs/PROGRESS.md).
+- [Run/deploy/backup/maintenance instructions](docs/OPERATIONS.md).
+- [Privacy and dictionary policy](docs/PRIVACY.md).
+
+Use Node 22+, `npm ci --ignore-scripts`, `npm test`, `npm run build`, then `npm run dev`.
+Open `http://127.0.0.1:4173/online/`. Copy `online/config.example.js` to the ignored
+`online/config.local.js` and enter public project connection details after setup.
+Never put service keys, SMTP passwords or signing credentials in browser configuration.
+Without a configured backend the online app shows a labelled visual preview, not fake
+saved games. Root prototype mechanics below are unchanged.
+
+Local checks pass, but hosted authentication/email, full remote integration, a backup
+restore and real-device asynchronous play remain acceptance gates. No deployment or
+public release has been performed. Existing Resend and Zoho services will be reused.
 
 ## Play locally
 
