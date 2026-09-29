@@ -32,7 +32,16 @@ function selectionChanged() {
   const captured=Engine.capturedTiles(state,path), castles=captured.filter(t=>t.castle).length;
   const enemy=captured.filter(t=>t.owner!==0).length;
   $('preview').textContent=path.length?`${path.length} letters · captures ${captured.length} territories${enemy?` (${enemy} enemy)`:''}${castles?` · ${castles} castle${castles>1?'s':''}`:''}`:Engine.canReenter(state,config)?'No territory left? Start on any tile to return.':'Start on your color. Trace a word.';
-  $('submit').disabled=!!Engine.validatePath(state,path,config,true,dictionary,jokerLetters);
+  const error=Engine.validatePath(state,path,config,true,dictionary,jokerLetters);
+  $('submit').disabled=!!error;
+  $('move-score').hidden=!path.length;
+  if(path.length) {
+    const scoring=Engine.scoreMove(state,path,config);
+    $('move-score-total').textContent=`${error?'Potential: ':''}+${scoring.totalGain} total points`;
+    $('move-score-word').textContent=`${scoring.letters} letter points + ${scoring.lengthBonus} length bonus = ${scoring.wordPoints} permanent word points`;
+    $('move-score-territory').textContent=`+${scoring.territoryGain} territory${scoring.enemyLoss?` · opponent loses ${scoring.enemyLoss} territory points`:''}`;
+    $('move-score-help').textContent=error || 'Word points stay yours, even if these tiles are captured later.';
+  }
   $('cancel').disabled=!path.length;
 }
 function renderJokers() {
@@ -59,7 +68,14 @@ function render(captured=[],refreshed=[]) {
   $('refresh').hidden=!config.allowRefreshTurn;
   $('refresh').disabled=state.over || !state.tiles.some(t=>t.owner===state.player && t.letter!=='?');
   const scores=Engine.scores(state,config);
-  [1,2].forEach(p=>{ $('score'+p).textContent=scores[p-1]; $('turns'+p).textContent=`${state.turns[p-1]} / ${config.turnsPerPlayer} turns played`; $('p'+p).classList.toggle('active',!state.over && state.player===p); });
+  const breakdown=Engine.scoreBreakdown(state,config);
+  [1,2].forEach(p=>{
+    $('score'+p).textContent=scores[p-1];
+    $('score'+p).setAttribute('aria-label',`${scores[p-1]} total points`);
+    $('breakdown'+p).textContent=`${breakdown[p-1].words} word + ${breakdown[p-1].territory} territory = ${scores[p-1]} total`;
+    $('turns'+p).textContent=`${state.turns[p-1]} / ${config.turnsPerPlayer} turns played`;
+    $('p'+p).classList.toggle('active',!state.over && state.player===p);
+  });
   $('turn').textContent=state.over?(scores[0]===scores[1]?`It's a draw!`:`Player ${scores[0]>scores[1]?1:2} wins!`):`Player ${state.player}’s turn`;
   $('round').textContent=state.over?'Game complete':`Turn ${state.turns[state.player-1]+1} of ${config.turnsPerPlayer}`;
   $('log').replaceChildren();
@@ -69,7 +85,14 @@ function render(captured=[],refreshed=[]) {
     title.textContent=`Player ${move.player}: ${move.type==='refresh'?'Refreshed letters':move.word}`;
     detail.textContent=move.type==='refresh'?`${move.refreshed} letters replaced · used one turn`:
       `Captured ${move.captured} territor${move.captured===1?'y':'ies'}${move.enemy?` · ${move.enemy} enemy`:''}${move.castles?` · ${move.castles} castle${move.castles>1?'s':''}`:''}${move.refreshed?` · ${move.refreshed} fresh letters`:''}`;
-    li.append(title,detail); $('log').append(li);
+    li.append(title);
+    if(move.scoring) {
+      const points=document.createElement('small'), score=move.scoring;
+      points.className='log-points';
+      points.textContent=`+${score.wordPoints} word (${score.letters} letters + ${score.lengthBonus} length) + ${score.territoryGain} territory = +${score.totalGain} total${score.enemyLoss?` · opponent −${score.enemyLoss}`:''}`;
+      li.append(points);
+    }
+    li.append(detail); $('log').append(li);
   });
 }
 function choose(id) {
@@ -89,7 +112,7 @@ function finishMove(result) {
   if(result.error){$('status').textContent=result.error;return;}
   const player=state.player;state=result.state;path=[];jokerLetters={};stopDrag();render(result.captured,result.refreshed);
   $('status').textContent=state.over?`${$('turn').textContent} Final score: ${Engine.scores(state,config).join(' – ')}.`:
-    `Player ${player} ${state.log[0].type==='refresh'?'spent a turn refreshing letters':`captured ${result.captured.length} territories`}. ${result.refreshed.length} letters replaced. Pass to Player ${state.player}.`;
+    `Player ${player} ${state.log[0].type==='refresh'?'spent a turn refreshing letters (no points earned)':`earned ${state.log[0].scoring.wordPoints} word points and gained ${state.log[0].scoring.territoryGain} territory points`}. Pass to Player ${state.player}.`;
 }
 $('submit').addEventListener('click',()=>finishMove(Engine.submit(state,path,config,dictionary,jokerLetters)));
 $('refresh').addEventListener('click',()=>{
@@ -101,4 +124,6 @@ $('castle-value').textContent=config.castlePoints;
 $('rules').textContent=`Start on your territory. Move in any of 8 directions, including diagonals across the small gaps. Connect at least ${config.minimumWordLength} letters without repeating a tile. Capture up to ${config.maxEnemyTilesPerWord} enemy tiles per word, plus any neutral tiles along your path. Normal territory is worth ${config.normalTerritoryPoints} point; castles are worth ${config.castlePoints}. Each player gets ${config.turnsPerPlayer} turns.${config.allowReentry?' If you lose all your territory, you may start anywhere; the enemy limit still applies.':''}`;
 $('edition').textContent=`${state.tiles.length} tiles · ${config.maxEnemyTilesPerWord} enemy captures per word · ${config.turnsPerPlayer} turns each`;
 $('letter-rules').textContent=`Each side gets different letters with matching mixes of vowels and consonant types around its starting area. Jokers are equally reachable, with independently chosen positions. ${config.refreshUsedLetters?'After every word, ordinary letters on its path are replaced; ownership stays. Jokers stay wild. Fresh batches use the same letter-mix rules for both players, with rare letters limited. ':''}${config.allowRefreshTurn?'Stuck? Refresh your owned letters instead of playing a word. It costs one turn.':''}`;
+$('letter-values').textContent=config.wordScoring.letterGroups.map(group=>`${group.letters.split('').join(' ')}: ${group.points} point${group.points===1?'':'s'} each`).join(' · ')+` · Joker: ${config.wordScoring.jokerPoints} points, but counts toward word length.`;
+$('length-values').textContent=`Length bonus: ${config.wordScoring.lengthBonuses.map((bonus,length)=>({bonus,length})).filter(item=>item.length>=config.minimumWordLength).map(item=>`${item.length} letters +${item.bonus}`).join(' · ')}. Beyond ${config.wordScoring.lengthBonuses.length-1} letters, +${config.wordScoring.extraLetterBonus} per extra letter.`;
 render();

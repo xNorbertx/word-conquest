@@ -20,10 +20,34 @@ After a submitted word, **all ordinary letters in its path change**, including o
 
 Words may repeat if you find them again, and zero-capture moves are allowed; used letters still change. Disconnected territory stays owned. Reloading the page or starting a new game resets progress; nothing is saved.
 
+## Scoring
+
+**Total = accumulated word points + current territory value.** Word points are permanent; territory points change with ownership. Starting scores are 0 word + 3 territory. Highest total after 12 turns each wins; equal totals draw with no territory tiebreaker.
+
+Each submitted word earns the sum of its original tile values plus a length bonus:
+
+| Tiles | Points each |
+| --- | --- |
+| A E I O U R S T L N | 1 |
+| B C D F G H K M P V W Y | 2 |
+| J Q X Z | 4 |
+| Joker, regardless of the chosen letter | 0 |
+
+| Word length | 3 | 4 | 5 | 6 | 7 | 8 |
+| --- | --- | --- | --- | --- | --- | --- |
+| Bonus | 0 | 1 | 3 | 6 | 10 | 15 |
+
+Beyond eight letters, add six bonus points per extra letter. Jokers count toward length. Without jokers, CAT earns 4 word points, HOUNDS earns 14, and PIEHOLE earns 19. Letter values are measured before the path's letters refresh.
+
+Normal controlled territory adds 1 point and a controlled castle adds 3. Capturing an enemy castle adds 3 territory points to you and removes 3 from the opponent; their banked word points stay intact. There is no separate permanent capture bonus or per-turn territory income. Zero-capture words still earn word points; refreshing earns no points. The score preview and move log distinguish your total increase from the opponent's territory loss. Historical log entries describe that move, not territory still held now.
+
+Tune `GAME_CONFIG.wordScoring` independently from letter-generation settings: `letterGroups`, `jokerPoints`, the length-indexed `lengthBonuses` array, and `extraLetterBonus`. Territory values remain in `normalTerritoryPoints` and `castlePoints`. `scoreMove` is the shared preview/submission calculation; `scoreBreakdown` provides permanent word points, current territory and total.
+
 ## This experiment
 
 - Independent opening letters with matching category budgets reduce starting luck without making the two sides copies. Territory shapes and castles remain symmetric; letters and joker positions are chosen independently. This does not guarantee equal word counts or remove first-player advantage.
 - Fresh letters move some luck into each turn and break up repeated use of one fixed word. The refreshed letters are shared and may also help the opponent.
+- Permanent word points reward long words and harder letters even when a short attack would capture more territory. This is a tunable experiment, not a proven balance.
 - Three enemy captures make counterattacks larger: stealing three normal tiles changes the score difference by six points. Castles can make the swing larger. Whether this produces satisfying comebacks needs playtesting.
 - A larger map and 12-turn limit are intended to keep expansion meaningful without a long stale ending.
 - Re-entry prevents total territory loss from leaving a player unable to take their remaining turns. It is an experimental comeback rule, not permanent protection.
@@ -32,7 +56,7 @@ These values and behaviors are provisional. In the next playtest, watch how ofte
 
 ## Constrained letter distribution
 
-Letter categories affect generation only, never scoring:
+Generation categories are configured separately from scoring values:
 
 | Category | Letters | Rule |
 | --- | --- | --- |
@@ -60,7 +84,7 @@ Dictionary-based comparison of actual available words is a later step; this iter
 
 For a future word list, load a script defining `window.WORD_DICTIONARY = new Set([...lowercaseWords])` before `app.js`, then enable `dictionaryEnabled`. An enabled but missing dictionary blocks submissions rather than accepting everything silently.
 
-Run the dependency-free rule checks with `node engine.test.cjs`.
+Run the dependency-free checks with `node engine.test.cjs` and `node scoring.test.cjs`.
 
 ## GitHub Pages
 

@@ -58,14 +58,14 @@ const battle={...s,tiles:[0,1,2,3,4].map(q=>({id:String(q),q,r:0,owner:q?2:1,let
 const assault=E.submit(battle,['0','1','2','3'],C);
 assert.equal(assault.state.log[0].enemy,3);
 assert.equal(assault.state.log[0].castles,1);
-assert.deepEqual(E.scores(assault.state,C),[6,1]);
+assert.deepEqual(E.scores(assault.state,C),[14,1]);
 assert.match(E.submit(battle,['0','1','2','3','4'],C).error,/enemy/);
 assert.match(E.validatePath(s,['a','b','c'],{...C,dictionaryEnabled:true}),/unavailable/);
 assert.match(E.validatePath(s,['a','b','c'],{...C,dictionaryEnabled:true},true,new Set(['dog'])),/not in/);
 assert.equal(E.validatePath(s,['a','b','c'],{...C,dictionaryEnabled:true},true,new Set(['cat'])),null);
 const result=E.submit(s,['a','b','c'],C);
 assert.deepEqual(result.captured,['b','c']);
-assert.deepEqual(E.scores(result.state,C),[5,1]);
+assert.deepEqual(E.scores(result.state,C),[9,1]);
 assert.equal(result.state.player,2);
 assert.deepEqual(result.state.turns,[1,0]);
 assert.equal(s.tiles[1].owner,0);
@@ -81,7 +81,7 @@ for(const choice of ['', 'AB', '1', 'a']) assert.match(E.submit(jokerState,['a',
 const jokerResult=E.submit(jokerState,['a','b','c'],{...C,dictionaryEnabled:true},new Set(['cat']),{b:'A'});
 assert.equal(jokerResult.state.log[0].word,'CAT');
 assert.equal(jokerResult.state.tiles[1].letter,'?');
-assert.deepEqual(E.scores(jokerResult.state,C),[5,1]);
+assert.deepEqual(E.scores(jokerResult.state,C),[8,1]);
 assert.match(E.submit(jokerState,['a','b','c'],{...C,dictionaryEnabled:true},new Set(['cat']),{b:'O'}).error,/dictionary/);
 assert.equal(E.submit(jokerState,['a','b','c'],C,null,{b:'O'}).state.log[0].word,'COT');
 const twoJokers={...jokerState,tiles:jokerState.tiles.map(t=>t.id==='a'?{...t,letter:'?'}:t)};

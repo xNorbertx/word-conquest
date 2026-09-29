@@ -119,7 +119,7 @@ const WordConquest = (() => {
     placeLetters(tiles,center,categoryPlan(center.length,config,random),config,random);
     return tiles;
   }
-  const newGame=(config,random)=>({tiles:generateBoard(config,random),player:1,turns:[0,0],log:[],over:false});
+  const newGame=(config,random)=>({tiles:generateBoard(config,random),player:1,turns:[0,0],wordPoints:[0,0],log:[],over:false});
   const canReenter=(state,config)=>config.allowReentry && !state.tiles.some(t=>t.owner===state.player);
   const wordForPath=(state,ids,jokerLetters={})=>ids.map(id=>{
     const tile=state.tiles.find(t=>t.id===id);
@@ -145,7 +145,29 @@ const WordConquest = (() => {
     return null;
   }
   const capturedTiles=(state,ids)=>state.tiles.filter(t=>ids.includes(t.id) && t.owner!==state.player);
-  const scores=(state,config)=>[1,2].map(player=>state.tiles.filter(t=>t.owner===player).reduce((n,t)=>n+(t.castle?config.castlePoints:config.normalTerritoryPoints),0));
+  const territoryValue=(tile,config)=>tile.castle?config.castlePoints:config.normalTerritoryPoints;
+  const letterValue=(value,config)=>value==='?'?config.wordScoring.jokerPoints:
+    (config.wordScoring.letterGroups.find(group=>group.letters.includes(value))?.points ?? 0);
+  function lengthBonus(length,config) {
+    const bonuses=config.wordScoring.lengthBonuses, last=bonuses.length-1;
+    return length<=last?bonuses[length]:bonuses[last]+(length-last)*config.wordScoring.extraLetterBonus;
+  }
+  // Preview and submission share this calculation, using letters BEFORE refresh.
+  function scoreMove(state,ids,config) {
+    const tiles=ids.map(id=>state.tiles.find(t=>t.id===id));
+    const letters=tiles.reduce((sum,t)=>sum+letterValue(t.letter,config),0);
+    const bonus=lengthBonus(ids.length,config);
+    const captured=capturedTiles(state,ids);
+    const territoryGain=captured.reduce((sum,t)=>sum+territoryValue(t,config),0);
+    const enemyLoss=captured.filter(t=>t.owner!==0).reduce((sum,t)=>sum+territoryValue(t,config),0);
+    return {letters,lengthBonus:bonus,wordPoints:letters+bonus,territoryGain,enemyLoss,totalGain:letters+bonus+territoryGain};
+  }
+  const scoreBreakdown=(state,config)=>[1,2].map(player=>{
+    const words=state.wordPoints?.[player-1] || 0;
+    const territory=state.tiles.filter(t=>t.owner===player).reduce((sum,t)=>sum+territoryValue(t,config),0);
+    return {words,territory,total:words+territory};
+  });
+  const scores=(state,config)=>scoreBreakdown(state,config).map(score=>score.total);
   function advanceTurn(state,config) {
     state.turns[state.player-1]++;
     state.over=state.turns.every(n=>n>=config.turnsPerPlayer);
@@ -162,12 +184,15 @@ const WordConquest = (() => {
     const error=validatePath(state,ids,config,true,dictionary,jokerLetters);
     if(error)return {error};
     const captured=capturedTiles(state,ids);
+    const scoring=scoreMove(state,ids,config);
     const move={type:'word',player:state.player,word:wordForPath(state,ids,jokerLetters),captured:captured.length,
-      enemy:captured.filter(t=>t.owner!==0).length,castles:captured.filter(t=>t.castle).length};
+      enemy:captured.filter(t=>t.owner!==0).length,castles:captured.filter(t=>t.castle).length,scoring};
     const claimed=state.tiles.map(t=>ids.includes(t.id)?{...t,owner:state.player}:t);
     const updated=config.refreshUsedLetters?refreshLetters(claimed,ids,config,random):{tiles:claimed,refreshed:[]};
     move.refreshed=updated.refreshed.length;
-    const next={...state,tiles:updated.tiles,turns:[...state.turns],log:[move,...state.log]};
+    const wordPoints=[...(state.wordPoints || [0,0])];
+    wordPoints[state.player-1]+=scoring.wordPoints;
+    const next={...state,tiles:updated.tiles,wordPoints,turns:[...state.turns],log:[move,...state.log]};
     advanceTurn(next,config);
     return {state:next,captured:captured.map(t=>t.id),refreshed:updated.refreshed};
   }
@@ -182,6 +207,6 @@ const WordConquest = (() => {
     advanceTurn(next,config);
     return {state:next,captured:[],refreshed:updated.refreshed};
   }
-  return {distance,adjacent,letterType,openingBand,generateBoard,newGame,canReenter,wordForPath,validatePath,capturedTiles,scores,advanceTurn,refreshLetters,submit,refreshTurn};
+  return {distance,adjacent,letterType,openingBand,generateBoard,newGame,canReenter,wordForPath,validatePath,capturedTiles,letterValue,lengthBonus,scoreMove,scoreBreakdown,scores,advanceTurn,refreshLetters,submit,refreshTurn};
 })();
 if(typeof module!=='undefined')module.exports=WordConquest;
