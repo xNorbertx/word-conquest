@@ -10,11 +10,22 @@ for(let n=0;n<100;n++) {
   assert.deepEqual(E.scores(s,C),[3,3]);
   for(const tile of s.tiles) {
     const mirror=s.tiles.find(t=>t.q===-tile.q && t.r===tile.r);
-    assert.equal(tile.letter,mirror.letter);
     assert.equal(tile.castle,mirror.castle);
     assert.equal(mirror.owner,tile.owner?3-tile.owner:0);
     assert.ok(s.tiles.filter(t=>E.adjacent(t,tile)).length>=4,'No tile has fewer than four neighbors');
   }
+  const counts=batch=>Object.fromEntries(['vowels','flexible','ordinary','rare'].map(type=>[type,batch.filter(t=>E.letterType(t.letter,C)===type).length]));
+  for(const band of ['base','near','outer']) {
+    const left=s.tiles.filter(t=>t.q<0 && E.openingBand(t,s.tiles)===band);
+    const right=s.tiles.filter(t=>t.q>0 && E.openingBand(t,s.tiles)===band);
+    assert.deepEqual(counts(left),counts(right),'Both sides must have equal category budgets in each band');
+    assert.equal(left.filter(t=>t.letter==='?').length,right.filter(t=>t.letter==='?').length);
+    if(band!=='outer')assert.equal(counts(left).rare,0,'No awkward letters in the opening area');
+    else assert.ok(counts(left).rare<=1);
+  }
+  assert.ok(s.tiles.filter(t=>t.q<0 && t.letter!=='?').some(t=>t.letter!==s.tiles.find(a=>a.q===-t.q && a.r===t.r).letter),'Letters must not form a mirrored puzzle');
+  const jokerDistances=p=>s.tiles.filter(t=>t.letter==='?' && Math.sign(t.q)===(p===1?-1:1)).map(t=>Math.min(...s.tiles.filter(a=>a.owner===p).map(a=>E.distance(a,t)))).sort();
+  assert.deepEqual(jokerDistances(1),jokerDistances(2),'Jokers should be equally reachable');
   for(const p of [1,2]) {
     assert.equal(s.tiles.filter(t=>t.owner===p && t.letter==='?').length,1);
     const owned=s.tiles.filter(t=>t.owner===p), seen=new Set([owned[0]]);
@@ -113,6 +124,17 @@ for(let n=0;n<100;n++) {
   const batch=E.refreshLetters(s.tiles,['a','b','c'],C,seeded(n)).tiles.slice(0,3);
   assert.ok(batch.some(t=>'AEIOU'.includes(t.letter)));
   assert.ok(batch.some(t=>!'AEIOU'.includes(t.letter)));
+  assert.ok(batch.some(t=>C.letterBalance.flexible.includes(t.letter)));
+  assert.ok(batch.every(t=>!C.letterBalance.rare.includes(t.letter)));
+}
+for(const size of [0,1,2,5,9,10,20,40]) {
+  const source=Array.from({length:size},(_,i)=>({id:String(i),q:i%8,r:Math.floor(i/8),letter:'A',owner:1}));
+  const first=JSON.stringify(source);
+  const batch=E.refreshLetters(source,source.map(t=>t.id),C,seeded(size)).tiles;
+  assert.equal(JSON.stringify(source),first);
+  assert.ok(batch.every(t=>t.letter!=='A'));
+  const rare=batch.filter(t=>C.letterBalance.rare.includes(t.letter)).length;
+  assert.ok(rare<=(size<C.letterBalance.rareMinBatch?0:Math.min(1,Math.floor(size*C.letterBalance.rareMaxShare))));
 }
 let game=E.newGame(C,seeded(9));
 function findPath(game,path=[]) {
@@ -129,4 +151,4 @@ for(let turn=0;turn<24;turn++) {
   assert.equal(game.over,turn===23);
 }
 assert.deepEqual(game.turns,[12,12]);
-console.log('Passed: 100 symmetric 69-tile boards, 4+ neighbors, refreshed letter batches, three-enemy attacks, jokers, dictionary validation, refresh turns, re-entry, and a complete 24-turn game.');
+console.log('Passed: 100 independently lettered boards with matching regional category budgets and joker reach, constrained refreshes, capture/scoring, dictionary validation, and a complete 24-turn game.');

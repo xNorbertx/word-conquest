@@ -3,7 +3,19 @@ const GAME_CONFIG = Object.freeze({
   boardRadius: 4,
   // 9 × 9 with two layers trimmed from each corner = 69 tiles.
   cornerCut: 2,
-  mirrorStartingBoard: true,
+  // Generation categories only; territory scoring is unchanged.
+  letterBalance: {
+    vowels: 'AEIOU',
+    flexible: 'RSTLN',
+    ordinary: 'BCDFGHKMPVWY',
+    rare: 'JQXZ',
+    vowelShare: 0.42,
+    flexibleShare: 0.34,
+    rareMinBatch: 10,
+    rareMaxShare: 0.08,
+    rareBatchChance: 0.35,
+    placementAttempts: 24
+  },
   jokerCount: 6,
   minimumWordLength: 3,
   startingTerritories: 3,

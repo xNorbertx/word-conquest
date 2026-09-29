@@ -2,7 +2,53 @@
 const WordConquest = (() => {
   const distance = (a,b) => Math.max(Math.abs(a.q-b.q),Math.abs(a.r-b.r));
   const adjacent = (a,b) => distance(a,b)===1;
-  const isVowel = value => 'AEIOU'.includes(value);
+  const letterType=(value,config)=>['vowels','flexible','ordinary','rare'].find(type=>config.letterBalance[type].includes(value));
+  function shuffled(values,random) {
+    const result=[...values];
+    for(let i=result.length-1;i>0;i--) { const j=Math.floor(random()*(i+1)); [result[i],result[j]]=[result[j],result[i]]; }
+    return result;
+  }
+  // Shared category quotas; letters and positions are sampled independently.
+  function categoryPlan(count,config,random,allowRare=true) {
+    const balance=config.letterBalance;
+    if(!count)return [];
+    if(count===1) {
+      const roll=random();
+      return [roll<balance.vowelShare?'vowels':roll<balance.vowelShare+balance.flexibleShare?'flexible':'ordinary'];
+    }
+    const vowels=Math.max(1,Math.min(count-1,Math.round(count*balance.vowelShare)));
+    const flexible=Math.max(1,Math.min(count-vowels,Math.round(count*balance.flexibleShare)));
+    const remaining=count-vowels-flexible;
+    const rare=allowRare && count>=balance.rareMinBatch && random()<balance.rareBatchChance
+      ? Math.min(remaining,Math.floor(count*balance.rareMaxShare),1):0;
+    return [...Array(vowels).fill('vowels'),...Array(flexible).fill('flexible'),
+      ...Array(remaining-rare).fill('ordinary'),...Array(rare).fill('rare')];
+  }
+  function placeLetters(tiles,batch,plan,config,random,previous=new Map()) {
+    if(!batch.length)return;
+    const values=shuffled(plan,random).map(type=>letter(config,random,value=>config.letterBalance[type].includes(value)));
+    let best=null,bestCost=Infinity;
+    for(let attempt=0;attempt<config.letterBalance.placementAttempts;attempt++) {
+      const candidate=shuffled(values,random).map((value,i)=>value===previous.get(batch[i].id)
+        ? letter(config,random,next=>letterType(next,config)===letterType(value,config) && next!==value):value);
+      const letters=new Map(batch.map((t,i)=>[t.id,candidate[i]]));
+      const valueAt=t=>letters.get(t.id) || t.letter;
+      let cost=0;
+      for(const tile of batch) {
+        const value=valueAt(tile), type=letterType(value,config), neighbors=tiles.filter(t=>adjacent(t,tile));
+        const vowelAccess=neighbors.some(t=>valueAt(t)==='?' || letterType(valueAt(t),config)==='vowels');
+        if(type!=='vowels' && !vowelAccess)cost+=3;
+        if(type==='rare') {
+          if(!vowelAccess)cost+=8;
+          if(neighbors.some(t=>letterType(valueAt(t),config)==='rare'))cost+=8;
+        }
+      }
+      if(cost<bestCost){best=candidate;bestCost=cost;}
+      if(!cost)break;
+    }
+    batch.forEach((tile,i)=>tile.letter=best[i]);
+  }
+  const openingBand=(tile,tiles)=>tile.owner?'base':tiles.some(t=>t.owner && adjacent(tile,t))?'near':'outer';
   function letter(config,random=Math.random,accept=()=>true) {
     const weights=Object.entries(config.letterWeights).filter(([value,weight])=>weight>0 && accept(value));
     if (!weights.length) throw new Error('Letter distribution needs vowels and consonants.');
@@ -40,27 +86,37 @@ const WordConquest = (() => {
       castles.push(tile,mirror(tile));
     }
     castles.forEach(t=>t.castle=true);
-    if(config.mirrorStartingBoard)tiles.filter(t=>t.q<0).forEach(t=>mirror(t).letter=t.letter);
     const jokers=[];
-    if(config.jokerCount>=2)jokers.push(anchor,mirror(anchor));
+    if(config.jokerCount>=2) {
+      const first=shuffled(region,random)[0];
+      const other=shuffled(tiles.filter(t=>t.owner===2 && t.id!==mirror(first).id),random)[0] || mirror(first);
+      jokers.push(first,other);
+    }
     if(config.jokerCount%2) {
       const centerline=tiles.filter(t=>t.q===0 && !t.castle && !t.owner);
       if(centerline.length)jokers.push(centerline[Math.floor(random()*centerline.length)]);
     }
-    const jokerCandidates=tiles.filter(t=>t.q<0 && !t.owner && !t.castle).map(tile=>({tile,tie:random()}));
-    while(jokers.length+2<=config.jokerCount && jokerCandidates.length) {
-      const rank=t=>jokers.length?Math.min(...jokers.map(a=>distance(a,t))):0;
-      jokerCandidates.sort((a,b)=>rank(b.tile)-rank(a.tile) || a.tie-b.tie);
-      const tile=jokerCandidates.shift().tile;
-      jokers.push(tile,mirror(tile));
+    const reach=t=>Math.min(...starts.filter(a=>a.owner===(t.q<0?1:2)).map(a=>distance(a,t)));
+    while(jokers.length+2<=config.jokerCount) {
+      const available=tiles.filter(t=>t.q!==0 && !t.owner && !t.castle && !jokers.includes(t));
+      const left=shuffled(available.filter(t=>t.q<0),random).sort((a,b)=>
+        Math.min(...jokers.map(t=>distance(t,b)),99)-Math.min(...jokers.map(t=>distance(t,a)),99));
+      const first=left.find(t=>available.some(a=>a.q>0 && reach(a)===reach(t)));
+      if(!first)break;
+      const right=shuffled(available.filter(t=>t.q>0 && reach(t)===reach(first)),random);
+      const other=right.find(t=>t.id!==mirror(first).id) || right[0];
+      jokers.push(first,other);
     }
     jokers.forEach(t=>t.letter='?');
-    // Default opening: a joker, a vowel and a consonant for each player.
-    const regularStart=region.filter(t=>t.letter!=='?');
-    regularStart.slice(0,2).forEach((t,i)=>{
-      t.letter=letter(config,random,value=>isVowel(value)===(i===0));
-      mirror(t).letter=config.mirrorStartingBoard?t.letter:letter(config,random,value=>isVowel(value)===(i===0));
-    });
+    // Match category counts separately at the base, in its immediate neighborhood,
+    // and in the remaining half. No shared letters or shared shuffle sequence.
+    for(const band of ['base','near','outer']) {
+      const batches=[-1,1].map(side=>tiles.filter(t=>Math.sign(t.q)===side && t.letter!=='?' && openingBand(t,tiles)===band));
+      const plan=categoryPlan(batches[0].length,config,random,band==='outer');
+      batches.forEach(batch=>placeLetters(tiles,batch,batch.length===plan.length?plan:categoryPlan(batch.length,config,random,band==='outer'),config,random));
+    }
+    const center=tiles.filter(t=>t.q===0 && t.letter!=='?');
+    placeLetters(tiles,center,categoryPlan(center.length,config,random),config,random);
     return tiles;
   }
   const newGame=(config,random)=>({tiles:generateBoard(config,random),player:1,turns:[0,0],log:[],over:false});
@@ -97,16 +153,9 @@ const WordConquest = (() => {
   }
   function refreshLetters(tiles,ids,config,random=Math.random) {
     const selected=new Set(ids), previous=new Map(tiles.map(t=>[t.id,t.letter]));
-    const next=tiles.map(t=>selected.has(t.id) && t.letter!=='?'
-      ? {...t,letter:letter(config,random,value=>value!==t.letter)} : t);
+    const next=tiles.map(t=>selected.has(t.id) && t.letter!=='?'?{...t}:t);
     const refreshed=next.filter(t=>selected.has(t.id) && t.letter!=='?');
-    // A fresh batch of 2+ letters always includes a vowel and a consonant.
-    if(refreshed.length>=2)for(const vowel of [true,false]) {
-      if(!refreshed.some(t=>isVowel(t.letter)===vowel)) {
-        const tile=refreshed[Math.floor(random()*refreshed.length)];
-        tile.letter=letter(config,random,value=>isVowel(value)===vowel && value!==previous.get(tile.id));
-      }
-    }
+    placeLetters(next,refreshed,categoryPlan(refreshed.length,config,random),config,random,previous);
     return {tiles:next,refreshed:refreshed.map(t=>t.id)};
   }
   function submit(state,ids,config,dictionary=null,jokerLetters={},random=Math.random) {
@@ -133,6 +182,6 @@ const WordConquest = (() => {
     advanceTurn(next,config);
     return {state:next,captured:[],refreshed:updated.refreshed};
   }
-  return {distance,adjacent,generateBoard,newGame,canReenter,wordForPath,validatePath,capturedTiles,scores,advanceTurn,refreshLetters,submit,refreshTurn};
+  return {distance,adjacent,letterType,openingBand,generateBoard,newGame,canReenter,wordForPath,validatePath,capturedTiles,scores,advanceTurn,refreshLetters,submit,refreshTurn};
 })();
 if(typeof module!=='undefined')module.exports=WordConquest;
