@@ -1,5 +1,5 @@
 const assert=require('node:assert/strict');
-const E=require('./engine.js'), C=require('./config.js');
+const E=require('./engine.js'), C={...require('./config.js'),endCondition:'turns'};
 const stable={...C,refreshUsedLetters:false};
 const fixture=word=>({tiles:[...word].map((letter,q)=>({id:String(q),q,r:0,letter,owner:q?0:1,castle:false})),player:1,turns:[0,0],wordPoints:[0,0],log:[],over:false});
 const ids=state=>state.tiles.map(t=>t.id);

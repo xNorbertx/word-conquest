@@ -12,17 +12,19 @@ The board has **69 octagons in a 9 × 9 grid with clipped corners**. All eight s
 
 **Dictionary validation is OFF by default.** Any legal path of at least three letters counts. Agree to use real English words when testing the word-finding experience. The yellow banner makes the limitation explicit. Letters use English frequency weights; there is no word-generation solver.
 
-Start on your own territory. Use each tile at most once and **up to three enemy tiles per word**. All neutral/enemy tiles used become yours. Normal territory scores 1; castles score 3. Each player gets **12 turns**. Highest final score wins; equal scores draw. If you lose every territory, you may start anywhere to re-enter; enemy tiles still count toward the three-tile limit.
+Start on your own territory. Use each tile at most once and **up to three enemy tiles per word**. All neutral/enemy tiles used become yours. Normal territory scores 1; castles score 3. There are **five castles: two north, one center, two south**. Bottom numbers on every tile show its letter value, including 0 for jokers. A castle marker sits beside that value; it does not change the letter value. Selected tiles have separate path-order numbers at the top.
+
+The default game uses a **shared budget of 120 played letters**, rather than a fixed turn count. Every letter in a submitted word counts once, including jokers and letters on already owned territory. The initial board does not consume the budget. This is a usage threshold, not a literal bag of replacement tiles: full words and normal letter replacement continue even when crossing the threshold. If Player 1 exhausts it, Player 2 gets one final reply; if Player 2 exhausts it, the game ends immediately. Both players therefore finish with equal turn counts. Highest final total wins; equal totals draw. If you lose every territory, you may start anywhere to re-enter; enemy tiles still count toward the three-tile limit.
 
 After a submitted word, **all ordinary letters in its path change**, including owned tiles and castles. Ownership is retained. Jokers stay wild. A replacement batch containing two or more ordinary letters includes at least one vowel and one consonant, and each replacement differs from that tile's previous letter. The log preserves the word you actually played. Letters elsewhere do not change.
 
-**Refresh letters** replaces all ordinary letters you own instead of playing a word. It consumes one turn and captures nothing. The confirmation lets you cancel without losing your selection or turn. A player with no ordinary owned letters must play a word instead. Refresh is disabled at game end.
+**Refresh letters** replaces all ordinary letters you own instead of playing a word. It consumes one turn and one supply unit per replaced letter, with a minimum cost of three. It captures nothing and earns no word points. Its supply cost is shown before use. The confirmation lets you cancel without losing your selection, supply or turn. A player with no ordinary owned letters must play a word instead. Refresh is disabled at game end.
 
 Words may repeat if you find them again, and zero-capture moves are allowed; used letters still change. Disconnected territory stays owned. Reloading the page or starting a new game resets progress; nothing is saved.
 
 ## Scoring
 
-**Total = accumulated word points + current territory value.** Word points are permanent; territory points change with ownership. Starting scores are 0 word + 3 territory. Highest total after 12 turns each wins; equal totals draw with no territory tiebreaker.
+**Total = accumulated word points + current territory value.** Word points are permanent; territory points change with ownership. Starting scores are 0 word + 3 territory. Highest total at game end wins; equal totals draw with no territory tiebreaker.
 
 Each submitted word earns the sum of its original tile values plus a length bonus:
 
@@ -49,7 +51,7 @@ Tune `GAME_CONFIG.wordScoring` independently from letter-generation settings: `l
 - Fresh letters move some luck into each turn and break up repeated use of one fixed word. The refreshed letters are shared and may also help the opponent.
 - Permanent word points reward long words and harder letters even when a short attack would capture more territory. This is a tunable experiment, not a proven balance.
 - Three enemy captures make counterattacks larger: stealing three normal tiles changes the score difference by six points. Castles can make the swing larger. Whether this produces satisfying comebacks needs playtesting.
-- A larger map and 12-turn limit are intended to keep expansion meaningful without a long stale ending.
+- A larger map and shared letter budget let longer words move the game toward its ending faster. Top and bottom castles provide objectives in both directions.
 - Re-entry prevents total territory loss from leaving a player unable to take their remaining turns. It is an experimental comeback rule, not permanent protection.
 
 These values and behaviors are provisional. In the next playtest, watch how often you refresh, whether late counterattacks can matter, and whether changing letters make planning feel too fragile.
@@ -60,8 +62,8 @@ Generation categories are configured separately from scoring values:
 
 | Category | Letters | Rule |
 | --- | --- | --- |
-| Vowels | A E I O U | Target 42% of each batch |
-| Flexible consonants | R S T L N | Target 34% of each batch |
+| Vowels | A E I O U | Target 36% of each batch |
+| Flexible consonants | R S T L N | Target 38% of each batch |
 | Other consonants | B C D F G H K M P V W Y | Fill remaining positions |
 | Rare / awkward | J Q X Z | None in bases or their immediate neighbors; at most one per outer-side batch |
 
@@ -77,6 +79,8 @@ Dictionary-based comparison of actual available words is a later step; this iter
 
 ## Change the experiment
 
+Set `endCondition: 'letters'` and `letterBudget` to adjust the usage-based ending. Set `endCondition: 'turns'` to restore the existing `turnsPerPlayer` limit (12 by default). `refreshMinimumLetterCost` controls the minimum supply spent on refresh. `castleCount` defaults to 5; castle pairs alternate between north and south. The vowel target changed from 42% to 36%; rounding means a typical four-letter batch now gets one vowel instead of two, and a six-letter batch gets two instead of three.
+
 - `config.js`: `GAME_CONFIG.letterBalance` holds the letter groups, target shares, rare-letter limits and placement attempt count. `letterWeights` controls relative frequency within each group. The remaining config includes `boardRadius`, `cornerCut`, `jokerCount`, `maxEnemyTilesPerWord`, `turnsPerPlayer`, `refreshUsedLetters`, `allowRefreshTurn`, `allowReentry`, scoring and dictionary toggle. Reload after edits. Radius 4 with corner cut 2 creates 69 tiles; cut 0 restores an 81-tile square. Use a positive radius, corner cut no larger than the radius, feasible territory/special counts, disjoint letter groups, and multiple positive-weight letters in each group so a refresh can draw a different letter.
 - `engine.js`: DOM-free board generation, 8-way adjacency, path/word validation, capture, scoring, letter replacement, submission, refresh turns and turn advancement. `submit` and `refreshTurn` return a new state without mutating the old state. Joker assignments are a separate map of tile IDs to uppercase letters. Randomness is injectable for reproducible tests. Alter these functions for different capture or victory rules.
 - `app.js`: SVG rendering, pointer/touch/keyboard selection, status and move log. Consumes the engine rather than defining the rules.
@@ -84,7 +88,7 @@ Dictionary-based comparison of actual available words is a later step; this iter
 
 For a future word list, load a script defining `window.WORD_DICTIONARY = new Set([...lowercaseWords])` before `app.js`, then enable `dictionaryEnabled`. An enabled but missing dictionary blocks submissions rather than accepting everything silently.
 
-Run the dependency-free checks with `node engine.test.cjs` and `node scoring.test.cjs`.
+Run the dependency-free checks with `node engine.test.cjs`, `node scoring.test.cjs`, and `node supply.test.cjs`.
 
 ## GitHub Pages
 

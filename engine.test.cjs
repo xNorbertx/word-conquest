@@ -1,12 +1,15 @@
 const assert = require('node:assert/strict');
-const E = require('./engine.js'), C = require('./config.js');
+const E = require('./engine.js'), C = {...require('./config.js'),endCondition:'turns'};
 function seeded(seed) { return ()=>{ seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296; }; }
 for(let n=0;n<100;n++) {
   const s=E.newGame(C,seeded(n));
   assert.equal(s.tiles.length,69);
   assert.equal(s.tiles.filter(t=>t.letter==='?').length,6);
   assert.equal(s.tiles.filter(t=>!t.owner && t.letter==='?').length,4);
-  assert.equal(s.tiles.filter(t=>t.castle).length,3);
+  assert.equal(s.tiles.filter(t=>t.castle).length,5);
+  assert.equal(s.tiles.filter(t=>t.castle && t.r<0).length,2);
+  assert.equal(s.tiles.filter(t=>t.castle && t.r>0).length,2);
+  assert.equal(s.tiles.filter(t=>t.castle && t.q===0 && t.r===0).length,1);
   assert.deepEqual(E.scores(s,C),[3,3]);
   for(const tile of s.tiles) {
     const mirror=s.tiles.find(t=>t.q===-tile.q && t.r===tile.r);
