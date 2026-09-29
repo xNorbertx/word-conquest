@@ -1,6 +1,7 @@
 /* Pure game logic: no DOM, timers or browser dependencies. */
 const WordConquest = (() => {
-  const distance = (a, b) => Math.max(Math.abs(a.q-b.q), Math.abs(a.r-b.r), Math.abs(a.q+a.r-b.q-b.r));
+  // Octagons sit on a square grid. All eight surrounding positions are neighbors.
+  const distance = (a, b) => Math.max(Math.abs(a.q-b.q), Math.abs(a.r-b.r));
   const adjacent = (a, b) => distance(a,b) === 1;
   function letter(config, random) {
     const weights = Object.entries(config.letterWeights);
@@ -11,7 +12,7 @@ const WordConquest = (() => {
   function generateBoard(config, random = Math.random) {
     const tiles = [], radius = config.boardRadius;
     for (let q=-radius; q<=radius; q++) for (let r=-radius; r<=radius; r++) {
-      if (Math.abs(q+r)<=radius) tiles.push({id:`${q},${r}`, q,r,letter:letter(config,random),owner:0,castle:false});
+      tiles.push({id:`${q},${r}`, q,r,letter:letter(config,random),owner:0,castle:false});
     }
     for (const [player, q] of [[1,-radius],[2,radius]]) {
       const anchor = tiles.find(t => t.q===q && t.r===0);
@@ -35,23 +36,46 @@ const WordConquest = (() => {
       });
       const chosen=candidates.shift().tile; chosen.castle=true; castles.push(chosen);
     }
+    // Give each player a starting joker, then spread the rest through neutral land.
+    // Jokers remain '?' permanently; their chosen letter only belongs to one move.
+    const jokers = [];
+    for (const player of [1,2]) {
+      if (jokers.length >= config.jokerCount) break;
+      const owned = tiles.filter(t=>t.owner===player);
+      if (owned.length) jokers.push(owned[Math.floor(random()*owned.length)]);
+    }
+    const neutral = tiles.filter(t=>!t.owner && !t.castle).map(tile=>({tile,tie:random()}));
+    while (jokers.length < config.jokerCount && neutral.length) {
+      neutral.sort((a,b)=> {
+        const separation = c => jokers.length ? Math.min(...jokers.map(t=>distance(t,c.tile))) : 0;
+        return separation(b)-separation(a) || a.tie-b.tie;
+      });
+      jokers.push(neutral.shift().tile);
+    }
+    jokers.forEach(t=>t.letter='?');
     return tiles;
   }
   const newGame = (config, random) => ({tiles:generateBoard(config,random),player:1,turns:[0,0],log:[],over:false});
-  function validatePath(state, ids, config, complete=true, dictionary=null) {
+  const wordForPath = (state, ids, jokerLetters={}) => ids.map(id=> {
+    const tile=state.tiles.find(t=>t.id===id);
+    return tile.letter==='?' ? (jokerLetters[id] || '?') : tile.letter;
+  }).join('');
+  function validatePath(state, ids, config, complete=true, dictionary=null, jokerLetters={}) {
     if (state.over) return 'The game has ended. Start a new game.';
     const tiles=ids.map(id=>state.tiles.find(t=>t.id===id));
     if (!tiles.length) return 'Start on one of your territories.';
     if (tiles.some(t=>!t)) return 'Unknown territory.';
-    if (new Set(ids).size!==ids.length) return 'A hex can only be used once.';
+    if (new Set(ids).size!==ids.length) return 'A tile can only be used once.';
     if (tiles[0].owner!==state.player) return 'Start on one of your territories.';
-    if (tiles.some((t,i)=>i>0 && !adjacent(t,tiles[i-1]))) return 'Choose an adjacent hex.';
+    if (tiles.some((t,i)=>i>0 && !adjacent(t,tiles[i-1]))) return 'Choose an adjacent tile (diagonals count).';
     if (tiles.filter(t=>t.owner && t.owner!==state.player).length>config.maxEnemyTilesPerWord)
-      return `Use at most ${config.maxEnemyTilesPerWord} enemy hex per word.`;
+      return `Use at most ${config.maxEnemyTilesPerWord} enemy tile per word.`;
     if (complete && tiles.length<config.minimumWordLength) return `Choose at least ${config.minimumWordLength} letters.`;
+    if (complete && tiles.some(t=>t.letter==='?' && !/^[A-Z]$/.test(jokerLetters[t.id] || '')))
+      return 'Choose one letter from A–Z for each joker.';
     if (complete && config.dictionaryEnabled) {
       if (!dictionary) return 'Dictionary unavailable. Load a word list or disable validation in config.js.';
-      if (!dictionary.has(tiles.map(t=>t.letter).join('').toLowerCase())) return 'That word is not in the dictionary.';
+      if (!dictionary.has(wordForPath(state,ids,jokerLetters).toLowerCase())) return 'That word is not in the dictionary.';
     }
     return null;
   }
@@ -62,15 +86,15 @@ const WordConquest = (() => {
     state.over=state.turns.every(n=>n>=config.turnsPerPlayer);
     if (!state.over) state.player=3-state.player;
   }
-  function submit(state,ids,config,dictionary=null) {
-    const error=validatePath(state,ids,config,true,dictionary);
+  function submit(state,ids,config,dictionary=null,jokerLetters={}) {
+    const error=validatePath(state,ids,config,true,dictionary,jokerLetters);
     if (error) return {error};
     const captured=capturedTiles(state,ids);
-    const move={player:state.player,word:ids.map(id=>state.tiles.find(t=>t.id===id).letter).join(''),captured:captured.length,castles:captured.filter(t=>t.castle).length};
+    const move={player:state.player,word:wordForPath(state,ids,jokerLetters),captured:captured.length,castles:captured.filter(t=>t.castle).length};
     const next={...state,tiles:state.tiles.map(t=>ids.includes(t.id)?{...t,owner:state.player}:t),turns:[...state.turns],log:[move,...state.log]};
     advanceTurn(next,config);
     return {state:next,captured:captured.map(t=>t.id)};
   }
-  return {distance,adjacent,generateBoard,newGame,validatePath,capturedTiles,scores,advanceTurn,submit};
+  return {distance,adjacent,generateBoard,newGame,wordForPath,validatePath,capturedTiles,scores,advanceTurn,submit};
 })();
 if (typeof module !== 'undefined') module.exports = WordConquest;

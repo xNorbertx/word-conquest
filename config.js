@@ -1,6 +1,8 @@
 /* Change rules here, then reload and start a new game. */
 const GAME_CONFIG = Object.freeze({
   boardRadius: 3,
+  // A square of octagons: (2 * radius + 1)² tiles, with 8-way adjacency.
+  jokerCount: 5,
   minimumWordLength: 3,
   startingTerritories: 3,
   maxEnemyTilesPerWord: 1,
