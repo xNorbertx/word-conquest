@@ -1,5 +1,14 @@
 # Run, deploy and maintain
 
+## Current deployment — 30 September 2026
+
+Dedicated project `aumiyyjsdqdazzmdmprl`, Free plan, Paris EU. CLI authenticated locally
+and linked; migration and both functions deployed. Local app's public connection is
+in ignored `online/config.local.js`. Function origin and APP_URL currently point to
+`http://127.0.0.1:4173` and `/online/`. Update those to the approved frontend host before
+friend testing on other devices. SMTP, notification scheduling and backups are pending.
+CLI is now pinned as a project dependency: run `npx supabase` with Node 22+.
+
 ## Local build
 
 Use Node 22+ (the machine's default Node 16 is too old). The audit found a bundled

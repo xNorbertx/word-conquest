@@ -2,7 +2,7 @@
 
 A territory word game with a preserved local prototype and a separate online implementation.
 
-## Online implementation (not yet deployed)
+## Online implementation (backend deployed; frontend local)
 
 The original root `index.html` still works without dependencies or accounts. The new
 `online/` client uses the approved Autumn Sunday direction; Supabase supplies identity,
@@ -21,9 +21,10 @@ Never put service keys, SMTP passwords or signing credentials in browser configu
 Without a configured backend the online app shows a labelled visual preview, not fake
 saved games. Root prototype mechanics below are unchanged.
 
-Local checks pass, but hosted authentication/email, full remote integration, a backup
-restore and real-device asynchronous play remain acceptance gates. No deployment or
-public release has been performed. Existing Resend and Zoho services will be reused.
+Local checks and a full hosted 36-turn test game pass. The Supabase backend is deployed
+and the local app is connected. Signup/recovery email, backup restoration, public web
+hosting and real-device asynchronous play remain acceptance gates. No public release
+has been performed. Existing Resend and Zoho services will be reused.
 
 ## Play locally
 

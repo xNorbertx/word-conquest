@@ -1,4 +1,27 @@
-# Implementation and verification — 29 September 2026
+# Implementation and verification — updated 30 September 2026
+
+## Hosted backend connected — 30 September
+
+- Official Supabase CLI 2.118.0 installed locally and authenticated. Repository linked
+  to the dedicated Free project `aumiyyjsdqdazzmdmprl` (Word conquest, Paris EU).
+- Empty public schema verified before applying migration `202609290001_online.sql`.
+  Both `game-api` and `notify` deployed using server-side bundling; no Docker needed.
+- Ignored `online/config.local.js` contains only the project URL and publishable key.
+  Allowed app origin is currently `http://127.0.0.1:4173`; frontend is still local.
+- Hosted smoke test completed 36 turns, including 35 dictionary words. Final scores
+  72–90, equal turn counts, one completed-game result. Every accepted turn was reloaded
+  independently from the remote database. Real Auth sessions, invitations, create and
+  turn retries, stale rejection, participant access, direct-write denial, recaps,
+  statistics, inbox, and unauthenticated function rejection all passed.
+- Three isolated `example.invalid` test accounts and their completed game remain in
+  the dedicated project. No records were deleted; no email sent. Test passwords/tokens
+  were generated and held only in process memory, never logged or committed.
+- Reproducible opt-in test: `node scripts/hosted-smoke.mjs aumiyyjsdqdazzmdmprl --create-test-data`.
+  Each run creates additional test data; do not run routinely or against another project.
+- Resend domain verification and SMTP are still pending. No reminder credentials or
+  scheduled delivery job enabled. No paid plans, public frontend or store releases.
+
+Local implementation and remaining acceptance work are detailed below.
 
 ## Delivered locally
 
@@ -40,11 +63,11 @@
 
 ## Explicitly incomplete / release gates
 
-- No Supabase project/access or real sender credentials supplied; backend is **not
-  deployed**. PGlite is real local PostgreSQL but does not substitute for hosted Auth,
-  PostgREST, Edge runtime, network concurrency or SMTP verification.
-- No hosted two-account acceptance/confirmation/recovery, interrupted HTTP submission,
-  cross-device session recovery or multi-day playtest yet. Need actual project and sender.
+- Hosted Auth/API/PostgREST tests pass with isolated confirmed test accounts. Real
+  signup confirmation and recovery email await Resend domain verification and SMTP.
+- Browser-level interrupted HTTP submission, cross-device session recovery and a
+  human multi-day playtest remain required. The automated retry test is not a
+  substitute for real-device network interruption testing.
 - No staging URL verified or deployed; GitHub remote exists, authenticated hosting
   access was not found. No push or Pages setting change made.
 - No configured Cron, external monitor, backup job, restore drill or retention job.
@@ -55,5 +78,5 @@
 - No public matchmaking/messaging, therefore their conditional moderation milestone
   is not launched. No public app-store release authorized.
 
-The first-online milestone must remain unaccepted until the remote and real-device
-checks above pass. Local implementation completion is not release acceptance.
+The first-online milestone must remain unaccepted until email, hosting, recovery and
+real-device checks above pass. Backend deployment alone is not release acceptance.

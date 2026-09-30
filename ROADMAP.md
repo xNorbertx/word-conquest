@@ -13,8 +13,10 @@ versioned engine/dictionary, identity/recovery UI, invitations, game lists, reca
 saved retry IDs, inbox/email worker, lifecycle, grouped stats, account controls and
 Autumn Sunday client are built locally. Original tests plus 14 new integration/
 service tests pass. Android Capacitor project generated and synced; no APK/IPA.
-Remote credentials, email configuration, privacy/operator details, backup/monitoring
-setup and real-device multi-day play are still required. No new spending or release.
+Update 30 September: Supabase access configured, database and functions deployed,
+local app connected, and full hosted 36-turn game verified. Email configuration,
+privacy/operator details, public frontend hosting, backup/monitoring setup and
+real-device multi-day play are still required. No new spending or public release.
 
 First milestone: invite a friend and reliably finish a game over several days.
 
