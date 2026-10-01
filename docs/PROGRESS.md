@@ -1,4 +1,16 @@
-# Implementation and verification — updated 30 September 2026
+# Implementation and verification — updated 2 October 2026
+
+## Web publishing - 2 October
+
+- Built static app pushed to dedicated gh-pages branch; Pages source configured there.
+- Public app URL: https://xnorbertx.github.io/word-conquest/online/.
+- Original root prototype preserved; source main untouched.
+- Supabase public CORS, APP_URL and Auth Site URL configured; localhost retained.
+- All three original test suites and 14 integration tests pass.
+- Support inbox deferred by owner; sender chosen as no_reply@word-conquest.com.
+- SMTP/domain verification, email delivery, multi-device/multi-day acceptance,
+  notification scheduling and backup/restore acceptance remain outstanding.
+- No new paid plan enabled; existing hosting free-tier limits still apply.
 
 ## Hosted backend connected — 30 September
 
@@ -7,7 +19,7 @@
 - Empty public schema verified before applying migration `202609290001_online.sql`.
   Both `game-api` and `notify` deployed using server-side bundling; no Docker needed.
 - Ignored `online/config.local.js` contains only the project URL and publishable key.
-  Allowed app origin is currently `http://127.0.0.1:4173`; frontend is still local.
+  Initial localhost-only origin was expanded for public hosting on 2 October.
 - Hosted smoke test completed 36 turns, including 35 dictionary words. Final scores
   72–90, equal turn counts, one completed-game result. Every accepted turn was reloaded
   independently from the remote database. Real Auth sessions, invitations, create and
@@ -19,7 +31,7 @@
 - Reproducible opt-in test: `node scripts/hosted-smoke.mjs aumiyyjsdqdazzmdmprl --create-test-data`.
   Each run creates additional test data; do not run routinely or against another project.
 - Resend domain verification and SMTP are still pending. No reminder credentials or
-  scheduled delivery job enabled. No paid plans, public frontend or store releases.
+  scheduled delivery job enabled. No paid plans or store releases. Public frontend publishing followed on 2 October.
 
 Local implementation and remaining acceptance work are detailed below.
 

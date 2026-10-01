@@ -186,7 +186,7 @@ $('board').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();con
 $('preview-button').onclick=()=>{preview=true;game={id:'preview',state:Engine.newGame(config),status:'active',players:[],names:['You','Alex'],revision:0};history=[];invite=null;selection=[];jokers={};screen('game');renderGame();status('Design preview only — connect the service for saved online play.');};
 async function poll(){if(polling || busy || !user || document.hidden || recovering)return;polling=true;try{if(currentView==='game')await openGame(game.id,true);else if(currentView==='home')await showHome(true);}catch{status('Unable to refresh. Your last loaded board remains visible; reconnect before playing.',true);}finally{polling=false;}}
 window.addEventListener('online',()=>run(poll));window.addEventListener('offline',()=>status('Offline. Accepted moves stay saved. A pending move must be retried when connected.',true));window.addEventListener('focus',()=>run(poll));document.addEventListener('visibilitychange',()=>{if(!document.hidden)run(poll);});setInterval(poll,20000);
-$('privacy-contact').textContent=cfg.operatorName && cfg.supportEmail?`Operated by ${cfg.operatorName}. Support and privacy: ${cfg.supportEmail}`:'Private development build. Operator and support contact must be configured before inviting real users.';
+$('privacy-contact').textContent=cfg.operatorName && cfg.supportEmail?`Operated by ${cfg.operatorName}. Support and privacy: ${cfg.supportEmail}`:'Private friend pilot. For help, contact the person who invited you.';
 if(!db){screen('setup');status('Online service not connected. The original prototype is still available.');}
 else {
   db.auth.onAuthStateChange((event,session)=>{

@@ -4,9 +4,7 @@
 
 Dedicated project `aumiyyjsdqdazzmdmprl`, Free plan, Paris EU. CLI authenticated locally
 and linked; migration and both functions deployed. Local app's public connection is
-in ignored `online/config.local.js`. Function origin and APP_URL currently point to
-`http://127.0.0.1:4173` and `/online/`. Update those to the approved frontend host before
-friend testing on other devices. SMTP, notification scheduling and backups are pending.
+in ignored `online/config.local.js`. Public frontend: https://xnorbertx.github.io/word-conquest/online/. APP_ORIGIN allows https://xnorbertx.github.io and http://127.0.0.1:4173; APP_URL and Auth Site URL point at the public online app. Localhost remains an explicit Auth redirect. SMTP, notification scheduling and backups are pending.
 CLI is now pinned as a project dependency: run `npx supabase` with Node 22+.
 
 ## Local build
@@ -58,13 +56,11 @@ This never means anonymous game access. Postgres mutation RPCs are service-only.
 
 Host **contents of dist/** on the existing static host. This keeps the root prototype
 and adds `/online/`. Do not publish raw source `online/app.js`, which needs bundling.
-For GitHub Pages use an artifact deployment of dist, not a switch to raw online source.
-No CI workflow was enabled that could incur billed runner usage. No production alias
-was changed and nothing was pushed during implementation.
+GitHub Pages publishes built files from `gh-pages` at `/`. For updates: run tests and build locally, clone the existing `gh-pages` branch into an isolated directory, copy only contents of `dist/` there, retain `.nojekyll`, inspect the diff, commit and push without force. Never publish the source tree or server secrets. Verify all public assets and the root prototype after the Pages build completes. Roll back by reverting the deployment commit in that branch. Source work is in `codex/async-friend-play`; main remains the prototype. No paid runner or hosting plan was enabled.
 
 ## Mail and scheduling
 
-Reuse Resend for SMTP confirmation/recovery and the existing Zoho support inbox.
+Reuse Resend for SMTP confirmation/recovery, sending from `no_reply@word-conquest.com`. The owner deferred a support inbox for the private friend pilot; friends can contact their inviter. Zoho receiving setup is not a pilot blocker.
 For optional event email, set RESEND_API_KEY, MAIL_FROM, APP_URL, NOTIFY_SECRET in
 Supabase Edge Function Secrets. Use a dedicated sender key, not another app's key.
 Verify the exact SMTP settings from https://resend.com/docs/send-with-supabase-smtp.
