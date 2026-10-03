@@ -1795,6 +1795,9 @@ var require_cjs = __commonJS({
   }
 });
 
+// package.json
+var version = "0.3.0";
+
 // online/app.js
 init_dist();
 
@@ -1803,111 +1806,6 @@ init_dist();
 var App = registerPlugin("App", {
   web: () => Promise.resolve().then(() => (init_web(), web_exports)).then((m) => new m.AppWeb())
 });
-
-// online/push.js
-init_dist();
-
-// node_modules/@capacitor/push-notifications/dist/esm/index.js
-init_dist();
-var PushNotifications = registerPlugin("PushNotifications", {});
-
-// online/push.js
-function createPushControls({ api: api2, getUser, onOpen, onUpdate, onStatus }) {
-  const available = Capacitor.getPlatform() === "android";
-  let initialized = null, registration = null, deviceId = null, chain = Promise.resolve();
-  const key = (id) => `wc-push-enabled:${id}`;
-  const preferred = () => !!getUser() && localStorage.getItem(key(getUser().id)) === "true";
-  const serial = (fn) => {
-    const job = chain.then(fn);
-    chain = job.catch(() => {
-    });
-    return job;
-  };
-  function device() {
-    if (!deviceId) {
-      deviceId = localStorage.getItem("wc-push-device") || crypto.randomUUID();
-      localStorage.setItem("wc-push-device", deviceId);
-    }
-    return deviceId;
-  }
-  async function initialize() {
-    if (!available) return;
-    if (!initialized) initialized = (async () => {
-      await PushNotifications.createChannel({ id: "game_updates", name: "Game updates", description: "Turns, invitation responses and completed games", importance: 4, visibility: 0 });
-      await PushNotifications.addListener("registration", ({ value }) => {
-        if (registration) {
-          const r = registration;
-          registration = null;
-          r.resolve(value);
-        }
-      });
-      await PushNotifications.addListener("registrationError", () => {
-        if (registration) {
-          const r = registration;
-          registration = null;
-          r.reject(Error("Notifications could not connect. Please try again."));
-        }
-      });
-      await PushNotifications.addListener("pushNotificationReceived", () => onUpdate());
-      await PushNotifications.addListener("pushNotificationActionPerformed", ({ notification }) => {
-        const id = notification.data?.gameId;
-        if (typeof id === "string" && /^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(id)) onOpen(id);
-      });
-    })();
-    return initialized;
-  }
-  async function token() {
-    return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
-        registration = null;
-        reject(Error("Notification setup timed out. Please retry."));
-      }, 15e3);
-      registration = { resolve: (t) => {
-        clearTimeout(timer);
-        resolve(t);
-      }, reject: (e) => {
-        clearTimeout(timer);
-        reject(e);
-      } };
-      PushNotifications.register().catch((e) => {
-        registration?.reject(e);
-        registration = null;
-      });
-    });
-  }
-  const enable = () => serial(async () => {
-    if (!available || !getUser()) return;
-    const actor = getUser().id;
-    await initialize();
-    let permission = await PushNotifications.checkPermissions();
-    if (permission.receive === "prompt" || permission.receive === "prompt-with-rationale") permission = await PushNotifications.requestPermissions();
-    if (permission.receive !== "granted") throw Error("Allow notifications for Word Conquest in Android Settings to enable game alerts.");
-    const value = await token();
-    if (getUser()?.id !== actor) return;
-    await api2({ action: "push_device", deviceId: device(), token: value, enabled: true });
-    localStorage.setItem(key(actor), "true");
-    onStatus("Game notifications are enabled on this phone.");
-  });
-  const disable = (forget = true) => serial(async () => {
-    if (!available) return;
-    const actor = getUser()?.id;
-    if (actor && localStorage.getItem("wc-push-device")) await api2({ action: "push_device", deviceId: device(), enabled: false });
-    if (actor && forget) localStorage.removeItem(key(actor));
-    await PushNotifications.unregister();
-    await PushNotifications.removeAllDeliveredNotifications();
-  });
-  async function restore() {
-    if (!available || !getUser()) return;
-    await initialize();
-    if (!preferred()) return;
-    if ((await PushNotifications.checkPermissions()).receive !== "granted") {
-      await disable();
-      return;
-    }
-    await enable();
-  }
-  return { available, preferred, initialize, enable, disable, restore };
-}
 
 // node_modules/@supabase/functions-js/dist/module/helper.js
 var resolveFetch = (customFetch) => {
@@ -2179,10 +2077,10 @@ Suggested solution: ${env.workaround}`;
 var websocket_factory_default = WebSocketFactory;
 
 // node_modules/@supabase/realtime-js/dist/module/lib/version.js
-var version = "2.15.5";
+var version2 = "2.15.5";
 
 // node_modules/@supabase/realtime-js/dist/module/lib/constants.js
-var DEFAULT_VERSION = `realtime-js/${version}`;
+var DEFAULT_VERSION = `realtime-js/${version2}`;
 var VSN = "1.0.0";
 var DEFAULT_TIMEOUT = 1e4;
 var WS_CLOSE_NORMAL = 1e3;
@@ -2879,9 +2777,9 @@ var RealtimeChannel = class _RealtimeChannel {
           const newPostgresBindings = [];
           for (let i = 0; i < bindingsLen; i++) {
             const clientPostgresBinding = clientPostgresBindings[i];
-            const { filter: { event, schema, table, filter } } = clientPostgresBinding;
+            const { filter: { event, schema, table, filter: filter2 } } = clientPostgresBinding;
             const serverPostgresFilter = postgres_changes2 && postgres_changes2[i];
-            if (serverPostgresFilter && serverPostgresFilter.event === event && serverPostgresFilter.schema === schema && serverPostgresFilter.table === table && serverPostgresFilter.filter === filter) {
+            if (serverPostgresFilter && serverPostgresFilter.event === event && serverPostgresFilter.schema === schema && serverPostgresFilter.table === table && serverPostgresFilter.filter === filter2) {
               newPostgresBindings.push(Object.assign(Object.assign({}, clientPostgresBinding), { id: serverPostgresFilter.id }));
             } else {
               this.unsubscribe();
@@ -2921,12 +2819,12 @@ var RealtimeChannel = class _RealtimeChannel {
       event: "untrack"
     }, opts);
   }
-  on(type, filter, callback) {
+  on(type, filter2, callback) {
     if (this.state === CHANNEL_STATES.joined && type === REALTIME_LISTEN_TYPES.PRESENCE) {
       this.socket.log("channel", `resubscribe to ${this.topic} due to change in presence callbacks on joined channel`);
       this.unsubscribe().then(() => this.subscribe());
     }
-    return this._on(type, filter, callback);
+    return this._on(type, filter2, callback);
   }
   /**
    * Sends a message into the channel.
@@ -3161,11 +3059,11 @@ var RealtimeChannel = class _RealtimeChannel {
     return `chan_reply_${ref}`;
   }
   /** @internal */
-  _on(type, filter, callback) {
+  _on(type, filter2, callback) {
     const typeLower = type.toLocaleLowerCase();
     const binding = {
       type: typeLower,
-      filter,
+      filter: filter2,
       callback
     };
     if (this.bindings[typeLower]) {
@@ -3176,12 +3074,12 @@ var RealtimeChannel = class _RealtimeChannel {
     return this;
   }
   /** @internal */
-  _off(type, filter) {
+  _off(type, filter2) {
     const typeLower = type.toLocaleLowerCase();
     if (this.bindings[typeLower]) {
       this.bindings[typeLower] = this.bindings[typeLower].filter((bind) => {
         var _a;
-        return !(((_a = bind.type) === null || _a === void 0 ? void 0 : _a.toLocaleLowerCase()) === typeLower && _RealtimeChannel.isEqual(bind.filter, filter));
+        return !(((_a = bind.type) === null || _a === void 0 ? void 0 : _a.toLocaleLowerCase()) === typeLower && _RealtimeChannel.isEqual(bind.filter, filter2));
       });
     }
     return this;
@@ -4411,10 +4309,10 @@ var StorageFileApi = class {
    * @param expiresIn The number of seconds until the signed URLs expire. For example, `60` for URLs which are valid for one minute.
    * @param options.download triggers the file as a download if set to true. Set this parameter as the name of the file if you want to trigger the download with a different filename.
    */
-  createSignedUrls(paths, expiresIn, options) {
+  createSignedUrls(paths2, expiresIn, options) {
     return __awaiter4(this, void 0, void 0, function* () {
       try {
-        const data = yield post(this.fetch, `${this.url}/object/sign/${this.bucketId}`, { expiresIn, paths }, { headers: this.headers });
+        const data = yield post(this.fetch, `${this.url}/object/sign/${this.bucketId}`, { expiresIn, paths: paths2 }, { headers: this.headers });
         const downloadQueryParam = (options === null || options === void 0 ? void 0 : options.download) ? `&download=${options.download === true ? "" : options.download}` : "";
         return {
           data: data.map((datum) => Object.assign(Object.assign({}, datum), { signedUrl: datum.signedURL ? encodeURI(`${this.url}${datum.signedURL}${downloadQueryParam}`) : null })),
@@ -4545,10 +4443,10 @@ var StorageFileApi = class {
    *
    * @param paths An array of files to delete, including the path and file name. For example [`'folder/image.png'`].
    */
-  remove(paths) {
+  remove(paths2) {
     return __awaiter4(this, void 0, void 0, function* () {
       try {
-        const data = yield remove(this.fetch, `${this.url}/object/${this.bucketId}`, { prefixes: paths }, { headers: this.headers });
+        const data = yield remove(this.fetch, `${this.url}/object/${this.bucketId}`, { prefixes: paths2 }, { headers: this.headers });
         return { data, error: null };
       } catch (error) {
         if (this.shouldThrowOnError) {
@@ -4701,10 +4599,10 @@ var StorageFileApi = class {
 };
 
 // node_modules/@supabase/storage-js/dist/module/lib/version.js
-var version2 = "2.12.1";
+var version3 = "2.12.1";
 
 // node_modules/@supabase/storage-js/dist/module/lib/constants.js
-var DEFAULT_HEADERS = { "X-Client-Info": `storage-js/${version2}` };
+var DEFAULT_HEADERS = { "X-Client-Info": `storage-js/${version3}` };
 
 // node_modules/@supabase/storage-js/dist/module/packages/StorageBucketApi.js
 var __awaiter5 = function(thisArg, _arguments, P, generator) {
@@ -4930,7 +4828,7 @@ var StorageClient = class extends StorageBucketApi {
 };
 
 // node_modules/@supabase/supabase-js/dist/module/lib/version.js
-var version3 = "2.57.4";
+var version4 = "2.57.4";
 
 // node_modules/@supabase/supabase-js/dist/module/lib/constants.js
 var JS_ENV = "";
@@ -4943,7 +4841,7 @@ if (typeof Deno !== "undefined") {
 } else {
   JS_ENV = "node";
 }
-var DEFAULT_HEADERS2 = { "X-Client-Info": `supabase-js-${JS_ENV}/${version3}` };
+var DEFAULT_HEADERS2 = { "X-Client-Info": `supabase-js-${JS_ENV}/${version4}` };
 var DEFAULT_GLOBAL_OPTIONS = {
   headers: DEFAULT_HEADERS2
 };
@@ -5089,7 +4987,7 @@ function validateSupabaseUrl(supabaseUrl) {
 }
 
 // node_modules/@supabase/auth-js/dist/module/lib/version.js
-var version4 = "2.71.1";
+var version5 = "2.71.1";
 
 // node_modules/@supabase/auth-js/dist/module/lib/constants.js
 var AUTO_REFRESH_TICK_DURATION_MS = 30 * 1e3;
@@ -5097,7 +4995,7 @@ var AUTO_REFRESH_TICK_THRESHOLD = 3;
 var EXPIRY_MARGIN_MS = AUTO_REFRESH_TICK_THRESHOLD * AUTO_REFRESH_TICK_DURATION_MS;
 var GOTRUE_URL = "http://localhost:9999";
 var STORAGE_KEY = "supabase.auth.token";
-var DEFAULT_HEADERS3 = { "X-Client-Info": `gotrue-js/${version4}` };
+var DEFAULT_HEADERS3 = { "X-Client-Info": `gotrue-js/${version5}` };
 var API_VERSION_HEADER_NAME = "X-Supabase-Api-Version";
 var API_VERSIONS = {
   "2024-01-01": {
@@ -6296,7 +6194,7 @@ var GoTrueClient = class _GoTrueClient {
   }
   _debug(...args) {
     if (this.logDebugMessages) {
-      this.logger(`GoTrueClient@${this.instanceID} (${version4}) ${(/* @__PURE__ */ new Date()).toISOString()}`, ...args);
+      this.logger(`GoTrueClient@${this.instanceID} (${version5}) ${(/* @__PURE__ */ new Date()).toISOString()}`, ...args);
     }
     return this;
   }
@@ -8534,6 +8432,111 @@ if (shouldShowDeprecationWarning()) {
   console.warn(`\u26A0\uFE0F  Node.js 18 and below are deprecated and will no longer be supported in future versions of @supabase/supabase-js. Please upgrade to Node.js 20 or later. For more information, visit: https://github.com/orgs/supabase/discussions/37217`);
 }
 
+// online/push.js
+init_dist();
+
+// node_modules/@capacitor/push-notifications/dist/esm/index.js
+init_dist();
+var PushNotifications = registerPlugin("PushNotifications", {});
+
+// online/push.js
+function createPushControls({ api: api2, getUser, onOpen, onUpdate, onStatus }) {
+  const available = Capacitor.getPlatform() === "android";
+  let initialized = null, registration = null, deviceId = null, chain = Promise.resolve();
+  const key = (id) => `wc-push-enabled:${id}`;
+  const preferred = () => !!getUser() && localStorage.getItem(key(getUser().id)) === "true";
+  const serial = (fn) => {
+    const job = chain.then(fn);
+    chain = job.catch(() => {
+    });
+    return job;
+  };
+  function device() {
+    if (!deviceId) {
+      deviceId = localStorage.getItem("wc-push-device") || crypto.randomUUID();
+      localStorage.setItem("wc-push-device", deviceId);
+    }
+    return deviceId;
+  }
+  async function initialize() {
+    if (!available) return;
+    if (!initialized) initialized = (async () => {
+      await PushNotifications.createChannel({ id: "game_updates", name: "Game updates", description: "Turns, invitation responses and completed games", importance: 4, visibility: 0 });
+      await PushNotifications.addListener("registration", ({ value }) => {
+        if (registration) {
+          const r = registration;
+          registration = null;
+          r.resolve(value);
+        }
+      });
+      await PushNotifications.addListener("registrationError", () => {
+        if (registration) {
+          const r = registration;
+          registration = null;
+          r.reject(Error("Notifications could not connect. Please try again."));
+        }
+      });
+      await PushNotifications.addListener("pushNotificationReceived", () => onUpdate());
+      await PushNotifications.addListener("pushNotificationActionPerformed", ({ notification }) => {
+        const id = notification.data?.gameId;
+        if (typeof id === "string" && /^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(id)) onOpen(id);
+      });
+    })();
+    return initialized;
+  }
+  async function token() {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        registration = null;
+        reject(Error("Notification setup timed out. Please retry."));
+      }, 15e3);
+      registration = { resolve: (t) => {
+        clearTimeout(timer);
+        resolve(t);
+      }, reject: (e) => {
+        clearTimeout(timer);
+        reject(e);
+      } };
+      PushNotifications.register().catch((e) => {
+        registration?.reject(e);
+        registration = null;
+      });
+    });
+  }
+  const enable = () => serial(async () => {
+    if (!available || !getUser()) return;
+    const actor = getUser().id;
+    await initialize();
+    let permission = await PushNotifications.checkPermissions();
+    if (permission.receive === "prompt" || permission.receive === "prompt-with-rationale") permission = await PushNotifications.requestPermissions();
+    if (permission.receive !== "granted") throw Error("Allow notifications for Word Conquest in Android Settings to enable game alerts.");
+    const value = await token();
+    if (getUser()?.id !== actor) return;
+    await api2({ action: "push_device", deviceId: device(), token: value, enabled: true });
+    localStorage.setItem(key(actor), "true");
+    onStatus("Game notifications are enabled on this phone.");
+  });
+  const disable = (forget = true) => serial(async () => {
+    if (!available) return;
+    const actor = getUser()?.id;
+    if (actor && localStorage.getItem("wc-push-device")) await api2({ action: "push_device", deviceId: device(), enabled: false });
+    if (actor && forget) localStorage.removeItem(key(actor));
+    await PushNotifications.unregister();
+    await PushNotifications.removeAllDeliveredNotifications();
+  });
+  async function restore() {
+    if (!available || !getUser()) return;
+    await initialize();
+    if (!preferred()) return;
+    if ((await PushNotifications.checkPermissions()).receive !== "granted") {
+      await disable();
+      return;
+    }
+    await enable();
+  }
+  return { available, preferred, initialize, enable, disable, restore };
+}
+
 // server/versions/engine-v1.mjs
 var WordConquest = /* @__PURE__ */ (() => {
   const distance = (a, b) => Math.max(Math.abs(a.q - b.q), Math.abs(a.r - b.r));
@@ -8819,11 +8822,227 @@ var rules_v1_default = GAME_CONFIG;
 // server/domain.mjs
 var config = Object.freeze({ ...rules_v1_default, dictionaryEnabled: true });
 
-// online/app.js
+// online/ui.js
 var $ = (id) => document.getElementById(id);
+var paths = {
+  back: ["m14 6-6 6 6 6"],
+  arrow: ["M4 12h15", "m13 6 6 6-6 6"],
+  chevron: ["m9 6 6 6-6 6"],
+  close: ["m6 6 12 12", "m18 6-12 12"],
+  plus: ["M12 5v14", "M5 12h14"],
+  more: ["M5 12h.01", "M12 12h.01", "M19 12h.01"],
+  grid: ["M4 4h6v6H4z", "M14 4h6v6h-6z", "M4 14h6v6H4z", "M14 14h6v6h-6z"],
+  bell: ["M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9", "M10 21h4"],
+  user: ["M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0", "M4 21v-2a8 6 0 0 1 16 0v2"],
+  help: ["M9 8a3 3 0 0 1 6 0c0 2-3 2-3 5", "M12 17h.01", "M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0"],
+  book: ["M12 5C9 3 5 3 2 4v15c4-1 7-1 10 1 3-2 6-2 10-1V4c-3-1-7-1-10 1v15"],
+  shield: ["m12 2 8 4v6c0 5-8 10-8 10S4 17 4 12V6z", "m8 12 3 3 5-6"],
+  logout: ["M10 4H4v16h6", "M10 12h12", "m17 7 5 5-5 5"],
+  edit: ["m15 4 5 5", "m3 21 5-1L21 7a2.8 2.8 0 0 0-4-4L4 16z"],
+  check: ["m5 12 4 4L19 6"],
+  "check-all": ["m3 12 4 4L17 6", "m12 16 9-10"],
+  share: ["M12 16V3", "m7 8 5-5 5 5", "M5 12v8h14v-8"],
+  copy: ["M9 9h11v12H9z", "M5 15H3V3h11v2"],
+  eye: ["M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12", "M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0"],
+  lock: ["M5 10h14v12H5z", "M8 10V6a4 4 0 0 1 8 0v4"],
+  expand: ["M8 3H3v5", "M16 3h5v5", "M21 16v5h-5", "M8 21H3v-5"],
+  shrink: ["M3 8h5V3", "M16 3v5h5", "M21 16h-5v5", "M8 21v-5H3"],
+  undo: ["M3 10h10a7 7 0 0 1 0 14", "m8 5-5 5 5 5"],
+  refresh: ["M20 7a8 8 0 0 0-14-2L3 8", "M3 3v5h5", "M4 17a8 8 0 0 0 14 2l3-3", "M21 21v-5h-5"],
+  hourglass: ["M6 3h12", "M6 21h12", "M7 3v4l5 5-5 5v4", "M17 3v4l-5 5 5 5v4"],
+  award: ["M16 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0", "m8 11-2 10 6-3 6 3-2-10"],
+  flag: ["M4 22V3", "M4 3c5-5 10 5 16 0v11c-6 5-11-5-16 0"],
+  handshake: ["m3 6 4-3 5 3 5-3 4 3-4 10-4 4-4-1-6-9", "m12 6-5 5 2 2 4-3 5 5"],
+  history: ["M3 10a9 9 0 1 1 1 7", "M3 3v7h7", "M12 7v5l3 2"],
+  info: ["M12 11v6", "M12 7h.01", "M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0"],
+  download: ["M12 3v12", "m7 10 5 5 5-5", "M4 17v4h16v-4"],
+  trash: ["M3 6h18", "M9 6V3h6v3", "m5 6 1 15h12l1-15", "M10 10v7", "M14 10v7"],
+  "user-plus": ["M11 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0", "M1 21v-2a7 6 0 0 1 14 0v2", "M19 6v8", "M15 10h8"],
+  mail: ["M3 5h18v14H3z", "m3 5 9 8 9-8"],
+  leaf: ["M20 3C9 0 2 7 5 15c8 6 16-1 15-12Z", "M3 21 15 9"]
+};
+function svg(tag, attrs = {}, text) {
+  const n = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  for (const [key, value] of Object.entries(attrs)) n.setAttribute(key, value);
+  if (text !== void 0) n.textContent = text;
+  return n;
+}
+function icon(name) {
+  const n = svg("svg", { viewBox: "0 0 24 24", class: "icon", "aria-hidden": "true", focusable: "false" });
+  for (const d of paths[name] || paths.info) n.append(svg("path", { d }));
+  return n;
+}
+function hydrateIcons(root = document) {
+  for (const el of root.querySelectorAll("[data-icon]")) el.replaceChildren(icon(el.dataset.icon));
+}
+function node(tag, text, className) {
+  const n = document.createElement(tag);
+  if (text !== void 0) n.textContent = text;
+  if (className) n.className = className;
+  return n;
+}
+function button(label, handler, className = "secondary", symbol) {
+  const n = node("button", void 0, className);
+  n.type = "button";
+  if (symbol) n.append(icon(symbol));
+  n.append(node("span", label));
+  n.onclick = handler;
+  return n;
+}
+function setting(label, symbol, handler, { note, danger = false } = {}) {
+  const n = button("", handler, "settings-row" + (danger ? " danger" : ""));
+  n.replaceChildren(icon(symbol));
+  const copy = node("span", label);
+  if (note) copy.append(node("small", note));
+  n.append(copy, icon("chevron"));
+  return n;
+}
+var toastTimer;
+function notify(message, error = false) {
+  clearTimeout(toastTimer);
+  if (error && $("sheet").open) {
+    let alert = $("sheet-content").querySelector(".form-alert");
+    if (!alert) {
+      alert = node("p", void 0, "form-alert");
+      alert.setAttribute("role", "alert");
+      $("sheet-content").prepend(alert);
+    }
+    alert.textContent = message;
+    alert.scrollIntoView({ block: "nearest" });
+    return;
+  }
+  $("toast-text").textContent = message;
+  $("toast").classList.toggle("error", error);
+  $("toast").firstElementChild.replaceWith(icon(error ? "info" : "check"));
+  $("toast").hidden = false;
+  if (!error) toastTimer = setTimeout(() => $("toast").hidden = true, 4e3);
+}
+function closeSheet() {
+  if ($("sheet").open) $("sheet").close();
+}
+function showSheet(title, content) {
+  $("sheet-title").textContent = title;
+  $("sheet-content").replaceChildren(...Array.isArray(content) ? content : [content]);
+  hydrateIcons($("sheet-content"));
+  if (!$("sheet").open) $("sheet").showModal();
+  $("sheet-content").scrollTop = 0;
+}
+var confirmResolve = null;
+function ask({ title, message, label = "Confirm", cancel = "Keep playing", danger = false, symbol = "help" }) {
+  closeSheet();
+  $("confirm-title").textContent = title;
+  $("confirm-message").textContent = message;
+  $("confirm-ok").textContent = label;
+  $("confirm-ok").classList.toggle("danger", danger);
+  $("confirm-cancel").textContent = cancel;
+  $("confirm-icon").replaceChildren(icon(symbol));
+  $("confirm-dialog").showModal();
+  return new Promise((resolve) => confirmResolve = resolve);
+}
+function finishConfirm(answer) {
+  $("confirm-dialog").close();
+  const resolve = confirmResolve;
+  confirmResolve = null;
+  resolve?.(answer);
+}
+function initUI() {
+  hydrateIcons();
+  $("close-sheet").onclick = closeSheet;
+  $("dismiss-toast").onclick = () => $("toast").hidden = true;
+  $("confirm-cancel").onclick = () => finishConfirm(false);
+  $("confirm-ok").onclick = () => finishConfirm(true);
+  $("confirm-dialog").addEventListener("cancel", (e) => {
+    e.preventDefault();
+    finishConfirm(false);
+  });
+  for (const d of [$("sheet"), $("confirm-dialog")]) d.addEventListener("click", (e) => {
+    if (e.target !== d) return;
+    const r = d.getBoundingClientRect();
+    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) {
+      if (d === $("sheet")) closeSheet();
+      else finishConfirm(false);
+    }
+  });
+}
+function closeTopDialog() {
+  if ($("confirm-dialog").open) {
+    finishConfirm(false);
+    return true;
+  }
+  if ($("sheet").open) {
+    closeSheet();
+    return true;
+  }
+  return false;
+}
+function emptyState(title, copy, symbol = "leaf") {
+  const box = node("div", void 0, "empty-state"), art = node("div", void 0, "empty-art");
+  art.append(icon(symbol));
+  box.append(art, node("h2", title), node("p", copy));
+  return box;
+}
+
+// online/presentation.mjs
+var seatOf = (game2, userId) => game2.players.indexOf(userId) + 1;
+var isFinished = (game2) => !["active", "invited"].includes(game2.status);
+function opponentName(game2, userId) {
+  const seat = seatOf(game2, userId);
+  return game2.status === "invited" ? "Waiting for a friend" : ["cancelled", "declined"].includes(game2.status) ? "Invitation to a friend" : game2.names?.[seat === 2 ? 0 : 1] || "Your friend";
+}
+function gameStatus(game2, userId) {
+  if (game2.status === "active") return game2.players[game2.state.player - 1] === userId ? "Your turn" : "Their turn";
+  if (game2.status === "invited") return "Invitation sent";
+  if (game2.status === "completed") return game2.result === "draw" ? "A draw" : Number(game2.result) === seatOf(game2, userId) ? "You won" : "They won";
+  return game2.status === "abandoned" ? "Abandoned" : game2.status === "cancelled" ? "Cancelled" : game2.status === "declined" ? "Declined" : game2.status;
+}
+function visibleGames(games, userId, filter2 = "active") {
+  return games.filter((g) => isFinished(g) === (filter2 === "finished")).sort((a, b) => {
+    const mine = (g) => g.status === "active" && g.players[g.state.player - 1] === userId;
+    return Number(mine(b)) - Number(mine(a)) || Date.parse(b.updated_at) - Date.parse(a.updated_at);
+  });
+}
+function timeAgo(value, now = Date.now()) {
+  const timestamp = Date.parse(value);
+  if (!Number.isFinite(timestamp)) return "";
+  const minutes = Math.max(0, Math.floor((now - timestamp) / 6e4));
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return "Yesterday";
+  if (days < 7) return `${days}d ago`;
+  return new Date(timestamp).toLocaleDateString(void 0, { month: "short", day: "numeric" });
+}
+function invitationToken(value) {
+  let token = value.trim();
+  try {
+    if (/^https?:/i.test(token)) token = new URL(token).searchParams.get("invite") || "";
+  } catch {
+    return null;
+  }
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(token) ? token : null;
+}
+function activityText(kind, name) {
+  const labels = { word: `${name} played a word`, refresh: `${name} refreshed their letters`, resign: `${name} left the game`, offer_draw: `${name} offered a draw`, accept_draw: "Your game ended in a draw", abandon: "Your game was abandoned", "game complete": "Your game has finished", "invitation accepted": `Your game with ${name} is ready`, "invitation accept": `Your game with ${name} is ready`, "invitation decline": "Your invitation was declined", "invitation cancel": "Your invitation was cancelled", "invitation declined": "Your invitation was declined", "invitation cancelled": "Your invitation was cancelled" };
+  return labels[kind] || "Your game has an update";
+}
+function friendlyError(error) {
+  const messages = { stale: "A new turn came in. Your board has been updated.", not_your_turn: "It is your friend's turn.", invitation_unavailable: "This invitation is no longer available.", cannot_accept_own_invitation: "This is your invitation. Share it with a friend.", rate_limit: "A little too quick. Try again in a moment.", unauthorized: "Please sign in again to continue.", not_found: "This game is no longer available.", dictionary_unavailable: "Word checking is unavailable. Your turn has not been used.", version_unavailable: "This game needs an update. Please contact your inviter.", ended: "This game has already ended." };
+  if (messages[error.code]) return messages[error.code];
+  if (["TimeoutError", "AbortError", "TypeError"].includes(error.name)) return "Could not connect. Please try again.";
+  return error.message || "Something went wrong. Please try again.";
+}
+
+// online/app.js
+initUI();
+$("app-version").textContent = version;
 var cfg = window.WC_CONFIG || {};
 var configured = !!(cfg.supabaseUrl && cfg.supabaseAnonKey);
 var db = configured ? createClient(cfg.supabaseUrl, cfg.supabaseAnonKey) : null;
+var params = new URLSearchParams(location.search);
+var launchGame = params.get("game");
+if (params.get("invite")) localStorage.setItem("wc-invitation", params.get("invite"));
 var user = null;
 var game = null;
 var history = [];
@@ -8831,44 +9050,113 @@ var invite = null;
 var selection = [];
 var jokers = {};
 var busy = false;
+var creating = false;
 var preview = false;
 var recovering = false;
 var dragging = false;
-var currentView = "auth";
+var currentView = "loading";
 var homeData = null;
+var filter = "active";
 var polling = false;
 var gameLoad = 0;
+var homeLoad = 0;
 var notificationGame = null;
 var authReady = false;
-var push = createPushControls({
-  api,
-  getUser: () => user,
-  onStatus: (message) => {
-    status(message);
-    renderPush();
-  },
-  onUpdate: () => void poll(),
-  onOpen: (id) => {
-    notificationGame = id;
-    if (user && authReady && !recovering) void run(openNotification);
-  }
-});
-async function openNotification() {
-  if (notificationGame && user && !recovering) {
-    const id = notificationGame;
-    notificationGame = null;
-    await openGame(id);
-  }
-}
-function renderPush() {
-  $("push-controls").hidden = !push.available;
-  $("enable-push").hidden = push.preferred();
-  $("disable-push").hidden = !push.preferred();
-  $("push-state").textContent = push.preferred() ? "Enabled on this phone." : "Get notified when your game has an update.";
-}
+var navigation = 0;
 var liveChannel = null;
 var liveUser = null;
 var refreshQueued = false;
+var highlightLast = false;
+var focusTile = null;
+var authMode = "signin";
+var authBusy = false;
+var lastRequestId = null;
+var lastProblem = null;
+var native = Capacitor.isNativePlatform();
+var publicApp = "https://xnorbertx.github.io/word-conquest/online/";
+var authRedirect = () => native ? publicApp : location.origin + location.pathname;
+var status = (message, error = false) => notify(message, error);
+var push = createPushControls({ api, getUser: () => user, onStatus: (message) => {
+  status(message);
+  renderPush();
+}, onUpdate: () => void poll(), onOpen: (id) => {
+  notificationGame = id;
+  if (user && authReady && !recovering) void run(openNotification);
+} });
+var screens = ["loading", "setup", "auth", "recovery", "home", "activity", "account", "game"];
+function screen(name, { route = true, replace = false } = {}) {
+  closeSheet();
+  currentView = name;
+  for (const id of screens) $(id).hidden = id !== name;
+  const inGame = name === "game";
+  document.body.classList.toggle("game-view", inGame);
+  $("back").hidden = !inGame;
+  $("game-heading").hidden = !inGame;
+  $("game-menu").hidden = !inGame;
+  $("help-button").hidden = inGame;
+  $("main-nav").hidden = !user || !["home", "activity", "account"].includes(name);
+  for (const [id, view] of [["home-button", "home"], ["activity-button", "activity"], ["account-button", "account"]]) {
+    if (view === name) $(id).setAttribute("aria-current", "page");
+    else $(id).removeAttribute("aria-current");
+  }
+  if (route && user) {
+    const url = name === "game" ? `?game=${game.id}` : name === "home" ? location.pathname : `?view=${name}`;
+    window.history[replace ? "replaceState" : "pushState"]({ view: name }, "", url);
+  }
+  document.title = inGame ? `${opponentName(game, user?.id)} - Word Conquest` : "Word Conquest";
+  window.scrollTo({ top: 0, behavior: "instant" });
+}
+function offlineNotice(show = true, message = "You are offline. Reconnect to send your turn.") {
+  $("connection").hidden = !show;
+  $("connection").textContent = message;
+}
+var pendingKey = () => `wc-pending:${user?.id}:${game?.id}`;
+function pending() {
+  if (preview) return null;
+  try {
+    return JSON.parse(localStorage.getItem(pendingKey()) || "null");
+  } catch {
+    return null;
+  }
+}
+function apiError(message, code, statusCode, requestId) {
+  const e = new Error(message);
+  Object.assign(e, { code, status: statusCode, requestId });
+  return e;
+}
+async function api(body) {
+  if (!db) throw new Error("Online play is not connected yet.");
+  const { data: { session }, error } = await db.auth.getSession();
+  if (error || !session) throw apiError("Sign in to continue.", "unauthorized", 401);
+  const response = await fetch(`${cfg.supabaseUrl}/functions/v1/game-api`, { method: "POST", signal: AbortSignal.timeout(2e4), headers: { "Content-Type": "application/json", apikey: cfg.supabaseAnonKey, Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify(body) });
+  const result = await response.json();
+  if (!response.ok) throw apiError(result.error || "Request failed.", result.code, response.status, result.requestId);
+  return result;
+}
+async function run(fn) {
+  try {
+    return await fn();
+  } catch (e) {
+    lastProblem = friendlyError(e);
+    lastRequestId = e.requestId || null;
+    status(lastProblem, true);
+    if (currentView === "loading") {
+      $("loading-message").textContent = "Your table could not load.";
+      $("retry-load").hidden = false;
+      $("loading").querySelector(".spinner").hidden = true;
+    }
+  }
+}
+var act = (label, fn, className = "secondary", symbol) => button(label, () => run(fn), className, symbol);
+var row = (label, symbol, fn, options) => setting(label, symbol, () => run(fn), options);
+function avatar(name, className = "") {
+  return node("span", (name || "?").trim().slice(0, 1).toUpperCase(), "avatar " + className);
+}
+function renderPush() {
+  const preferred = push.preferred();
+  $("push-settings").hidden = !push.available;
+  $("push-state").textContent = preferred ? "On for this phone" : "Off";
+}
 async function connectLiveUpdates(session) {
   if (session?.access_token) await db.realtime.setAuth(session.access_token);
   if (session?.user?.id !== user?.id) return;
@@ -8879,136 +9167,147 @@ async function connectLiveUpdates(session) {
   }
   liveUser = user?.id || null;
   if (!liveUser) return;
-  liveChannel = db.channel(`games:${liveUser}`).on(
-    "postgres_changes",
-    { event: "UPDATE", schema: "public", table: "games" },
-    () => {
-      refreshQueued = true;
-      void poll();
-    }
-  ).subscribe((state) => {
+  liveChannel = db.channel(`games:${liveUser}`).on("postgres_changes", { event: "UPDATE", schema: "public", table: "games" }, () => {
+    refreshQueued = true;
+    void poll();
+  }).subscribe((state) => {
     if (state === "SUBSCRIBED") {
       refreshQueued = true;
       void poll();
     }
   });
 }
-var params = new URLSearchParams(location.search);
-if (params.get("invite")) localStorage.setItem("wc-invitation", params.get("invite"));
-var authRedirect = () => Capacitor.isNativePlatform() ? "https://xnorbertx.github.io/word-conquest/online/" : location.origin + location.pathname;
-var screens = ["setup", "auth", "recovery", "home", "account", "game"];
-var status = (text, error = false) => {
-  $("connection").textContent = text;
-  $("connection").classList.toggle("error", error);
-};
-function screen(name) {
-  currentView = name;
-  for (const id of screens) $(id).hidden = id !== name;
-}
-var pendingKey = () => `wc-pending:${user?.id}:${game?.id}`;
-function pending() {
-  try {
-    return JSON.parse(localStorage.getItem(pendingKey()) || "null");
-  } catch {
-    return null;
+async function openNotification() {
+  if (notificationGame && user && !recovering) {
+    const id = notificationGame;
+    notificationGame = null;
+    await openGame(id);
   }
 }
-function apiError(message, code, statusCode) {
-  const e = new Error(message);
-  e.code = code;
-  e.status = statusCode;
-  return e;
+function renderHome() {
+  if (!homeData) return;
+  const { games, profile } = homeData;
+  $("greeting").textContent = profile.display_name && profile.display_name !== "Player" ? `WELCOME BACK, ${profile.display_name.toUpperCase()}` : "YOUR LITTLE WORD WORLD";
+  const active = games.filter((g) => !isFinished(g)).length, turns = games.filter((g) => gameStatus(g, user.id) === "Your turn").length;
+  $("active-count").textContent = active || "";
+  $("turn-count").textContent = turns ? `${turns} ${turns === 1 ? "turn" : "turns"} waiting` : "";
+  $("active-games").setAttribute("aria-pressed", filter === "active");
+  $("finished-games").setAttribute("aria-pressed", filter === "finished");
+  const list = $("game-list");
+  list.replaceChildren();
+  for (const g of visibleGames(games, user.id, filter)) {
+    const name = opponentName(g, user.id), card = act("", () => openGame(g.id), "game-card");
+    card.replaceChildren();
+    card.setAttribute("aria-label", `${name}. ${gameStatus(g, user.id)}. Open game`);
+    const top = node("div", void 0, "game-card-top"), copy = node("div");
+    copy.append(node("div", name, "game-card-name"));
+    const meta = node("div", void 0, "game-card-meta"), dot = node("span", void 0, "status-dot" + (gameStatus(g, user.id) === "Your turn" ? " active" : ""));
+    meta.append(dot, node("span", timeAgo(g.updated_at)));
+    copy.append(meta);
+    const chevron = node("span", void 0, "card-chevron");
+    chevron.append(icon("chevron"));
+    top.append(avatar(g.status === "invited" ? "+" : name, "walnut"), copy, chevron);
+    const bottom = node("div", void 0, "game-card-bottom");
+    if (g.status === "invited") bottom.append(node("span", "Your invitation is ready to share", "small-note"));
+    else {
+      const scores = engine_v1_default.scores(g.state, config), seat = seatOf(g, user.id) - 1, score = node("span", void 0, "card-score");
+      score.append(node("strong", scores[seat]), node("span", "  :  "), node("strong", scores[1 - seat]));
+      bottom.append(score);
+    }
+    bottom.append(node("span", gameStatus(g, user.id), "card-status" + (gameStatus(g, user.id) === "Your turn" ? "" : " waiting")));
+    card.append(top, bottom);
+    list.append(card);
+  }
+  if (!list.childElementCount) {
+    const blank = emptyState(filter === "finished" ? "Your story starts here." : "A little friendly competition?", filter === "finished" ? "Finished games will find a home here." : "Invite someone. Take your time. Find a great word.", filter === "finished" ? "award" : "leaf");
+    if (filter === "active") blank.append(act("Invite a friend", createGame, "primary", "plus"));
+    list.append(blank);
+  }
+  renderActivity();
 }
-async function api(body) {
-  if (!db) throw new Error("The online service has not been configured.");
-  const { data: { session }, error } = await db.auth.getSession();
-  if (error || !session) throw apiError("Sign in to continue.", "unauthorized", 401);
-  const response = await fetch(`${cfg.supabaseUrl}/functions/v1/game-api`, {
-    method: "POST",
-    signal: AbortSignal.timeout(2e4),
-    headers: { "Content-Type": "application/json", apikey: cfg.supabaseAnonKey, Authorization: `Bearer ${session.access_token}` },
-    body: JSON.stringify(body)
-  });
-  const result = await response.json();
-  if (!response.ok) throw apiError(`${result.error || "Request failed."}${result.requestId ? ` Support code: ${result.requestId}` : ""}`, result.code, response.status);
+function renderActivity() {
+  if (!homeData) return;
+  const unread = homeData.notifications.filter((n) => !n.read_at).length;
+  $("activity-badge").hidden = !unread;
+  $("activity-badge").textContent = unread > 9 ? "9+" : String(unread);
+  $("read-inbox").disabled = !unread;
+  $("inbox").replaceChildren();
+  for (const n of homeData.notifications) {
+    const g = homeData.games.find((g2) => g2.id === n.game_id), name = g ? opponentName(g, user.id) : "Your friend";
+    const item = act("", () => openGame(n.game_id), "activity-item" + (n.read_at ? "" : " unread"));
+    item.replaceChildren(avatar(name), node("span"), icon("chevron"));
+    item.children[1].append(node("strong", activityText(n.kind, name)), node("small", timeAgo(n.created_at)));
+    $("inbox").append(item);
+  }
+  if (!homeData.notifications.length) $("inbox").append(emptyState("All quiet at the table.", "Game updates will appear here.", "bell"));
+}
+async function fetchHome() {
+  const request = ++homeLoad, actor = user?.id;
+  const result = await api({ action: "home" });
+  if (user?.id !== actor || request !== homeLoad) return null;
+  homeData = result;
   return result;
 }
-async function run(fn) {
-  try {
-    await fn();
-  } catch (e) {
-    status(e.message || "Connection interrupted. Please retry.", true);
-  }
-}
-function node(tag, text, className) {
-  const n = document.createElement(tag);
-  if (text !== void 0) n.textContent = text;
-  if (className) n.className = className;
-  return n;
-}
-function button(text, fn, className = "secondary") {
-  const n = node("button", text, className);
-  n.onclick = () => run(fn);
-  return n;
-}
-var title = (g) => g.names?.join(" & ") || "Word Conquest";
-function gameStatus(g) {
-  if (g.status === "active") return g.players[g.state.player - 1] === user?.id ? "Your turn" : "Waiting for your friend";
-  if (g.status === "completed") return g.result === "draw" ? "A shared draw" : `${g.names?.[Number(g.result) - 1] || "Player"} won`;
-  return g.status === "invited" ? "Invitation waiting" : g.status;
-}
-async function showHome(quiet = false) {
+async function showHome(quiet = false, { route = true, replace = false } = {}) {
   if (!user) return;
-  const result = await api({ action: "home" });
-  homeData = result;
+  const ticket = quiet ? navigation : ++navigation, before = JSON.stringify(homeData), result = await fetchHome();
+  if (!result || ticket !== navigation) return;
   if (!quiet) {
     ++gameLoad;
-    screen("home");
-    params.delete("game");
-    window.history.replaceState(null, "", location.pathname);
+    screen("home", { route, replace });
   }
-  $("game-list").replaceChildren();
-  if (!result.games.length) $("game-list").append(node("p", "A fresh page. Invite a friend to begin.", "notice"));
-  for (const g of result.games) {
-    const card = node("article", void 0, "game-card"), copy = node("div");
-    copy.append(node("strong", title(g)), node("p", gameStatus(g)), node("small", `Updated ${new Date(g.updated_at).toLocaleDateString()}`));
-    card.append(copy, button("Open", () => openGame(g.id)));
-    $("game-list").append(card);
-  }
-  $("inbox").replaceChildren();
-  for (const n of result.notifications) {
-    const p = node("p");
-    p.append(button(`${n.read_at ? "" : "\u25CF "}${n.kind} \xB7 ${new Date(n.created_at).toLocaleDateString()}`, () => openGame(n.game_id), "quiet"));
-    $("inbox").append(p);
-  }
-  if (!result.notifications.length) $("inbox").append(node("p", "All quiet for now."));
-  if (!quiet) status("Your saved games are up to date.");
+  if (!quiet || before !== JSON.stringify(result)) renderHome();
+}
+async function showActivity({ route = true } = {}) {
+  if (!user) return;
+  const ticket = ++navigation, actor = user.id;
+  if (!homeData) await fetchHome();
+  if (ticket !== navigation || actor !== user?.id || !homeData) return;
+  ++gameLoad;
+  screen("activity", { route });
+  renderActivity();
 }
 async function showInvite() {
-  const token = localStorage.getItem("wc-invitation");
-  if (!token || !user) return;
-  const result = await api({ action: "invitation", choice: "preview", token });
-  const i = result.invitation, available = i.status === "invited" && Date.parse(i.expires_at) > Date.now();
-  $("invitation").hidden = false;
-  $("invite-description").textContent = available ? `${i.host} invited you to a game. Accept before ${new Date(i.expires_at).toLocaleDateString()}.` : "This invitation is no longer available.";
-  $("accept-invite").disabled = !available;
-  $("decline-invite").disabled = !available;
-  if (!available) localStorage.removeItem("wc-invitation");
+  const raw = localStorage.getItem("wc-invitation");
+  if (!raw || !user) return false;
+  const token = invitationToken(raw);
+  if (!token) {
+    localStorage.removeItem("wc-invitation");
+    throw Error("That invitation code does not look right.");
+  }
+  const { invitation: i } = await api({ action: "invitation", choice: "preview", token });
+  const own = homeData?.games.find((g) => g.id === i.id && g.players[0] === user.id);
+  if (own) {
+    localStorage.removeItem("wc-invitation");
+    await openGame(own.id);
+    return true;
+  }
+  const available = i.status === "invited" && Date.parse(i.expires_at) > Date.now();
+  if (!available) {
+    localStorage.removeItem("wc-invitation");
+    showSheet("This seat is no longer available.", [node("p", "Ask your friend for a new invitation."), act("Back to games", closeSheet, "primary full")]);
+    return true;
+  }
+  const heading = node("div", void 0, "invitation-summary");
+  heading.append(avatar(i.host, "avatar-large"), node("h3", `${i.host} saved you a seat.`));
+  showSheet("You are invited.", [heading, node("p", "A game of words, in your own time."), act("Join game", () => decideInvite("accept"), "primary full", "arrow"), act("Not this time", () => decideInvite("decline"), "text-button full")]);
+  return true;
 }
 async function decideInvite(choice) {
-  const result = await api({ action: "invitation", choice, token: localStorage.getItem("wc-invitation") });
+  const token = invitationToken(localStorage.getItem("wc-invitation") || "");
+  const result = await api({ action: "invitation", choice, token });
   localStorage.removeItem("wc-invitation");
-  $("invitation").hidden = true;
+  closeSheet();
   if (choice === "accept" && result.game.status === "active") await openGame(result.game.id);
   else {
     await showHome();
-    status(`Invitation ${result.game.status}.`);
+    status("Invitation declined.");
   }
 }
-async function openGame(id, quiet = false) {
-  const request = quiet ? gameLoad : ++gameLoad;
+async function openGame(id, quiet = false, { route = true } = {}) {
+  const ticket = quiet ? navigation : ++navigation, request = quiet ? gameLoad : ++gameLoad, actor = user?.id;
   const result = await api({ action: "game", gameId: id });
-  if (request !== gameLoad) return;
+  if (ticket !== navigation || request !== gameLoad || actor !== user?.id) return;
   if (quiet && (currentView !== "game" || game?.id !== id)) return;
   if (game?.id === id && game.revision > result.game.revision) return;
   const changed = !game || game.id !== id || game.revision !== result.game.revision;
@@ -9019,58 +9318,64 @@ async function openGame(id, quiet = false) {
   if (changed) {
     selection = [];
     jokers = {};
+    highlightLast = false;
+    focusTile = null;
   }
   if (!quiet) {
-    screen("game");
-    window.history.replaceState(null, "", `?game=${game.id}`);
+    $("board").classList.remove("enlarged");
+    $("zoom").setAttribute("aria-pressed", "false");
+    screen("game", { route });
   }
   if (changed || !quiet) renderGame();
-  if (!quiet) status(pending() ? "A saved action needs confirmation. Retry it before making another move." : "Saved board loaded.");
 }
 var pos = (t) => ({ x: t.q * 64, y: t.r * 64 });
-function svg(tag, attrs, text) {
-  const n = document.createElementNS("http://www.w3.org/2000/svg", tag);
-  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
-  if (text !== void 0) n.textContent = text;
-  return n;
+function myTurn() {
+  return game?.status === "active" && game.players[game.state.player - 1] === user?.id;
 }
 function canPlay() {
-  return !preview && game?.status === "active" && game.players[game.state.player - 1] === user?.id && !busy && !pending();
+  return !preview && myTurn() && !busy && !pending();
 }
 function drawBoard() {
   const board = $("board");
   board.replaceChildren();
   board.setAttribute("viewBox", "-295 -295 590 590");
-  const last = history[0]?.recap;
+  const last = history[0]?.recap, seat = seatOf(game, user?.id) || 1;
+  if (!focusTile) focusTile = game.state.tiles.find((t) => t.owner === seat)?.id || game.state.tiles[0].id;
   for (const t of game.state.tiles) {
     const p = pos(t), step = selection.indexOf(t.id), letter = t.letter === "?" && step >= 0 ? jokers[t.id] || "?" : t.letter;
-    const g = svg("g", {
-      "data-id": t.id,
-      role: "button",
-      tabindex: 0,
-      "aria-pressed": step >= 0,
-      "aria-label": `${letter}, ${t.owner ? `Player ${t.owner}` : "neutral"}, ${engine_v1_default.letterValue(t.letter, config)} points${t.castle ? ", castle" : ""}, ${t.id}`,
-      class: `tile owner${t.owner}${step >= 0 ? " selected" : ""}${last?.path?.includes(t.id) ? " last-move" : ""}`
-    });
+    const g = svg("g", { "data-id": t.id, role: "button", tabindex: t.id === focusTile ? 0 : -1, "aria-pressed": step >= 0, "aria-disabled": !canPlay() && !preview, "aria-label": `${letter === "?" ? "Joker" : letter}, ${t.owner === seat ? "yours" : t.owner ? "opponent" : "neutral"}, ${engine_v1_default.letterValue(t.letter, config)} points${t.castle ? ", castle" : ""}`, class: `tile owner${t.owner}${step >= 0 ? " selected" : ""}${highlightLast && last?.path?.includes(t.id) ? " last-move" : ""}` });
     const points = Array.from({ length: 8 }, (_, i) => {
       const a = (45 * i + 22.5) * Math.PI / 180;
       return `${p.x + 32 * Math.cos(a)},${p.y + 32 * Math.sin(a)}`;
     }).join(" ");
-    g.append(svg("polygon", { points }), svg("text", { x: p.x, y: p.y - 2 }, letter), svg("text", { x: p.x, y: p.y + 18, class: "value" }, `${engine_v1_default.letterValue(t.letter, config)}${t.castle ? " \u2605" : ""}`));
-    if (t.owner) g.append(svg("text", { x: p.x + 19, y: p.y - 18, class: "marker" }, t.owner === 1 ? "\u25CF" : "\u25CB"));
-    if (step >= 0) g.append(svg("text", { x: p.x - 18, y: p.y - 18, class: "step" }, step + 1));
+    g.append(svg("polygon", { points }), svg("text", { x: p.x, y: p.y - 2 }, letter), svg("text", { x: p.x, y: p.y + 19, class: "value" }, engine_v1_default.letterValue(t.letter, config)));
+    if (t.owner) g.append(svg("circle", { cx: p.x + 20, cy: p.y - 19, r: 3.1, class: "marker" }));
+    if (t.castle) {
+      const points2 = Array.from({ length: 10 }, (_, i) => {
+        const a = (i * 36 - 90) * Math.PI / 180, r = i % 2 ? 2.7 : 6;
+        return `${p.x + 19 + r * Math.cos(a)},${p.y + 18 + r * Math.sin(a)}`;
+      }).join(" ");
+      g.append(svg("polygon", { points: points2, class: "castle" }));
+    }
+    if (step >= 0) g.append(svg("text", { x: p.x - 19, y: p.y - 18, class: "step" }, step + 1));
     board.append(g);
   }
-  board.append(svg("polyline", { class: "path", points: selection.map((id) => pos(game.state.tiles.find((t) => t.id === id))).map((p) => `${p.x},${p.y}`).join(" ") }));
+  const centers = selection.map((id) => pos(game.state.tiles.find((t) => t.id === id)));
+  const segments = centers.slice(1).map((b, i) => {
+    const a = centers[i], length = Math.hypot(b.x - a.x, b.y - a.y), dx = (b.x - a.x) / length * 15, dy = (b.y - a.y) / length * 15;
+    return `M${a.x + dx},${a.y + dy} L${b.x - dx},${b.y - dy}`;
+  }).join(" ");
+  board.append(svg("path", { class: "path", d: segments }));
 }
 function renderJokers() {
   $("jokers").replaceChildren();
   for (const id of selection) {
     if (game.state.tiles.find((t) => t.id === id).letter !== "?") continue;
-    const label = node("label", `Joker ${selection.indexOf(id) + 1}`), input = document.createElement("input");
+    const label = node("label", `Joker ${selection.indexOf(id) + 1}`), input = node("input");
     input.maxLength = 1;
     input.pattern = "[A-Za-z]";
     input.autocomplete = "off";
+    input.autocapitalize = "characters";
     input.value = jokers[id] || "";
     input.setAttribute("aria-label", `Joker at position ${selection.indexOf(id) + 1}`);
     input.oninput = () => {
@@ -9083,63 +9388,71 @@ function renderJokers() {
     $("jokers").append(label);
   }
 }
+function selectionHint(error) {
+  if (pending()) return "Your move is waiting to be confirmed.";
+  if (!selection.length) return engine_v1_default.canReenter(game.state, config) ? "No territory left? Start on any tile." : "Start on a tile you own.";
+  if (selection.some((id) => game.state.tiles.find((t) => t.id === id).letter === "?" && !jokers[id])) return "Choose a letter for your joker.";
+  if (selection.length < config.minimumWordLength) return `Add ${config.minimumWordLength - selection.length} more ${config.minimumWordLength - selection.length === 1 ? "letter" : "letters"}.`;
+  return error || "Ready when you are.";
+}
 function renderSelection() {
-  $("word").textContent = selection.length ? engine_v1_default.wordForPath(game.state, selection, jokers) : "\u2014";
+  const word = selection.length ? engine_v1_default.wordForPath(game.state, selection, jokers) : "Find your word.";
   const error = engine_v1_default.validatePath(game.state, selection, { ...config, dictionaryEnabled: false }, true, null, jokers);
+  $("word").textContent = word;
+  $("word").classList.toggle("placeholder", !selection.length);
   $("submit-word").disabled = !canPlay() || !!error;
-  $("clear-word").disabled = busy || !!pending();
+  $("clear-word").disabled = !selection.length || busy || !!pending();
+  $("selection-help").textContent = preview ? "Board preview. Moves are not saved." : selectionHint(error);
+  $("selection-help").classList.toggle("invalid", !!error && selection.length >= config.minimumWordLength && !selection.some((id) => game.state.tiles.find((t) => t.id === id).letter === "?" && !jokers[id]));
+  $("score-preview").hidden = !selection.length;
   if (selection.length) {
     const s = engine_v1_default.scoreMove(game.state, selection, config);
-    $("score-preview").textContent = `${s.letters} letters + ${s.lengthBonus} length + ${s.territoryGain} territory = ${s.totalGain}${s.enemyLoss ? ` \xB7 opponent \u2212${s.enemyLoss}` : ""}`;
-    $("submit-word").textContent = `Play word \xB7 ${s.totalGain}`;
-  } else {
-    $("score-preview").textContent = "Find a word, claim a little territory.";
-    $("submit-word").textContent = "Play word";
-  }
-  $("selection-help").textContent = preview ? "Visual preview only. No game is saved." : !canPlay() ? pending() ? "Your saved action is awaiting confirmation." : gameStatus(game) : error || "The server checks the dictionary before accepting your word.";
-  $("refresh").disabled = !canPlay();
-  const cost = Math.max(config.refreshMinimumLetterCost, game.state.tiles.filter((t) => t.owner === game.state.player && t.letter !== "?").length);
-  $("refresh").textContent = `\u21BB Refresh letters \xB7 uses ${cost}`;
+    $("score-preview").replaceChildren(node("span", `${s.wordPoints} word points + ${s.territoryGain} land`), icon("info"));
+    $("submit-label").textContent = `Play word \xB7 ${s.totalGain}`;
+  } else $("submit-label").textContent = "Play word";
+  if (busy) $("submit-label").textContent = "Saving...";
   $("pending").hidden = !pending();
-  $("pending").textContent = busy ? "Sending saved action\u2026 Do not assume it is accepted yet." : "Not yet confirmed. Retry sends the same saved action safely.";
-  $("retry").hidden = !pending();
+  $("pending-message").textContent = busy ? "Saving your move..." : "Move not confirmed yet. Retry when connected.";
   $("retry").disabled = busy;
 }
 function renderGame() {
-  const totals = engine_v1_default.scoreBreakdown(game.state, config);
+  const totals = engine_v1_default.scoreBreakdown(game.state, config), seat = seatOf(game, user?.id) || 1;
   [1, 2].forEach((p) => {
-    $(`name-${p}`).textContent = `${game.names?.[p - 1] || "Friend"} \xB7 ${p === 1 ? "\u25CF" : "\u25CB"}`;
+    $(`name-${p}`).textContent = p === seat ? "You" : game.names?.[p - 1] || "Your friend";
     $(`score-${p}`).textContent = totals[p - 1].total;
-    $(`breakdown-${p}`).textContent = `${totals[p - 1].words} word + ${totals[p - 1].territory} land`;
+    $(`player-score-${p}`).style.order = p === seat ? 1 : 3;
+    $(`player-score-${p}`).setAttribute("aria-label", `${p === seat ? "Your" : game.names?.[p - 1] || "Player"} score: ${totals[p - 1].total}. View breakdown`);
   });
-  $("turn").textContent = preview ? "A quiet Sunday" : gameStatus(game);
-  $("supply").textContent = game.state.over ? "Game complete" : engine_v1_default.lettersRemaining(game.state, config) === 0 ? "Player 2\u2019s final reply" : `${engine_v1_default.lettersRemaining(game.state, config)} letters left`;
-  $("game-label").textContent = preview ? "DESIGN PREVIEW" : `Turn ${game.state.turns.reduce((a, b) => a + b, 0) + 1}`;
-  $("game-id").textContent = preview ? "Preview \u2014 no online game" : "Support reference: " + game.id;
+  document.querySelector(".turn").style.order = 2;
+  $("game-heading-name").textContent = preview ? "The Sunday table" : opponentName(game, user?.id);
+  $("game-heading-subtitle").textContent = game.status === "invited" ? "Invitation" : isFinished(game) ? "Finished game" : `Turn ${game.state.turns.reduce((a, b) => a + b, 0) + 1}`;
+  $("turn").textContent = preview ? "Your turn" : gameStatus(game, user?.id);
+  $("turn").classList.toggle("waiting", !myTurn() && !preview);
+  const left = engine_v1_default.lettersRemaining(game.state, config);
+  $("supply").textContent = isFinished(game) ? "Final score" : left === 0 ? "Final reply" : `${left} letters left`;
+  $("supply-fill").style.width = `${Math.max(0, Math.min(100, left / config.letterBudget * 100))}%`;
   $("share").hidden = !invite;
-  if (invite) $("share-link").value = `${Capacitor.isNativePlatform() ? "https://xnorbertx.github.io/word-conquest/online/" : location.origin + location.pathname}?invite=${invite.token}`;
-  $("quit-game").hidden = preview || !["invited", "active"].includes(game.status);
-  $("quit-game").disabled = busy || !!pending();
-  $("quit-game").textContent = game.status === "invited" ? "Cancel game" : "Quit game";
-  $("accept-draw").hidden = !game.draw_by || game.draw_by === user?.id;
-  for (const id of ["offer-draw", "accept-draw", "resign", "abandon"]) $(id).disabled = preview || game.status !== "active" || busy || !!pending();
-  $("offer-draw").disabled ||= !!game.draw_by;
-  $("recap").replaceChildren();
+  $("game-table").hidden = !!invite;
+  if (invite) {
+    $("share-link").value = `${authRedirect()}?invite=${invite.token}`;
+    $("invite-expiry").textContent = `Available until ${new Date(invite.expires_at).toLocaleDateString(void 0, { month: "short", day: "numeric" })}`;
+  }
+  $("composer").hidden = !myTurn() && !preview || isFinished(game) || !!pending() && !busy;
+  $("waiting-turn").hidden = myTurn() || preview || isFinished(game) || !!pending();
+  $("game-result").hidden = !isFinished(game);
+  $("draw-offer").hidden = !game.draw_by || game.draw_by === user?.id || game.status !== "active";
+  $("board-context").textContent = highlightLast ? "Last word highlighted" : preview ? "DESIGN PREVIEW" : `You play ${seat === 1 ? "sage" : "walnut"}`;
+  if (isFinished(game)) {
+    $("result-title").textContent = game.status === "completed" ? gameStatus(game, user?.id) + "." : game.status === "abandoned" ? "A game left unfinished." : "Invitation cancelled.";
+    $("result-description").textContent = game.status === "completed" ? `${totals[seat - 1].total} to ${totals[seat === 1 ? 1 : 0].total}. A little word, a little world.` : "This game does not count towards your record.";
+  }
   const last = history[0]?.recap;
+  $("recap").hidden = !last;
   if (last) {
-    $("recap").append(node("h3", last.word ? `${game.names[last.player - 1]} played ${last.word}` : `${game.names[last.player - 1]} \xB7 ${last.action.replaceAll("_", " ")}`));
-    if (last.score) $("recap").append(node("p", `${last.score.wordPoints} word points + ${last.score.territoryGain} territory. Opponent lost ${last.score.enemyLoss}.`));
-    if (last.path?.length) $("recap").append(node("small", "Dashed tiles show the last word\u2019s path: " + last.path.join(" \u2192 ")));
-    if (last.changed?.length) {
-      const d = node("details"), s = node("summary", "Captures & replaced letters");
-      d.append(s, node("p", last.changed.map((c) => `${c.id}: ${c.before.letter} \u2192 ${c.after.letter}${c.before.owner !== c.after.owner ? ` (owner ${c.before.owner || "neutral"} \u2192 ${c.after.owner})` : ""}`).join("; ")));
-      $("recap").append(d);
-    }
-  } else $("recap").append(node("p", "The map is yours to contest."));
-  $("history").replaceChildren();
-  for (const move of history) {
-    const r = move.recap;
-    $("history").append(node("li", `${game.names[r.player - 1]} \xB7 ${r.word || r.action.replaceAll("_", " ")}${r.score ? ` \xB7 ${r.score.wordPoints} word points` : ""} \xB7 ${new Date(r.at).toLocaleString()}`));
+    const copy = node("span"), symbol = node("span", void 0, "recap-symbol");
+    symbol.append(icon("history"));
+    copy.append(node("small", "LAST MOVE"), node("strong", last.word ? `${game.names[last.player - 1]} played ${last.word}` : activityText(last.action, game.names[last.player - 1])));
+    $("recap").replaceChildren(symbol, copy, node("span", last.score ? `+${last.score.wordPoints}` : ""));
   }
   drawBoard();
   renderJokers();
@@ -9151,14 +9464,23 @@ function choose(id) {
   else {
     const error = engine_v1_default.validatePath(game.state, [...selection, id], config, false);
     if (error) {
-      status(error, true);
+      if (!dragging) status(error, true);
       return;
     }
     selection.push(id);
   }
+  highlightLast = false;
+  focusTile = id;
   drawBoard();
   renderJokers();
   renderSelection();
+}
+function clearWord() {
+  if (busy || pending()) return;
+  selection = [];
+  jokers = {};
+  highlightLast = false;
+  renderGame();
 }
 async function sendPending() {
   const command = pending();
@@ -9170,14 +9492,14 @@ async function sendPending() {
     const result = await api({ action: "turn", gameId: sentGame, command });
     localStorage.removeItem(storageKey);
     if (user?.id === sentUser) {
-      status(`Accepted and saved${result.replayed ? " \u2014 your earlier action was already received" : ""}.`);
+      status(result.replayed ? "Your earlier move was already saved." : "Move saved.");
       if (game?.id === sentGame) {
         game = result.game;
         selection = [];
         jokers = {};
         if (command.action === "resign") {
           await showHome();
-          status("You quit the game. Invite a friend to start a new one.");
+          status("You left the game.");
         } else await openGame(sentGame, true);
       }
     }
@@ -9185,13 +9507,19 @@ async function sendPending() {
     if (e.status >= 400 && e.status < 500 && ![401, 429].includes(e.status)) {
       localStorage.removeItem(storageKey);
       if (user?.id === sentUser && game?.id === sentGame) {
-        selection = [];
-        jokers = {};
+        if (e.code !== "illegal_move") {
+          selection = [];
+          jokers = {};
+        }
         await openGame(sentGame, true).catch(() => {
         });
       }
     }
-    if (user?.id === sentUser) status(e.message || "Connection interrupted. Your action is saved here; retry to confirm it.", true);
+    if (user?.id === sentUser) {
+      lastProblem = friendlyError(e);
+      lastRequestId = e.requestId || null;
+      if (!pending()) status(lastProblem, true);
+    }
   } finally {
     busy = false;
     if (game && currentView === "game") renderGame();
@@ -9199,75 +9527,126 @@ async function sendPending() {
   }
 }
 async function action(kind) {
-  if (preview || busy || pending()) return;
-  const command = {
-    operationId: crypto.randomUUID(),
-    revision: game.revision,
-    action: kind,
-    ...kind === "word" ? { path: [...selection], jokers: { ...jokers } } : {}
-  };
+  if (preview || busy || pending() || game?.status !== "active") return;
+  if (["word", "refresh"].includes(kind) && !canPlay()) return;
+  const command = { operationId: crypto.randomUUID(), revision: game.revision, action: kind, ...kind === "word" ? { path: [...selection], jokers: { ...jokers } } : {} };
   localStorage.setItem(pendingKey(), JSON.stringify(command));
+  closeSheet();
   await sendPending();
 }
-async function account() {
-  if (!user) return;
-  screen("account");
-  const { profile } = await api({ action: "home" });
-  $("display-name").value = profile.display_name;
-  $("email-notifications").checked = profile.email_notifications;
-  renderPush();
-  const { statistics } = await api({ action: "stats" });
-  $("statistics").replaceChildren();
-  if (!Object.keys(statistics).length) $("statistics").append(node("p", "Finish a game to begin your record."));
-  for (const [version5, s] of Object.entries(statistics)) {
-    const d = node("div");
-    d.append(node("p", `${s.wins} wins \xB7 ${s.losses} losses \xB7 ${s.draws} draws`), node("p", `Highest final score ${s.highestFinalScore}. Best word ${s.bestWord || "\u2014"} \xB7 ${s.bestTurn} word points.`), node("small", version5));
-    $("statistics").append(d);
+function scoreLines(rows) {
+  const container = node("div", void 0, "score-lines");
+  for (const [label, value, total] of rows) {
+    const line = node("div", void 0, "score-line" + (total ? " total" : ""));
+    line.append(node("span", label), node("strong", value));
+    container.append(line);
   }
+  return container;
 }
-$("auth-form").onsubmit = (e) => {
-  e.preventDefault();
-  run(async () => {
-    const { error } = await db.auth.signInWithPassword({ email: $("email").value, password: $("password").value });
-    if (error) throw error;
+function showScore(player) {
+  const s = engine_v1_default.scoreBreakdown(game.state, config)[player - 1];
+  showSheet(player === seatOf(game, user?.id) ? "Your score" : `${game.names[player - 1]}'s score`, [scoreLines([["Word points", s.words], ["Current territory", s.territory], ["Total", s.total, true]]), node("p", "Word points stay yours. Territory points change when tiles are captured.")]);
+}
+function showWordScore() {
+  if (!selection.length) return;
+  const s = engine_v1_default.scoreMove(game.state, selection, config);
+  const content = [scoreLines([["Letter points", s.letters], ["Length bonus", s.lengthBonus], ["New territory", s.territoryGain], ["Added to your score", s.totalGain, true]])];
+  if (s.enemyLoss) content.push(node("p", `Your opponent also loses ${s.enemyLoss} territory points.`));
+  showSheet("A good word adds up.", content);
+}
+function showRules() {
+  const steps = [["Find a word", `Start on a tile you own. Connect at least ${config.minimumWordLength} letters in any of the eight directions. Use each tile once. No territory left? Start anywhere.`], ["Make it yours", `Claim the tiles in your word, including up to ${config.maxEnemyTilesPerWord} enemy tiles. Ordinary tiles score ${config.normalTerritoryPoints} for territory; castles are worth ${config.castlePoints}.`], ["Every letter counts", "Small numbers are letter points. Longer words earn a bonus. Jokers can be any letter. Ordinary letters in a played word are replaced; jokers stay wild."], ["Take your time", `Both players share ${config.letterBudget} letters. When they run out, Player 2 gets a final reply if needed. The highest final score wins. Refreshing your letters uses your turn.`]];
+  const content = steps.map(([title, copy], i) => {
+    const row2 = node("div", void 0, "rule-step"), text = node("div");
+    text.append(node("h3", title), node("p", copy));
+    row2.append(node("span", i + 1, "step-number"), text);
+    return row2;
   });
-};
-$("signup").onclick = () => run(async () => {
-  if (!$("auth-form").reportValidity()) return;
-  const { error } = await db.auth.signUp({ email: $("email").value, password: $("password").value, options: { emailRedirectTo: authRedirect() } });
-  if (error) throw error;
-  status("Check your email to confirm your account, then sign in.");
-});
-$("recover").onclick = () => run(async () => {
-  if (!$("email").reportValidity()) return;
-  const { error } = await db.auth.resetPasswordForEmail($("email").value, { redirectTo: authRedirect() });
-  if (error) throw error;
-  status("If an account exists, a recovery email will arrive shortly.");
-});
-$("recovery-form").onsubmit = (e) => {
-  e.preventDefault();
-  run(async () => {
-    const { error } = await db.auth.updateUser({ password: $("new-password").value });
-    if (error) throw error;
-    recovering = false;
-    $("new-password").value = "";
-    await showHome();
-    status("Password updated.");
-  });
-};
-$("home-button").onclick = $("back").onclick = () => run(() => user ? showHome() : screen(configured ? "auth" : "setup"));
-$("account-button").onclick = () => run(account);
-$("accept-invite").onclick = () => run(() => decideInvite("accept"));
-$("decline-invite").onclick = () => run(() => decideInvite("decline"));
-$("invite-code-form").onsubmit = (e) => {
-  e.preventDefault();
-  run(async () => {
-    localStorage.setItem("wc-invitation", $("invite-code").value.trim());
-    await showInvite();
-  });
-};
-$("create-game").onclick = () => run(async () => {
-  $("create-game").disabled = true;
+  const legend = node("div", void 0, "rule-legend");
+  for (const [className, label] of [["owner-dot", "Sage player"], ["owner-ring", "Walnut player"]]) {
+    const item = node("span");
+    item.append(node("span", void 0, className), node("span", label));
+    legend.append(item);
+  }
+  content.push(legend, act("About the dictionary", showDictionary, "text-button"));
+  showSheet("A little word. A little world.", content);
+}
+function showDictionary() {
+  const link = node("a", "Dictionary license", "text-link");
+  link.href = "dictionary-license.txt";
+  link.target = "_blank";
+  link.rel = "noopener";
+  showSheet("Words we play.", [node("p", "English words are checked against a fixed Letterpress-derived word list. Listed inflections, slang and repeated words are allowed."), node("p", "The list includes some uncommon, archaic and offensive words. A game keeps the dictionary it started with."), link]);
+}
+function showHistory() {
+  const list = node("ol", void 0, "move-list");
+  for (const [index2, move] of history.entries()) {
+    const r = move.recap, item = node("li"), copy = node("div", void 0, "move-copy");
+    copy.append(node("strong", r.word || ({ refresh: "Letters refreshed", resign: "Resigned", offer_draw: "Draw offered", accept_draw: "Draw accepted", abandon: "Game abandoned" }[r.action] || "Game update")), node("small", `${game.names[r.player - 1]} \xB7 ${timeAgo(r.at)}`));
+    item.append(node("span", history.length - index2, "move-number"), copy, node("span", r.score ? `+${r.score.wordPoints}` : "", "move-points"));
+    list.append(item);
+  }
+  showSheet("The story so far.", history.length ? list : emptyState("The first word is yours.", "Played words will appear here.", "history"));
+}
+function showRecap() {
+  const r = history[0]?.recap;
+  if (!r) return;
+  const content = [node("div", r.word || "Game update", "recap-word"), node("div", `${game.names[r.player - 1]} \xB7 ${timeAgo(r.at)}`, "recap-byline")];
+  if (r.score) content.push(scoreLines([["Word points", r.score.wordPoints], ["Territory gained", r.score.territoryGain], ...r.score.enemyLoss ? [["Opponent territory lost", r.score.enemyLoss]] : []]));
+  if (r.changed?.length) {
+    content.push(node("h3", "After the word"));
+    const changes = node("div", void 0, "tile-changes");
+    for (const c of r.changed) {
+      const chip = node("span", void 0, "tile-change" + (c.before.owner !== c.after.owner ? " captured" : ""));
+      chip.append(node("b", c.before.letter), node("span", "\u2192"), node("b", c.after.letter));
+      chip.title = c.before.owner !== c.after.owner ? "Captured tile" : "Replacement letter";
+      changes.append(chip);
+    }
+    content.push(changes, node("p", "Green chips are tiles captured on this turn.", "field-hint"));
+  }
+  if (r.path?.length) content.push(act("Show word on the board", () => {
+    highlightLast = true;
+    closeSheet();
+    renderGame();
+    $("board").scrollIntoView({ block: "center", behavior: "smooth" });
+  }, "secondary full", "eye"));
+  content.push(act("All moves", showHistory, "text-button full"));
+  showSheet("The last move.", content);
+}
+function showNewGame() {
+  showSheet("Pull up a chair.", [node("p", "Start a game with someone you know."), act("Invite a friend", createGame, "primary full", "user-plus"), act("I have an invitation", showJoin, "secondary full", "mail")]);
+}
+function showJoin() {
+  const form = node("form", void 0, "stack-form"), label = node("label", "Invitation link or code"), input = node("input");
+  input.id = "invite-code";
+  input.autocomplete = "off";
+  input.required = true;
+  input.placeholder = "Paste your invitation here";
+  label.htmlFor = input.id;
+  const submit = button("Open invitation", null, "primary full", "arrow");
+  submit.type = "submit";
+  form.append(label, input, submit);
+  form.onsubmit = (e) => {
+    e.preventDefault();
+    void run(async () => {
+      const token = invitationToken(input.value);
+      if (!token) throw Error("Paste a complete invitation link or code.");
+      submit.disabled = true;
+      try {
+        localStorage.setItem("wc-invitation", token);
+        await showInvite();
+      } finally {
+        submit.disabled = false;
+      }
+    });
+  };
+  showSheet("Join a friend.", form);
+}
+async function createGame() {
+  if (creating || !user) return;
+  creating = true;
+  $("new-game").disabled = true;
+  closeSheet();
   try {
     const key = `wc-create:${user.id}`, id = localStorage.getItem(key) || crypto.randomUUID();
     localStorage.setItem(key, id);
@@ -9275,96 +9654,340 @@ $("create-game").onclick = () => run(async () => {
     localStorage.removeItem(key);
     await openGame(g.id);
   } finally {
-    $("create-game").disabled = false;
+    creating = false;
+    $("new-game").disabled = false;
   }
-});
+}
+async function copyInvite() {
+  try {
+    await navigator.clipboard.writeText($("share-link").value);
+    status("Invitation copied. Send it to a friend.");
+  } catch {
+    $("share-link").focus();
+    $("share-link").select();
+    status("Select and copy the invitation link.", true);
+  }
+}
+async function shareInvite() {
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: "A game of Word Conquest", text: "Join me for a game of words.", url: $("share-link").value });
+    } catch (e) {
+      if (e.name !== "AbortError") await copyInvite();
+    }
+  } else await copyInvite();
+}
 async function quitGame() {
   if (preview || busy || pending()) return;
   if (game.status === "invited") {
-    if (!invite || !confirm("Cancel this waiting game? Your invitation link will stop working.")) return;
+    if (!invite || !await ask({ title: "Cancel this invitation?", message: "The link will stop working. You can invite someone again whenever you like.", label: "Cancel invitation", cancel: "Keep it", symbol: "mail" })) return;
     busy = true;
-    renderGame();
     try {
       await api({ action: "invitation", choice: "cancel", token: invite.token });
       await showHome();
-      status("Game cancelled. Invite a friend to start a new one.");
+      status("Invitation cancelled.");
     } finally {
       busy = false;
-      if (currentView === "game") renderGame();
     }
-  } else if (game.status === "active" && confirm("Quit this game? Your opponent wins and this counts as a loss.")) await action("resign");
+  } else if (game.status === "active" && await ask({ title: "Leave this game?", message: "Your friend wins and this counts as a loss. Your game history will stay in Finished.", label: "Leave game", danger: true, symbol: "flag" })) await action("resign");
 }
-$("quit-game").onclick = $("cancel-invite").onclick = () => run(quitGame);
-$("copy-invite").onclick = () => run(async () => {
-  await navigator.clipboard.writeText($("share-link").value);
-  status("Private invitation link copied.");
-});
-$("profile-form").onsubmit = (e) => {
+async function confirmAction(kind) {
+  const cost = Math.max(config.refreshMinimumLetterCost, game.state.tiles.filter((t) => t.owner === game.state.player && t.letter !== "?").length);
+  const options = { refresh: { title: "Fresh letters?", message: `Replace your ordinary owned letters. This uses your turn and ${cost} letters from the shared supply.`, label: "Refresh letters", symbol: "refresh" }, offer_draw: { title: "Call it a draw?", message: "Your friend can accept the offer. You can both keep playing until then.", label: "Offer draw", symbol: "handshake" }, accept_draw: { title: "Share the honours?", message: "This ends the game as a draw for both players.", label: "Accept draw", symbol: "handshake" }, abandon: { title: "Close this inactive game?", message: "After 30 days without a turn, you can close a game without a win or loss.", label: "Close game", symbol: "hourglass" } };
+  if (await ask(options[kind])) await action(kind);
+}
+function showGameMenu() {
+  const list = node("div", void 0, "settings-list");
+  list.append(row("Move history", "history", showHistory), row("How to play", "book", showRules));
+  if (game.status === "active" && !preview) {
+    const refresh = row("Refresh letters", "refresh", () => confirmAction("refresh"), { note: "Replace your letters instead of playing a word" });
+    refresh.disabled = !canPlay();
+    list.append(refresh);
+    if (game.draw_by === user?.id) {
+      const offered = row("Draw offered", "handshake", () => {
+      }, { note: "Waiting for your friend" });
+      offered.disabled = true;
+      list.append(offered);
+    } else list.append(row(game.draw_by ? "Accept draw" : "Offer a draw", "handshake", () => confirmAction(game.draw_by ? "accept_draw" : "offer_draw")));
+    if (Date.now() - Date.parse(game.last_play_at) >= 30 * 864e5) list.append(row("Close inactive game", "hourglass", () => confirmAction("abandon")));
+    list.append(row("Leave game", "flag", quitGame, { danger: true }));
+  }
+  if (game.status === "invited") list.append(row("Cancel invitation", "close", quitGame));
+  showSheet("At this table.", list);
+}
+async function account({ route = true } = {}) {
+  if (!user) return;
+  const ticket = ++navigation, actor = user.id;
+  if (!homeData) await fetchHome();
+  if (ticket !== navigation || actor !== user?.id || !homeData) return;
+  ++gameLoad;
+  screen("account", { route });
+  const profile = homeData.profile;
+  $("profile-name").textContent = profile.display_name;
+  $("profile-email").textContent = user.email || "";
+  $("profile-avatar").textContent = profile.display_name.slice(0, 1).toUpperCase();
+  renderPush();
+  $("statistics").replaceChildren(node("p", "Loading your record...", "record-note"));
+  const { statistics } = await api({ action: "stats" });
+  if (user?.id !== actor || currentView !== "account") return;
+  $("statistics").replaceChildren();
+  const entries = Object.entries(statistics);
+  if (!entries.length) entries.push(["", { wins: 0, losses: 0, draws: 0, highestFinalScore: 0, bestTurn: 0, bestWord: "" }]);
+  for (const [version6, s] of entries) {
+    if (entries.length > 1) $("statistics").append(node("p", version6.startsWith("autumn-v1") ? "Standard English" : "Earlier rules", "record-note"));
+    const grid = node("div", void 0, "stats-grid");
+    for (const [label, count] of [["Wins", s.wins], ["Draws", s.draws], ["Losses", s.losses]]) {
+      const item = node("div", void 0, "stat");
+      item.append(node("strong", count), node("span", label));
+      grid.append(item);
+    }
+    $("statistics").append(grid);
+    if (s.bestWord) {
+      const best = node("div", void 0, "best-word");
+      best.append(icon("award"), node("span", "Best word"), node("strong", `${s.bestWord} \xB7 ${s.bestTurn}`));
+      $("statistics").append(best, node("p", `Highest final score: ${s.highestFinalScore}`, "record-note"));
+    } else $("statistics").append(node("p", "Your first finished game starts your record.", "record-note"));
+  }
+}
+function editProfile() {
+  const form = node("form", void 0, "stack-form"), label = node("label", "Display name"), input = node("input");
+  input.id = "display-name";
+  label.htmlFor = input.id;
+  input.maxLength = 40;
+  input.required = true;
+  input.autocomplete = "nickname";
+  input.value = homeData.profile.display_name;
+  const save = button("Save name", null, "primary full", "check");
+  save.type = "submit";
+  form.append(label, input, save);
+  form.onsubmit = (e) => {
+    e.preventDefault();
+    void run(async () => {
+      save.disabled = true;
+      try {
+        const name = input.value.trim();
+        if (!name) throw Error("Add a name for your friends to see.");
+        await api({ action: "profile", name, emailNotifications: homeData.profile.email_notifications });
+        homeData.profile.display_name = name;
+        closeSheet();
+        await account({ route: false });
+        status("Your name is updated.");
+      } finally {
+        save.disabled = false;
+      }
+    });
+  };
+  showSheet("What should we call you?", form);
+}
+function showPush() {
+  const enabled = push.preferred();
+  showSheet("Game notifications.", [node("p", enabled ? "This phone will let you know when a game needs you." : "A quiet nudge when it is your turn. You can change this anytime."), act(enabled ? "Turn off notifications" : "Enable notifications", async () => {
+    const b = $("sheet-content").querySelector("button");
+    b.disabled = true;
+    try {
+      if (enabled) {
+        await push.disable();
+        status("Notifications are off on this phone.");
+      } else await push.enable();
+      closeSheet();
+      renderPush();
+    } finally {
+      b.disabled = false;
+    }
+  }, "primary full", enabled ? "bell" : "check")]);
+}
+function showPrivacy() {
+  const list = node("div", void 0, "settings-list");
+  list.append(row("How your data is used", "shield", showDataInfo), row("Dictionary & word list", "book", showDictionary));
+  if (user) list.append(row("Download my data", "download", exportData), row("Delete my account", "trash", showDelete, { danger: true }));
+  const contact = node("p", cfg.operatorName && cfg.supportEmail ? `${cfg.operatorName} \xB7 ${cfg.supportEmail}` : "Need a hand? Contact the friend who invited you.");
+  const content = [contact, list];
+  if (lastProblem) {
+    content.push(node("p", `Last issue: ${lastProblem}`, "menu-note"));
+    if (lastRequestId) content.push(act("Copy support reference", async () => {
+      await navigator.clipboard.writeText(lastRequestId);
+      status("Support reference copied.");
+    }, "text-button"));
+  }
+  showSheet("Privacy & your account.", content);
+}
+function showDataInfo() {
+  showSheet("A private little table.", [node("p", "Only your opponents can see your shared games and display name. Your email is used for signing in and recovering your account."), node("p", "Supabase stores games and accounts. Resend sends account emails. Optional Android notifications use Google Firebase Cloud Messaging with a device token and game reference."), node("p", "There are no ads, public profile search or analytics trackers. Account deletion removes your login, profile and private inbox. Shared history stays anonymized for your opponents; backups expire under the hosting provider's retention policy.")]);
+}
+async function exportData() {
+  const data = await api({ action: "export" }), url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" })), link = node("a");
+  link.href = url;
+  link.download = "word-conquest-data.json";
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1e3);
+  closeSheet();
+  status("Your data export is ready.");
+}
+function showDelete() {
+  const form = node("form", void 0, "stack-form"), label = node("label", "Type DELETE to confirm"), input = node("input");
+  input.id = "delete-confirmation";
+  input.autocomplete = "off";
+  input.required = true;
+  input.pattern = "DELETE";
+  label.htmlFor = input.id;
+  const remove2 = button("Permanently delete account", null, "primary danger full", "trash");
+  remove2.type = "submit";
+  form.append(label, input, remove2);
+  form.onsubmit = (e) => {
+    e.preventDefault();
+    void run(async () => {
+      remove2.disabled = true;
+      try {
+        if (input.value !== "DELETE") return;
+        await api({ action: "delete_account", confirmation: "DELETE" });
+        const actor = user.id;
+        for (const key of Object.keys(localStorage)) if (key.startsWith(`wc-pending:${actor}:`) || key === `wc-create:${actor}`) localStorage.removeItem(key);
+        await db.auth.signOut();
+        closeSheet();
+        status("Your account has been deleted.");
+      } finally {
+        remove2.disabled = false;
+      }
+    });
+  };
+  showSheet("Leave Word Conquest?", [node("p", "This permanently removes your account, profile and private updates. Active games close without counting as wins or losses. Opponents keep anonymized shared history."), node("p", "For your protection, sign in again within ten minutes before deleting your account."), form]);
+}
+function setAuthMode(mode) {
+  authMode = mode;
+  const signup = mode === "signup", forgot = mode === "recover";
+  $("auth-heading").replaceChildren();
+  if (signup) $("auth-heading").textContent = "Your seat at the table.";
+  else if (forgot) $("auth-heading").textContent = "Let us get you back in.";
+  else $("auth-heading").append(document.createTextNode("Your next good word"), node("br"), document.createTextNode("is waiting."));
+  $("auth-intro").textContent = signup ? "Invite a friend. See where the words take you." : forgot ? "We will email you a link to reset your password." : "A friendly game, at your own pace.";
+  $("password-label").hidden = forgot;
+  $("password-field").hidden = forgot;
+  $("password").required = !forgot;
+  $("password").minLength = signup ? 12 : 1;
+  $("password").autocomplete = signup ? "new-password" : "current-password";
+  $("password-hint").hidden = !signup;
+  $("recover").hidden = signup;
+  $("auth-submit").replaceChildren(node("span", signup ? "Create account" : forgot ? "Send reset link" : "Sign in"), icon("arrow"));
+  $("auth-switch-text").textContent = signup ? "Already have an account?" : forgot ? "Remembered it?" : "New here?";
+  $("signup").textContent = signup || forgot ? "Sign in" : "Create an account";
+}
+$("auth-form").onsubmit = (e) => {
   e.preventDefault();
-  run(async () => {
-    await api({ action: "profile", name: $("display-name").value, emailNotifications: $("email-notifications").checked });
-    status("Preferences saved.");
+  void run(async () => {
+    if (authBusy) return;
+    authBusy = true;
+    $("auth-submit").disabled = true;
+    try {
+      const email = $("email").value.trim(), password = $("password").value;
+      if (authMode === "recover") {
+        const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo: authRedirect() });
+        if (error) throw error;
+        showSheet("Check your inbox.", [node("p", "If an account uses that address, a password reset link will arrive shortly."), act("Back to sign in", () => {
+          closeSheet();
+          setAuthMode("signin");
+        }, "primary full")]);
+      } else if (authMode === "signup") {
+        const { data, error } = await db.auth.signUp({ email, password, options: { emailRedirectTo: authRedirect() } });
+        if (error) throw error;
+        if (!data.session) {
+          $("password").value = "";
+          setAuthMode("signin");
+          showSheet("One last step.", [node("p", "Open the confirmation email, then come back here to sign in."), act("Got it", closeSheet, "primary full", "check")]);
+        }
+      } else {
+        const { error } = await db.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+      }
+    } finally {
+      authBusy = false;
+      $("auth-submit").disabled = false;
+    }
   });
 };
+$("signup").onclick = () => setAuthMode(authMode === "signin" ? "signup" : "signin");
+$("recover").onclick = () => setAuthMode("recover");
+$("show-password").onclick = () => {
+  const showing = $("password").type === "password";
+  $("password").type = showing ? "text" : "password";
+  $("show-password").setAttribute("aria-label", showing ? "Hide password" : "Show password");
+};
+$("recovery-form").onsubmit = (e) => {
+  e.preventDefault();
+  void run(async () => {
+    const submit = e.currentTarget?.querySelector("button") || $("recovery-form").querySelector("button");
+    submit.disabled = true;
+    try {
+      const { error } = await db.auth.updateUser({ password: $("new-password").value });
+      if (error) throw error;
+      recovering = false;
+      authReady = true;
+      $("new-password").value = "";
+      await showHome();
+      status("Password updated.");
+      await openNotification();
+    } finally {
+      submit.disabled = false;
+    }
+  });
+};
+$("retry-load").onclick = () => run(async () => {
+  await showHome(false, { route: false });
+  authReady = true;
+  await showInvite();
+});
+$("home-button").onclick = $("back").onclick = $("result-home").onclick = () => run(() => user ? showHome() : screen(configured ? "auth" : "setup", { route: false }));
+$("brand").onclick = (e) => {
+  e.preventDefault();
+  void run(() => user ? showHome() : screen(configured ? "auth" : "setup", { route: false }));
+};
+$("activity-button").onclick = () => run(() => showActivity());
+$("account-button").onclick = () => run(() => account());
+$("active-games").onclick = () => {
+  filter = "active";
+  renderHome();
+};
+$("finished-games").onclick = () => {
+  filter = "finished";
+  renderHome();
+};
+$("new-game").onclick = showNewGame;
+$("edit-profile").onclick = editProfile;
+$("push-settings").onclick = showPush;
+$("help-button").onclick = showRules;
+for (const b of document.querySelectorAll("[data-sheet]")) b.onclick = () => b.dataset.sheet === "rules" ? showRules() : showPrivacy();
+$("game-menu").onclick = showGameMenu;
+$("share-invite").onclick = () => run(shareInvite);
+$("copy-invite").onclick = () => run(copyInvite);
+$("cancel-invite").onclick = () => run(quitGame);
+$("player-score-1").onclick = () => showScore(1);
+$("player-score-2").onclick = () => showScore(2);
+$("score-preview").onclick = showWordScore;
+$("recap").onclick = showRecap;
+$("accept-draw").onclick = () => run(() => confirmAction("accept_draw"));
 $("signout").onclick = () => run(async () => {
   await push.disable(false);
   notificationGame = null;
   await db.auth.signOut();
   game = null;
+  homeData = null;
   selection = [];
   $("password").value = "";
-  status("Signed out. Unconfirmed actions remain saved for this account.");
-});
-$("enable-push").onclick = () => run(async () => {
-  const b = $("enable-push");
-  b.disabled = true;
-  try {
-    await push.enable();
-  } finally {
-    b.disabled = false;
-    renderPush();
-  }
-});
-$("disable-push").onclick = () => run(async () => {
-  await push.disable();
-  renderPush();
-  status("Game notifications are off on this phone.");
-});
-$("export").onclick = () => run(async () => {
-  const data = await api({ action: "export" }), url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" })), a = node("a");
-  a.href = url;
-  a.download = "word-conquest-data.json";
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1e3);
-  status("Your data export is ready.");
-});
-$("delete-account").onclick = () => run(async () => {
-  if ($("delete-confirmation").value !== "DELETE") {
-    status("Type DELETE to confirm.", true);
-    return;
-  }
-  await api({ action: "delete_account", confirmation: "DELETE" });
-  for (const key of Object.keys(localStorage)) if (key.startsWith(`wc-pending:${user.id}:`) || key === `wc-create:${user.id}`) localStorage.removeItem(key);
-  await db.auth.signOut();
-  status("Your account was deleted. Shared game history is anonymized.");
+  status("Signed out.");
 });
 $("read-inbox").onclick = () => run(async () => {
   await api({ action: "read_notifications" });
-  await showHome(true);
+  await fetchHome();
+  renderActivity();
+  status("All caught up.");
 });
 $("submit-word").onclick = () => run(() => action("word"));
 $("retry").onclick = () => run(sendPending);
-$("clear-word").onclick = () => {
-  selection = [];
-  jokers = {};
-  renderGame();
-};
-for (const [id, kind, message] of [["refresh", "refresh", "Replace your ordinary owned letters and spend this turn?"], ["resign", "resign", "Resign this game? This counts as a loss."], ["offer-draw", "offer_draw", "Offer your friend a draw?"], ["accept-draw", "accept_draw", "Accept this draw and end the game?"], ["abandon", "abandon", "Abandon this game? Available after 30 days without a turn; no result is counted."]]) $(id).onclick = () => run(async () => {
-  if (confirm(message)) await action(kind);
-});
+$("clear-word").onclick = clearWord;
 $("zoom").onclick = () => {
-  $("board").classList.toggle("enlarged");
-  $("zoom").textContent = $("board").classList.contains("enlarged") ? "Fit board" : "Enlarge board";
+  const expanded = $("board").classList.toggle("enlarged");
+  $("zoom").setAttribute("aria-pressed", expanded);
+  $("zoom").setAttribute("aria-label", expanded ? "Fit board" : "Enlarge board");
+  $("zoom").replaceChildren(icon(expanded ? "shrink" : "expand"));
 };
 var tileAt = (x, y) => document.elementFromPoint(x, y)?.closest("[data-id]")?.dataset.id;
 $("board").onpointerdown = (e) => {
@@ -9383,11 +10006,34 @@ for (const event of ["pointerup", "pointercancel", "lostpointercapture"]) $("boa
   dragging = false;
 });
 $("board").onkeydown = (e) => {
+  const id = e.target.closest("[data-id]")?.dataset.id;
+  if (!id) return;
   if (e.key === "Enter" || e.key === " ") {
     e.preventDefault();
-    const id = e.target.dataset.id;
     choose(id);
-    [...$("board").querySelectorAll("[data-id]")].find((n) => n.dataset.id === id)?.focus();
+    $("board").querySelector(`[data-id="${id}"]`)?.focus();
+  } else if (e.key === "Escape") {
+    e.preventDefault();
+    clearWord();
+    $("board").querySelector(`[data-id="${id}"]`)?.focus();
+  } else if (e.key === "Backspace") {
+    e.preventDefault();
+    if (canPlay() || preview) {
+      delete jokers[selection.pop()];
+      drawBoard();
+      renderJokers();
+      renderSelection();
+      $("board").querySelector(`[data-id="${id}"]`)?.focus();
+    }
+  } else if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+    e.preventDefault();
+    const tile = game.state.tiles.find((t) => t.id === id), [dq, dr] = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] }[e.key];
+    const next = game.state.tiles.find((t) => t.q === tile.q + dq && t.r === tile.r + dr);
+    if (next) {
+      focusTile = next.id;
+      drawBoard();
+      $("board").querySelector(`[data-id="${next.id}"]`)?.focus();
+    }
   }
 };
 $("preview-button").onclick = () => {
@@ -9397,26 +10043,31 @@ $("preview-button").onclick = () => {
   invite = null;
   selection = [];
   jokers = {};
-  screen("game");
+  screen("game", { route: false });
   renderGame();
-  status("Design preview only \u2014 connect the service for saved online play.");
 };
 async function poll() {
   if (polling || busy || !user || document.hidden || recovering) return;
   polling = true;
   refreshQueued = false;
   try {
-    if (currentView === "game") await openGame(game.id, true);
+    if (currentView === "game" && !preview) await openGame(game.id, true);
     else if (currentView === "home") await showHome(true);
+    else if (currentView === "activity") {
+      await fetchHome();
+      renderActivity();
+    }
+    offlineNotice(!navigator.onLine);
   } catch {
-    status("Unable to refresh. Your last loaded board remains visible; reconnect before playing.", true);
+    offlineNotice(true, "Could not refresh. Reconnect to get the latest turn.");
   } finally {
     polling = false;
     if (refreshQueued) void poll();
   }
 }
-if (Capacitor.isNativePlatform()) {
-  void push.initialize().catch(() => status("Notifications are unavailable. Gameplay is still available.", true));
+if (native) {
+  void push.initialize().catch(() => {
+  });
   void App.addListener("appStateChange", ({ isActive }) => {
     if (isActive) {
       void poll();
@@ -9425,51 +10076,61 @@ if (Capacitor.isNativePlatform()) {
     }
   });
   void App.addListener("backButton", () => {
+    if (closeTopDialog()) return;
     if (currentView !== "home" && user) void run(() => showHome());
     else void App.minimizeApp();
   });
 }
+window.addEventListener("popstate", () => run(async () => {
+  if (!user) return;
+  closeSheet();
+  const route = new URLSearchParams(location.search);
+  if (route.get("game")) await openGame(route.get("game"), false, { route: false });
+  else if (route.get("view") === "account") await account({ route: false });
+  else if (route.get("view") === "activity") await showActivity({ route: false });
+  else await showHome(false, { route: false });
+}));
 window.addEventListener("online", () => run(poll));
-window.addEventListener("offline", () => status("Offline. Accepted moves stay saved. A pending move must be retried when connected.", true));
+window.addEventListener("offline", () => offlineNotice());
 window.addEventListener("focus", () => run(poll));
 document.addEventListener("visibilitychange", () => {
-  if (!document.hidden) run(poll);
+  if (!document.hidden) void run(poll);
 });
 setInterval(poll, 2e4);
-$("privacy-contact").textContent = cfg.operatorName && cfg.supportEmail ? `Operated by ${cfg.operatorName}. Support and privacy: ${cfg.supportEmail}` : "Private friend pilot. For help, contact the person who invited you.";
-if (!db) {
-  screen("setup");
-  status("Online service not connected. The original prototype is still available.");
-} else {
-  db.auth.onAuthStateChange((event, session) => {
-    const previousUser = user?.id;
-    user = session?.user || null;
-    setTimeout(() => run(() => connectLiveUpdates(session)), 0);
-    if (event === "PASSWORD_RECOVERY") {
-      authReady = false;
-      recovering = true;
-      screen("recovery");
-      return;
-    }
-    if (!user) {
-      authReady = false;
-      screen("auth");
-      $("invitation").hidden = true;
-      status("Sign in to return to your games.");
-      return;
-    }
-    if (recovering || !["SIGNED_IN", "INITIAL_SESSION"].includes(event) || previousUser === user.id && currentView !== "auth") return;
-    setTimeout(() => run(async () => {
-      if (recovering) return;
-      await showHome();
-      await showInvite();
-      authReady = true;
-      if (notificationGame) await openNotification();
-      else if (params.get("game") && $("invitation").hidden) await openGame(params.get("game"));
-      void push.restore().catch(() => status("Could not refresh notifications. You can retry in Account.", true));
-    }), 0);
-  });
-}
+if (!db) screen("setup", { route: false });
+else db.auth.onAuthStateChange((event, session) => {
+  const previousUser = user?.id;
+  user = session?.user || null;
+  setTimeout(() => run(() => connectLiveUpdates(session)), 0);
+  if (event === "PASSWORD_RECOVERY") {
+    authReady = false;
+    recovering = true;
+    screen("recovery", { route: false });
+    return;
+  }
+  if (!user) {
+    authReady = false;
+    homeData = null;
+    ++navigation;
+    ++gameLoad;
+    ++homeLoad;
+    screen("auth", { route: false });
+    return;
+  }
+  if (recovering || !["SIGNED_IN", "INITIAL_SESSION"].includes(event) || previousUser === user.id && currentView !== "auth") return;
+  setTimeout(() => run(async () => {
+    if (recovering) return;
+    await showHome(false, { route: false });
+    const invited = await showInvite();
+    authReady = true;
+    if (notificationGame) await openNotification();
+    else if (launchGame && !invited) await openGame(launchGame, false, { route: false });
+    else if (!invited && params.get("view") === "account") await account({ route: false });
+    else if (!invited && params.get("view") === "activity") await showActivity({ route: false });
+    void push.restore().catch(() => {
+    });
+  }), 0);
+});
 /*! Bundled license information:
 
 @capacitor/core/dist/index.js:
