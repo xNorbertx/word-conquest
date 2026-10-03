@@ -161,3 +161,12 @@ Native-origin hosted API registration and disable passed with an isolated test
 identity; client token-table reads were denied. The test registration remains
 explicitly disabled. Local APK signature verified. Physical Seeker delivery and
 notification-tap/upgrade checks remain the only way to confirm device behavior.
+
+## Android download without GitHub sign-in - 3 October
+
+Published the verified 0.2.0-10135a0 APK as an Android pilot prerelease:
+https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-23837708
+An anonymous download returned HTTP 200 and matched the previously verified
+SHA-256 checksum. Phone users can now use Releases > Assets without a GitHub
+account. CI build artifacts remain available separately behind GitHub sign-in.
+No app-store publication or new paid service was involved.

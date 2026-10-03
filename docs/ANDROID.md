@@ -10,12 +10,13 @@ superseded; use this build or a later successful build for the stable pilot sign
 
 ## Install and use
 
-Download the APK artifact from the latest successful **Android APK** run:
-https://github.com/xNorbertx/word-conquest/actions/workflows/android.yml
-Sign in to GitHub to download the artifact ZIP, extract it, and open
-`word-conquest-android.apk` on the phone. Allow installation for the app used to
-open it if Android prompts. Updates install over the existing pilot app; do not
-uninstall it, because that removes locally saved sessions and pending actions.
+On your Android phone, open the repository's [Releases page](https://github.com/xNorbertx/word-conquest/releases).
+Open the newest published Android pilot and, under **Assets**, download
+`word-conquest-android.apk`. No GitHub account or ZIP extraction is needed.
+[Direct verified APK download](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-23837708/word-conquest-android.apk).
+Open the downloaded APK and allow installation from your browser if Android asks.
+Updates install over the existing pilot app; do not uninstall it, because that
+removes locally saved sessions and pending actions.
 
 In Word Conquest, open **Account > Enable notifications** and accept Android's
 permission prompt. Preferences are per account and phone. Turning notifications
@@ -37,6 +38,8 @@ saved games and the in-app inbox are authoritative.
 `.github/workflows/android.yml` runs tests and builds on source pushes (all branches
 except `gh-pages`; documentation/design-only pushes are skipped). Each successful
 run uploads an APK, build metadata and SHA-256 checksum, retained for seven days.
+These Actions artifacts require GitHub sign-in. Public phone downloads are published
+separately in Releases; the verified pilot above is available without signing in.
 This is build automation, not automatic installation on your phone. It does not
 deploy database migrations/functions or publish an app-store release.
 

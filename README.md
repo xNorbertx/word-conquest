@@ -122,5 +122,7 @@ Development source currently lives on `codex/async-friend-play`.
 
 ## Android pilot
 
+[Download the Android pilot](https://github.com/xNorbertx/word-conquest/releases) from Releases > Assets; no GitHub sign-in is needed.
+
 See [Android builds and push notifications](docs/ANDROID.md) for the verified APK,
 automatic GitHub Actions builds, installation, local builds and device checks.
