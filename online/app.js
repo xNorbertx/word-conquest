@@ -8194,6 +8194,33 @@ var currentView = "auth";
 var homeData = null;
 var polling = false;
 var gameLoad = 0;
+var liveChannel = null;
+var liveUser = null;
+var refreshQueued = false;
+async function connectLiveUpdates(session) {
+  if (session?.access_token) await db.realtime.setAuth(session.access_token);
+  if (session?.user?.id !== user?.id) return;
+  if (liveUser === user?.id) return;
+  if (liveChannel) {
+    void db.removeChannel(liveChannel);
+    liveChannel = null;
+  }
+  liveUser = user?.id || null;
+  if (!liveUser) return;
+  liveChannel = db.channel(`games:${liveUser}`).on(
+    "postgres_changes",
+    { event: "UPDATE", schema: "public", table: "games" },
+    () => {
+      refreshQueued = true;
+      void poll();
+    }
+  ).subscribe((state) => {
+    if (state === "SUBSCRIBED") {
+      refreshQueued = true;
+      void poll();
+    }
+  });
+}
 var params = new URLSearchParams(location.search);
 if (params.get("invite")) localStorage.setItem("wc-invitation", params.get("invite"));
 var screens = ["setup", "auth", "recovery", "home", "account", "game"];
@@ -8495,6 +8522,7 @@ async function sendPending() {
   } finally {
     busy = false;
     if (game && currentView === "game") renderGame();
+    if (refreshQueued) void poll();
   }
 }
 async function action(kind) {
@@ -8685,6 +8713,7 @@ $("preview-button").onclick = () => {
 async function poll() {
   if (polling || busy || !user || document.hidden || recovering) return;
   polling = true;
+  refreshQueued = false;
   try {
     if (currentView === "game") await openGame(game.id, true);
     else if (currentView === "home") await showHome(true);
@@ -8692,6 +8721,7 @@ async function poll() {
     status("Unable to refresh. Your last loaded board remains visible; reconnect before playing.", true);
   } finally {
     polling = false;
+    if (refreshQueued) void poll();
   }
 }
 window.addEventListener("online", () => run(poll));
@@ -8709,6 +8739,7 @@ if (!db) {
   db.auth.onAuthStateChange((event, session) => {
     const previousUser = user?.id;
     user = session?.user || null;
+    setTimeout(() => run(() => connectLiveUpdates(session)), 0);
     if (event === "PASSWORD_RECOVERY") {
       recovering = true;
       screen("recovery");
