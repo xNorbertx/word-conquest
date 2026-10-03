@@ -44,3 +44,33 @@ Resend's current Supabase SMTP instructions specify host `smtp.resend.com`, port
 directly in Supabase Authentication → Email → SMTP Settings, along with the verified
 sender email and sender name. Source: https://resend.com/docs/send-with-supabase-smtp.
 Zoho is receiving only; no Zoho password or API integration is needed by the app.
+
+## Android push setup - owner actions
+
+Use the existing Google account and a separate Word Conquest Firebase project.
+Keep Spark/free, no billing account, Analytics disabled. No Firebase database,
+hosting or authentication setup is required. This blocks Android push delivery,
+not core gameplay. The existing Android package is com.wordconquest.app.
+
+1. https://console.firebase.google.com/: create Word Conquest. Register an Android
+   app with package com.wordconquest.app, nickname Word Conquest Android. SHA-1 is
+   not needed for this FCM-only setup. Download google-services.json to
+   C:\repos\word-conquest\android\app\google-services.json. Agent handles SDK/Gradle.
+2. Project Settings > Cloud Messaging: confirm Firebase Cloud Messaging API (V1)
+   is enabled; if necessary enable Firebase Cloud Messaging API in Google Cloud's
+   API Library with this new project selected. Legacy messaging is not needed.
+3. https://console.cloud.google.com/iam-admin/serviceaccounts: select the same new
+   project and create word-conquest-push. Grant only Firebase Cloud Messaging API
+   Admin (roles/firebasecloudmessaging.admin) on this project; skip optional user
+   access. Open that service account > Keys > Add key > Create new key > JSON.
+4. Save the downloaded private file, renamed firebase-service-account.json, to
+   C:\Users\Norbert\AppData\Local\WordConquestBuild\secrets\firebase-service-account.json.
+   This folder is outside the repository. Never paste the key in chat or place it
+   in android/app or frontend assets. Agent will provision it in Supabase Edge
+   Function secrets for server-side sending; the APK gets only google-services.json.
+5. Tell the agent "Firebase files saved". No credentials need to be sent in chat.
+
+References: https://firebase.google.com/docs/android/setup,
+https://capacitorjs.com/docs/v7/apis/push-notifications,
+https://firebase.google.com/docs/cloud-messaging/send/v1-api,
+https://docs.cloud.google.com/iam/docs/roles-permissions/firebasecloudmessaging.
