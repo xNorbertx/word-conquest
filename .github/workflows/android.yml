@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      WC_ANDROID_KEYSTORE: ${{ runner.temp }}/word-conquest-pilot.keystore
+      WC_ANDROID_KEYSTORE: /tmp/word-conquest-pilot.keystore
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
