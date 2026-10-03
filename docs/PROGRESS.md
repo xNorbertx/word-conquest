@@ -183,3 +183,23 @@ local Android compilation passes. Controlled browser checks include one-commit
 lost-response recovery, stale boards, rejected words, jokers, game navigation,
 profile/activity, final results and agreed draw. See docs/UX.md for the scope and
 remaining physical-device/owner acceptance. Publication evidence follows below.
+
+Published UX build evidence:
+
+- Source commit: 6ff2644ed5ab7d9522d2e48477d832c8ac240dac.
+- Web deployment: gh-pages commit 3be706a57eec077dc6cc1f7e62e28303f3762f31.
+  All nine checked public assets returned HTTP 200 and matched the local build;
+  the five root prototype files remain unchanged. Published sign-in was visually
+  checked at 390 x 844 with no browser warnings/errors. API preflight returned 204
+  and an unauthenticated request remained correctly denied with 401.
+- CI passed: https://github.com/xNorbertx/word-conquest/actions/runs/37160098609
+- APK: 0.3.0-6ff2644, version code 23842588, 4,934,623 bytes.
+  Stable pilot signer independently verified; notification permission present;
+  no PEM private-key material or local test adapter in APK.
+- Release: https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-23842588
+  Anonymous APK download returned HTTP 200 and matched SHA-256
+  dab83ee0b677f1ca80ad653b104635d95a19787e2deae71e99c341181e973ce9.
+- Local verified APK: dist/word-conquest-0.3.0.apk.
+
+No new recurring costs or backend migrations. Install over the previous pilot;
+physical upgrade and push acceptance are still pending owner/device checks.

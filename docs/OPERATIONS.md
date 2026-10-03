@@ -4,7 +4,7 @@
 
 Dedicated project `aumiyyjsdqdazzmdmprl`, Free plan, Paris EU. CLI authenticated locally
 and linked; migration and both functions deployed. Local app's public connection is
-in ignored `online/config.local.js`. Public frontend: https://xnorbertx.github.io/word-conquest/online/. APP_ORIGIN allows https://xnorbertx.github.io and http://127.0.0.1:4173; APP_URL and Auth Site URL point at the public online app. Localhost remains an explicit Auth redirect. SMTP, notification scheduling and backups are pending.
+in ignored `online/config.local.js`. Public frontend: https://xnorbertx.github.io/word-conquest/online/. APP_ORIGIN allows https://xnorbertx.github.io and http://127.0.0.1:4173; APP_URL and Auth Site URL point at the public online app. Localhost remains an explicit Auth redirect. Authentication SMTP is verified; native push and its retry schedule are deployed. Backup restoration and operational monitoring acceptance remain pending. See docs/ANDROID.md.
 CLI is now pinned as a project dependency: run `npx supabase` with Node 22+.
 
 ## Local build
@@ -54,9 +54,10 @@ The API intentionally performs `auth.getUser` itself on every request; gateway
 verify_jwt is disabled to avoid confusing publishable keys with legacy JWT keys.
 This never means anonymous game access. Postgres mutation RPCs are service-only.
 
-Host **contents of dist/** on the existing static host. This keeps the root prototype
+Host the root prototype files and **dist/online/** on the existing static host.
+Exclude APKs and Android build metadata from the web deployment. This keeps the root prototype
 and adds `/online/`. Do not publish raw source `online/app.js`, which needs bundling.
-GitHub Pages publishes built files from `gh-pages` at `/`. For updates: run tests and build locally, clone the existing `gh-pages` branch into an isolated directory, copy only contents of `dist/` there, retain `.nojekyll`, inspect the diff, commit and push without force. Never publish the source tree or server secrets. Verify all public assets and the root prototype after the Pages build completes. Roll back by reverting the deployment commit in that branch. Source work is in `codex/async-friend-play`; main remains the prototype. No paid runner or hosting plan was enabled.
+GitHub Pages publishes built files from `gh-pages` at `/`. For updates: run tests and build locally, clone the existing `gh-pages` branch into an isolated directory, copy only the five root prototype files and `dist/online/` there, retain `.nojekyll`, inspect the diff, commit and push without force. Never publish the source tree or server secrets. Verify all public assets and the root prototype after the Pages build completes. Roll back by reverting the deployment commit in that branch. Source work is in `codex/async-friend-play`; main remains the prototype. No paid runner or hosting plan was enabled.
 
 ## Authentication mail and deferred turn-email worker
 

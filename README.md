@@ -21,10 +21,12 @@ Never put service keys, SMTP passwords or signing credentials in browser configu
 Without a configured backend the online app shows a labelled visual preview, not fake
 saved games. Root prototype mechanics below are unchanged.
 
-Local checks and a full hosted 36-turn test game pass. The Supabase backend is deployed
-and the local app is connected. Signup/recovery email, backup restoration, public web
-hosting and real-device asynchronous play remain acceptance gates. No public release
-has been performed. Existing Resend and Zoho services will be reused.
+The [web pilot](https://xnorbertx.github.io/word-conquest/online/) and Supabase backend
+are deployed. Authentication email through Resend is verified. A directly installable
+Android pilot is available in [Releases](https://github.com/xNorbertx/word-conquest/releases).
+See [Android installation](docs/ANDROID.md) and [0.3.0 UX review](docs/UX.md). Hosted
+36-turn and owner playtests passed; multi-day/device acceptance, backup restoration
+and operational monitoring remain open. The local prototype below is unchanged.
 
 ## Play locally
 
