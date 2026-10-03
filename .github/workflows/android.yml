@@ -1,0 +1,60 @@
+name: Android APK
+on:
+  push:
+    branches-ignore: [gh-pages]
+    paths-ignore: ['docs/**', '**/*.md', 'design/**']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  apk:
+    # Standard runner in this public repository. Do not switch to a paid larger runner.
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci
+      - run: npm test
+      - name: Public app configuration and stable pilot signing
+        env:
+          WC_PUBLIC_CONFIG: ${{ secrets.WC_PUBLIC_CONFIG }}
+          ANDROID_DEBUG_KEYSTORE: ${{ secrets.ANDROID_DEBUG_KEYSTORE }}
+        run: |
+          node --input-type=commonjs <<'NODE'
+          const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
+          if(!process.env.WC_PUBLIC_CONFIG || !process.env.ANDROID_DEBUG_KEYSTORE)throw Error('Android build configuration missing');
+          fs.writeFileSync('online/config.local.js',process.env.WC_PUBLIC_CONFIG);
+          const folder=path.join(os.homedir(),'.android');fs.mkdirSync(folder,{recursive:true});
+          fs.writeFileSync(path.join(folder,'debug.keystore'),Buffer.from(process.env.ANDROID_DEBUG_KEYSTORE,'base64'),{mode:0o600});
+          NODE
+      - run: npm run build
+      - name: Configure Android and Firebase
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          test -n "$GOOGLE_SERVICES_JSON"
+          node scripts/prepare-android.cjs
+          npx cap sync android
+      - name: Compile APK
+        run: |
+          chmod +x android/gradlew
+          android/gradlew -p android assembleDebug --console=plain
+          mkdir -p apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk apk/word-conquest-android.apk
+          cp dist/android-build.json apk/build.json
+          sha256sum apk/word-conquest-android.apk > apk/SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: word-conquest-android-${{ github.run_number }}-${{ github.sha }}
+          path: apk/
+          retention-days: 7

@@ -129,3 +129,18 @@ Firebase project selection/configuration is pending; Supabase remains the game
 backend and FCM is only Android push delivery. Native push is not complete yet.
 No APK has passed physical-device acceptance. No paid service enabled.
 `scripts/build-android.ps1` subsequently completed successfully, producing a debug APK with current native lifecycle changes. Push configuration and physical-device verification remain pending.
+
+## Android push and automatic APKs - 3 October
+
+Implemented per-phone Android notification consent, turn/invitation-response push,
+notification tap routing, logout cleanup and registration refresh. Deployed push
+registration/queue migration, push worker, game API wakeup and one-minute Cron retry.
+FCM service-account OAuth succeeded; a validation-only request reached FCM and was
+rejected only for its deliberately fake device token. No real phone delivery is
+claimed. Worker authorization and empty-queue execution passed against hosted Supabase.
+Three original rule suites and all 18 integration/service tests pass. Current APK
+compiles. Device delivery/permission/cold-start/upgrade acceptance remains pending.
+
+Added a GitHub Actions source-push APK workflow, stable pilot signing, reproducible
+native preparation, increasing version codes and downloadable artifact metadata.
+Workflow execution status is recorded after its first run. See docs/ANDROID.md.

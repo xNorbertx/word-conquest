@@ -1,0 +1,21 @@
+// Reproduce native customizations after `cap add android`; no native secrets in source.
+const fs=require('node:fs'),path=require('node:path'),cp=require('node:child_process');
+const root=path.resolve(__dirname,'..');process.chdir(root);
+if(!fs.existsSync('android/app'))cp.execFileSync(process.execPath,['node_modules/@capacitor/cli/bin/capacitor','add','android'],{stdio:'inherit'});
+if(process.env.GOOGLE_SERVICES_JSON)fs.writeFileSync('android/app/google-services.json',process.env.GOOGLE_SERVICES_JSON);
+const google=JSON.parse(fs.readFileSync('android/app/google-services.json','utf8'));
+if(!google.client.some(c=>c.client_info.android_client_info.package_name==='com.wordconquest.app'))throw Error('Firebase Android package mismatch');
+const versionCode=Number(process.env.ANDROID_VERSION_CODE || Math.floor((Date.now()-Date.UTC(2026,0,1))/1000));
+if(!Number.isSafeInteger(versionCode)||versionCode<2||versionCode>2100000000)throw Error('Invalid Android version code');
+const sha=cp.execFileSync('git',['-c','safe.directory='+root.replaceAll('\\','/'),'rev-parse','--short','HEAD'],{encoding:'utf8'}).trim();
+const versionName=`${require('../package.json').version}-${sha}`;
+let gradle=fs.readFileSync('android/app/build.gradle','utf8');
+gradle=gradle.replace(/versionCode \d+/,`versionCode ${versionCode}`).replace(/versionName "[^"]+"/,`versionName "${versionName}"`);
+fs.writeFileSync('android/app/build.gradle',gradle);
+let manifest=fs.readFileSync('android/app/src/main/AndroidManifest.xml','utf8').replace('android:allowBackup="true"','android:allowBackup="false"');
+if(!manifest.includes('ic_stat_word_conquest'))manifest=manifest.replace('<activity',`<meta-data android:name="com.google.firebase.messaging.default_notification_icon" android:resource="@drawable/ic_stat_word_conquest" />\n        <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="game_updates" />\n        <activity`);
+fs.writeFileSync('android/app/src/main/AndroidManifest.xml',manifest);
+fs.mkdirSync('android/app/src/main/res/drawable',{recursive:true});
+fs.writeFileSync('android/app/src/main/res/drawable/ic_stat_word_conquest.xml',`<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24"><path android:fillColor="#FFFFFFFF" android:pathData="M3,5 L6,5 L8,15 L10.5,7 L13.5,7 L16,15 L18,5 L21,5 L17.5,20 L14.5,20 L12,12 L9.5,20 L6.5,20 Z" /></vector>`);
+fs.mkdirSync('dist',{recursive:true});fs.writeFileSync('dist/android-build.json',JSON.stringify({versionCode,versionName,commit:sha,builtAt:new Date().toISOString()},null,2));
+console.log(`Android ${versionName} (${versionCode}) prepared.`);

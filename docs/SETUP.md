@@ -74,3 +74,8 @@ References: https://firebase.google.com/docs/android/setup,
 https://capacitorjs.com/docs/v7/apis/push-notifications,
 https://firebase.google.com/docs/cloud-messaging/send/v1-api,
 https://docs.cloud.google.com/iam/docs/roles-permissions/firebasecloudmessaging.
+
+Android build and push implementation details are in [ANDROID.md](ANDROID.md).
+Both Firebase files are now present; server credentials are configured in Supabase
+and build-only credentials in GitHub Actions. No further Firebase owner setup is
+currently needed. Physical-device notification acceptance remains required.

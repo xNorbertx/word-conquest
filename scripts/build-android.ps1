@@ -8,6 +8,8 @@ Push-Location (Split-Path $PSScriptRoot)
 try {
   node scripts/build.cjs
   if($LASTEXITCODE){throw 'Web build failed'}
+  node scripts/prepare-android.cjs
+  if($LASTEXITCODE){throw 'Android preparation failed'}
   node node_modules/@capacitor/cli/bin/capacitor sync android
   if($LASTEXITCODE){throw 'Android sync failed'}
   & .\android\gradlew.bat -p android assembleDebug --console=plain

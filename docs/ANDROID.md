@@ -1,0 +1,85 @@
+# Android pilot and build pipeline
+
+Target test phone: Solana Seeker / Android 16. Package: `com.wordconquest.app`.
+The APK uses the same Supabase accounts and games as the web app.
+
+## Install and use
+
+Download the APK artifact from the latest successful **Android APK** run:
+https://github.com/xNorbertx/word-conquest/actions/workflows/android.yml
+Sign in to GitHub to download the artifact ZIP, extract it, and open
+`word-conquest-android.apk` on the phone. Allow installation for the app used to
+open it if Android prompts. Updates install over the existing pilot app; do not
+uninstall it, because that removes locally saved sessions and pending actions.
+
+In Word Conquest, open **Account > Enable notifications** and accept Android's
+permission prompt. Preferences are per account and phone. Turning notifications
+off disables server delivery; signing out disables registration and removes
+delivered notifications. Signing in again restores a previously enabled preference.
+Native notifications contain a generic message and game reference, not email,
+board contents or played words. Tapping one opens the saved game after sign-in.
+Invitations are share links: push reports acceptance/decline to known players;
+there is no way to push an initial link to an unidentified recipient.
+
+Verify on the phone: foreground update, background and closed-app delivery, tap
+to correct game, denial/opt-out, sign-out, account switching, and an APK upgrade
+without losing the session. Android force-stop, notification settings, battery
+restrictions and locked Private Space can suppress delivery. Push is best-effort;
+saved games and the in-app inbox are authoritative.
+
+## Automatic APKs
+
+`.github/workflows/android.yml` runs tests and builds on source pushes (all branches
+except `gh-pages`; documentation/design-only pushes are skipped). Each successful
+run uploads an APK, build metadata and SHA-256 checksum, retained for seven days.
+This is build automation, not automatic installation on your phone. It does not
+deploy database migrations/functions or publish an app-store release.
+
+The standard Linux runner is free for this public repository. No paid runner or
+Firebase billing account is required. Public-repository Actions/artifact terms
+still apply. Do not change repository visibility or runner class without reviewing
+costs. Publishing a push creates a new APK only if the checks pass.
+
+Version name includes package version and source commit. Version code is seconds
+since 2026-01-01 UTC, so later builds upgrade earlier ones. Concurrent obsolete
+builds on the same branch are cancelled. Build-only GitHub repository secrets:
+
+- `WC_PUBLIC_CONFIG`: public Supabase URL/publishable key and public contact fields.
+- `GOOGLE_SERVICES_JSON`: Android Firebase configuration for this app.
+- `ANDROID_DEBUG_KEYSTORE`: base64 of the existing local pilot debug key, ensuring
+  local and CI APKs share a signing identity. This key is for direct pilot builds,
+  not a production store signing key. Never regenerate it for routine updates.
+
+The Firebase service-account private key is never uploaded to GitHub or bundled
+in the app. A future store release needs reviewed release signing and distribution.
+
+## Local build
+
+On this Windows machine: `powershell -File scripts/build-android.ps1`.
+The script uses the dedicated JDK/SDK under `%LOCALAPPDATA%/WordConquestBuild`.
+`scripts/prepare-android.cjs` reproduces native configuration, notification icon,
+version metadata and backup exclusion, including on a fresh CI checkout.
+Output: `android/app/build/outputs/apk/debug/app-debug.apk`.
+Native source generation remains ignored; customizations are tracked in the script.
+
+## Push backend
+
+Supabase migration `202610030002_android_push.sql` registers devices through the
+authenticated game API and queues notifications transactionally. Registration
+tokens and delivery records are service-only. Device ownership, opt-out, read
+status and account deletion are checked before queued work is claimed. The worker
+checks device ownership and token again before sending. Lease-based claims keep
+concurrent workers separate, with bounded retry/backoff and a 24-hour expiry.
+FCM has no exactly-once send contract: stable Android tags collapse duplicate
+alerts for a game, but a delivery whose acknowledgment was lost may be retried.
+
+Edge Function `push` uses secrets `FCM_SERVICE_ACCOUNT_JSON` and `PUSH_SECRET`.
+The game API wakes it after successful invitation/turn transactions; `wc-push-retry`
+Cron calls it once a minute as a fallback using Vault secret `wc_push_secret`.
+The email worker remains dormant. Inspect delivery outcome counts, not tokens.
+Invalidated tokens are disabled; renewed tokens register on app resume/sign-in.
+No paid plan enabled; monitor Supabase function/database and FCM usage limits.
+
+To disable delivery temporarily, disable `wc-push-retry` and unset `PUSH_SECRET`
+from the game API environment; preserve the queue and game data. To rotate sending
+credentials, replace the Edge Function secret and revoke the previous Google key.
