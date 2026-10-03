@@ -92,3 +92,7 @@ Local implementation and remaining acceptance work are detailed below.
 
 The first-online milestone must remain unaccepted until email, hosting, recovery and
 real-device checks above pass. Backend deployment alone is not release acceptance.
+
+## Clear game exit - 3 October
+
+Added a visible Cancel game / Quit game button above the board. Waiting games cancel their invitation; active games use the existing authoritative, retry-safe resignation. Successful exits return to Your games to create another invitation. Returning home clears the game URL so reloading does not reopen the exited game. Existing history is retained.
