@@ -1,3 +1,5 @@
+import {Capacitor} from '@capacitor/core';
+import {App} from '@capacitor/app';
 import {createClient} from '@supabase/supabase-js';
 import {Engine,config} from '../server/domain.mjs';
 const $=id=>document.getElementById(id), cfg=window.WC_CONFIG || {};
@@ -19,6 +21,7 @@ async function connectLiveUpdates(session){
 }
 const params=new URLSearchParams(location.search);
 if(params.get('invite'))localStorage.setItem('wc-invitation',params.get('invite'));
+const authRedirect=()=>Capacitor.isNativePlatform()?'https://xnorbertx.github.io/word-conquest/online/':location.origin+location.pathname;
 const screens=['setup','auth','recovery','home','account','game'];
 const status=(text,error=false)=>{$('connection').textContent=text;$('connection').classList.toggle('error',error);};
 function screen(name){currentView=name;for(const id of screens)$(id).hidden=id!==name;}
@@ -117,7 +120,7 @@ function renderGame(){
   $('supply').textContent=game.state.over?'Game complete':Engine.lettersRemaining(game.state,config)===0?'Player 2’s final reply':`${Engine.lettersRemaining(game.state,config)} letters left`;
   $('game-label').textContent=preview?'DESIGN PREVIEW':`Turn ${game.state.turns.reduce((a,b)=>a+b,0)+1}`;
   $('game-id').textContent=preview?'Preview — no online game':'Support reference: '+game.id;
-  $('share').hidden=!invite;if(invite)$('share-link').value=`${location.origin}${location.pathname}?invite=${invite.token}`;
+  $('share').hidden=!invite;if(invite)$('share-link').value=`${Capacitor.isNativePlatform()?'https://xnorbertx.github.io/word-conquest/online/':location.origin+location.pathname}?invite=${invite.token}`;
   $('quit-game').hidden=preview || !['invited','active'].includes(game.status);
   $('quit-game').disabled=busy || !!pending();
   $('quit-game').textContent=game.status==='invited'?'Cancel game':'Quit game';
@@ -172,8 +175,8 @@ async function account(){
   for(const [version,s]of Object.entries(statistics)){const d=node('div');d.append(node('p',`${s.wins} wins · ${s.losses} losses · ${s.draws} draws`),node('p',`Highest final score ${s.highestFinalScore}. Best word ${s.bestWord || '—'} · ${s.bestTurn} word points.`),node('small',version));$('statistics').append(d);}
 }
 $('auth-form').onsubmit=e=>{e.preventDefault();run(async()=>{const {error}=await db.auth.signInWithPassword({email:$('email').value,password:$('password').value});if(error)throw error;});};
-$('signup').onclick=()=>run(async()=>{if(!$('auth-form').reportValidity())return;const {error}=await db.auth.signUp({email:$('email').value,password:$('password').value,options:{emailRedirectTo:location.origin+location.pathname}});if(error)throw error;status('Check your email to confirm your account, then sign in.');});
-$('recover').onclick=()=>run(async()=>{if(!$('email').reportValidity())return;const {error}=await db.auth.resetPasswordForEmail($('email').value,{redirectTo:location.origin+location.pathname});if(error)throw error;status('If an account exists, a recovery email will arrive shortly.');});
+$('signup').onclick=()=>run(async()=>{if(!$('auth-form').reportValidity())return;const {error}=await db.auth.signUp({email:$('email').value,password:$('password').value,options:{emailRedirectTo:authRedirect()}});if(error)throw error;status('Check your email to confirm your account, then sign in.');});
+$('recover').onclick=()=>run(async()=>{if(!$('email').reportValidity())return;const {error}=await db.auth.resetPasswordForEmail($('email').value,{redirectTo:authRedirect()});if(error)throw error;status('If an account exists, a recovery email will arrive shortly.');});
 $('recovery-form').onsubmit=e=>{e.preventDefault();run(async()=>{const {error}=await db.auth.updateUser({password:$('new-password').value});if(error)throw error;recovering=false;$('new-password').value='';await showHome();status('Password updated.');});};
 $('home-button').onclick=$('back').onclick=()=>run(()=>user?showHome():screen(configured?'auth':'setup'));
 $('account-button').onclick=()=>run(account);
@@ -209,6 +212,10 @@ for(const event of ['pointerup','pointercancel','lostpointercapture'])$('board')
 $('board').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();const id=e.target.dataset.id;choose(id);[...$('board').querySelectorAll('[data-id]')].find(n=>n.dataset.id===id)?.focus();}};
 $('preview-button').onclick=()=>{preview=true;game={id:'preview',state:Engine.newGame(config),status:'active',players:[],names:['You','Alex'],revision:0};history=[];invite=null;selection=[];jokers={};screen('game');renderGame();status('Design preview only — connect the service for saved online play.');};
 async function poll(){if(polling || busy || !user || document.hidden || recovering)return;polling=true;refreshQueued=false;try{if(currentView==='game')await openGame(game.id,true);else if(currentView==='home')await showHome(true);}catch{status('Unable to refresh. Your last loaded board remains visible; reconnect before playing.',true);}finally{polling=false;if(refreshQueued)void poll();}}
+if(Capacitor.isNativePlatform()){
+  void App.addListener('appStateChange',({isActive})=>{if(isActive)void poll();});
+  void App.addListener('backButton',()=>{if(currentView!=='home' && user)void run(()=>showHome());else void App.minimizeApp();});
+}
 window.addEventListener('online',()=>run(poll));window.addEventListener('offline',()=>status('Offline. Accepted moves stay saved. A pending move must be retried when connected.',true));window.addEventListener('focus',()=>run(poll));document.addEventListener('visibilitychange',()=>{if(!document.hidden)run(poll);});setInterval(poll,20000);
 $('privacy-contact').textContent=cfg.operatorName && cfg.supportEmail?`Operated by ${cfg.operatorName}. Support and privacy: ${cfg.supportEmail}`:'Private friend pilot. For help, contact the person who invited you.';
 if(!db){screen('setup');status('Online service not connected. The original prototype is still available.');}

@@ -116,3 +116,15 @@ run the multi-day test. Turn-alert emails are removed from iteration scope;
 authentication email stays, and native push is planned for mobile.
 Next: engineering interruption/resume/session tests, then backups/restore and
 monitoring. Visual design improvements are deferred.
+
+## Android implementation started - 3 October
+
+Owner approved a directly installable APK, free build-tool installation and push
+in the first Android iteration. Target test device: Solana Seeker, Android 16.
+Installed dedicated per-user JDK 21 and Android SDK tools/platform 35/build-tools
+35.0.0 under LOCALAPPDATA/WordConquestBuild. Existing global Java unchanged.
+Added official Capacitor App and Push Notifications plugins. Repeatable Windows
+build command: powershell -File scripts/build-android.ps1 (Node 24 bundled path).
+Firebase project selection/configuration is pending; Supabase remains the game
+backend and FCM is only Android push delivery. Native push is not complete yet.
+No APK has passed physical-device acceptance. No paid service enabled.
