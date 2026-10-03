@@ -144,3 +144,10 @@ compiles. Device delivery/permission/cold-start/upgrade acceptance remains pendi
 Added a GitHub Actions source-push APK workflow, stable pilot signing, reproducible
 native preparation, increasing version codes and downloadable artifact metadata.
 Workflow execution status is recorded after its first run. See docs/ANDROID.md.
+
+The first GitHub Actions Android APK run passed:
+https://github.com/xNorbertx/word-conquest/actions/runs/37154178426
+Native-origin hosted API registration and disable passed with an isolated test
+identity; client token-table reads were denied. The test registration remains
+explicitly disabled. Local APK signature verified. Physical Seeker delivery and
+notification-tap/upgrade checks remain the only way to confirm device behavior.

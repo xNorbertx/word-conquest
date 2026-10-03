@@ -14,6 +14,7 @@ gradle=gradle.replace(/versionCode \d+/,`versionCode ${versionCode}`).replace(/v
 fs.writeFileSync('android/app/build.gradle',gradle);
 let manifest=fs.readFileSync('android/app/src/main/AndroidManifest.xml','utf8').replace('android:allowBackup="true"','android:allowBackup="false"');
 if(!manifest.includes('ic_stat_word_conquest'))manifest=manifest.replace('<activity',`<meta-data android:name="com.google.firebase.messaging.default_notification_icon" android:resource="@drawable/ic_stat_word_conquest" />\n        <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="game_updates" />\n        <activity`);
+if(!manifest.includes('firebase_messaging_auto_init_enabled'))manifest=manifest.replace('<activity','<meta-data android:name="firebase_messaging_auto_init_enabled" android:value="false" />\n        <activity');
 fs.writeFileSync('android/app/src/main/AndroidManifest.xml',manifest);
 fs.mkdirSync('android/app/src/main/res/drawable',{recursive:true});
 fs.writeFileSync('android/app/src/main/res/drawable/ic_stat_word_conquest.xml',`<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24"><path android:fillColor="#FFFFFFFF" android:pathData="M3,5 L6,5 L8,15 L10.5,7 L13.5,7 L16,15 L18,5 L21,5 L17.5,20 L14.5,20 L12,12 L9.5,20 L6.5,20 Z" /></vector>`);

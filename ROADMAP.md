@@ -100,3 +100,8 @@ Official references:
 - Flutter platform support: https://docs.flutter.dev/platform-integration/web
 
 The client framework does not replace the game server, storage, identity, or notification service. Choose those separately after defining the first online milestone.
+
+Android update: opt-in FCM delivery, registration/logout handling and retry queue
+are implemented and deployed. Automatic versioned APK builds pass in GitHub Actions.
+Native notification acceptance remains unchecked until a Seeker receives a real
+background push and opens the correct game. See docs/ANDROID.md for builds and tests.

@@ -4,9 +4,11 @@ Not approved for public release until the operator name, support address, hostin
 region, backup destination and retention have been confirmed in SETUP.md.
 
 The app stores an email address for confirmed login and recovery in Supabase Auth,
-a player-chosen display name, email reminder preference, game boards and moves,
+a player-chosen display name, game boards and moves,
 invitation capabilities, and an inbox. No contacts upload, public directory,
-advertising, chat, device identifiers or analytics scripts are included.
+advertising, chat or analytics scripts are included. Optional Android push stores
+a random installation ID and FCM registration token, linked to the signed-in account.
+Firebase messaging auto-initialization is off until the user enables notifications.
 
 Only participants can read their game records. The game API exposes names only to
 participants and a minimal inviter name to an authenticated invitation-link holder.
@@ -15,10 +17,13 @@ to expire in seven days. Logs contain request IDs and error categories, never to
 email addresses, board contents or request bodies. Supabase's own platform logs may
 contain connection metadata under its platform policy.
 
-Resend is the existing sender for confirmation, recovery and opt-in reminders.
-Reminders contain a generic update and game link, not the opponent's name or word.
-Zoho receives support messages at the owner's chosen address. No mail was sent in
-development. Enabling the app's email preference does not subscribe to marketing.
+Resend sends signup confirmation and recovery mail. Turn-alert emails are out of
+scope. Google Firebase Cloud Messaging delivers opted-in Android game alerts;
+payloads contain a generic message, event ID and game reference, not emails or words.
+Google handles installation identifiers and delivery metadata. Disable alerts in
+Account or Android Settings. Sign-out disables the device registration; deletion
+removes its registration and queued deliveries. Pilot support is through the inviter;
+the owner deferred a dedicated inbox. No notification preference enables marketing.
 
 The Account screen exports the profile and all shared game snapshots, whose logs
 contain played words and scoring. Account deletion requires explicit typed confirmation
