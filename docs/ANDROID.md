@@ -18,7 +18,7 @@ Open the downloaded APK and allow installation from your browser if Android asks
 Updates install over the existing pilot app; do not uninstall it, because that
 removes locally saved sessions and pending actions.
 
-In Word Conquest, open **Account > Enable notifications** and accept Android's
+In Word Conquest, open **You > Notifications > Enable notifications** and accept Android's
 permission prompt. Preferences are per account and phone. Turning notifications
 off disables server delivery; signing out disables registration and removes
 delivered notifications. Signing in again restores a previously enabled preference.

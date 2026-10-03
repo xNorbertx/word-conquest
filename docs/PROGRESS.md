@@ -170,3 +170,16 @@ An anonymous download returned HTTP 200 and matched the previously verified
 SHA-256 checksum. Phone users can now use Releases > Assets without a GitHub
 account. CI build artifacts remain available separately behind GitHub sign-in.
 No app-store publication or new paid service was involved.
+
+## UX overhaul - 4 October
+
+Rebuilt the online client around Games, Activity and You, focused word play,
+contextual sheets and one primary action per flow. Removed folds and persistent
+technical clutter. Added accessible SVG icons, selection order, ownership rings,
+clearer pending/retry feedback, quiet waiting states and compact records.
+Updated Android launcher/splash to match. Package version is 0.3.0.
+All three original rule suites and 23 integration/service/presentation tests pass;
+local Android compilation passes. Controlled browser checks include one-commit
+lost-response recovery, stale boards, rejected words, jokers, game navigation,
+profile/activity, final results and agreed draw. See docs/UX.md for the scope and
+remaining physical-device/owner acceptance. Publication evidence follows below.

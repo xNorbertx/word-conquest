@@ -1,6 +1,6 @@
 # Word Conquest — app roadmap
 
-Updated: 3 October 2026
+Updated: 4 October 2026
 
 This is an acceptance checklist. The original local two-player prototype remains
 available; a separate online implementation now exists. Rules remain experimental.
@@ -24,6 +24,10 @@ Owner advanced Android packaging and push ahead of remaining reliability work.
 The build pipeline is ready; next mobile acceptance is real Seeker delivery,
 notification taps and an in-place APK upgrade. Engineering work still includes
 interrupted submissions, resume/session recovery, backup/restore and monitoring.
+
+UX revision 0.3.0: rebuilt navigation, board presentation, invitations, identity,
+activity and account screens. Browser checks and regression suites pass; owner
+visual review and physical-phone acceptance remain open. See [UX review](docs/UX.md).
 
 First milestone: invite a friend and reliably finish a game over several days.
 

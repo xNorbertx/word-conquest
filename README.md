@@ -2,7 +2,7 @@
 
 A territory word game with a preserved local prototype and a separate online implementation.
 
-## Online implementation (backend deployed; frontend local)
+## Online web and Android pilot
 
 The original root `index.html` still works without dependencies or accounts. The new
 `online/` client uses the approved Autumn Sunday direction; Supabase supplies identity,
