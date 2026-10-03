@@ -20,6 +20,11 @@ if(!gradle.includes('WC_ANDROID_KEYSTORE'))gradle=gradle.replace('    buildTypes
         }
     }
     buildTypes {`);
+if(!gradle.includes('signingConfig signingConfigs.debug'))gradle=gradle.replace('    buildTypes {',`    buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+        }`);
+if(!gradle.includes('WC_ANDROID_KEYSTORE')||!gradle.includes('signingConfig signingConfigs.debug'))throw Error('Android signing configuration was not applied');
 fs.writeFileSync('android/app/build.gradle',gradle);
 let manifest=fs.readFileSync('android/app/src/main/AndroidManifest.xml','utf8').replace('android:allowBackup="true"','android:allowBackup="false"');
 if(!manifest.includes('ic_stat_word_conquest'))manifest=manifest.replace('<activity',`<meta-data android:name="com.google.firebase.messaging.default_notification_icon" android:resource="@drawable/ic_stat_word_conquest" />\n        <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="game_updates" />\n        <activity`);
