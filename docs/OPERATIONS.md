@@ -130,3 +130,7 @@ was purchased. Always-on production and enrollment fees need explicit owner appr
 Rollback the static deployment to the previous prototype artifact; leave database
 and history intact. Server rollback must still serve all in-progress rules versions.
 Never delete receipts or reset games as a rollback tactic.
+
+## Live updates
+
+Migration 202610030001_live_games.sql adds only public.games to supabase_realtime. Existing participant SELECT RLS controls delivery. Client supplies the current Auth token, removes the channel on sign-out/account change, and reloads through game-api instead of applying event payloads. Polling remains a fallback. Uses existing Supabase Realtime allowance; monitor usage in the project dashboard before expanding the pilot. No paid plan enabled.

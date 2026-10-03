@@ -5,6 +5,18 @@ const configured=!!(cfg.supabaseUrl && cfg.supabaseAnonKey);
 const db=configured?createClient(cfg.supabaseUrl,cfg.supabaseAnonKey):null;
 let user=null,game=null,history=[],invite=null,selection=[],jokers={},busy=false,preview=false,recovering=false,dragging=false;
 let currentView='auth',homeData=null,polling=false,gameLoad=0;
+let liveChannel=null,liveUser=null,refreshQueued=false;
+async function connectLiveUpdates(session){
+  if(session?.access_token)await db.realtime.setAuth(session.access_token);
+  if(session?.user?.id!==user?.id)return;
+  if(liveUser===user?.id)return;
+  if(liveChannel){void db.removeChannel(liveChannel);liveChannel=null;}
+  liveUser=user?.id || null;
+  if(!liveUser)return;
+  liveChannel=db.channel(`games:${liveUser}`).on('postgres_changes',
+    {event:'UPDATE',schema:'public',table:'games'},()=>{refreshQueued=true;void poll();})
+    .subscribe(state=>{if(state==='SUBSCRIBED'){refreshQueued=true;void poll();}});
+}
 const params=new URLSearchParams(location.search);
 if(params.get('invite'))localStorage.setItem('wc-invitation',params.get('invite'));
 const screens=['setup','auth','recovery','home','account','game'];
@@ -144,7 +156,7 @@ async function sendPending(){
       if(user?.id===sentUser && game?.id===sentGame){selection=[];jokers={};await openGame(sentGame,true).catch(()=>{});}
     }
     if(user?.id===sentUser)status(e.message || 'Connection interrupted. Your action is saved here; retry to confirm it.',true);
-  }finally{busy=false;if(game && currentView==='game')renderGame();}
+  }finally{busy=false;if(game && currentView==='game')renderGame();if(refreshQueued)void poll();}
 }
 async function action(kind){
   if(preview || busy || pending())return;
@@ -196,13 +208,13 @@ $('board').onpointermove=e=>{if(dragging)choose(tileAt(e.clientX,e.clientY));};
 for(const event of ['pointerup','pointercancel','lostpointercapture'])$('board').addEventListener(event,()=>{dragging=false;});
 $('board').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();const id=e.target.dataset.id;choose(id);[...$('board').querySelectorAll('[data-id]')].find(n=>n.dataset.id===id)?.focus();}};
 $('preview-button').onclick=()=>{preview=true;game={id:'preview',state:Engine.newGame(config),status:'active',players:[],names:['You','Alex'],revision:0};history=[];invite=null;selection=[];jokers={};screen('game');renderGame();status('Design preview only — connect the service for saved online play.');};
-async function poll(){if(polling || busy || !user || document.hidden || recovering)return;polling=true;try{if(currentView==='game')await openGame(game.id,true);else if(currentView==='home')await showHome(true);}catch{status('Unable to refresh. Your last loaded board remains visible; reconnect before playing.',true);}finally{polling=false;}}
+async function poll(){if(polling || busy || !user || document.hidden || recovering)return;polling=true;refreshQueued=false;try{if(currentView==='game')await openGame(game.id,true);else if(currentView==='home')await showHome(true);}catch{status('Unable to refresh. Your last loaded board remains visible; reconnect before playing.',true);}finally{polling=false;if(refreshQueued)void poll();}}
 window.addEventListener('online',()=>run(poll));window.addEventListener('offline',()=>status('Offline. Accepted moves stay saved. A pending move must be retried when connected.',true));window.addEventListener('focus',()=>run(poll));document.addEventListener('visibilitychange',()=>{if(!document.hidden)run(poll);});setInterval(poll,20000);
 $('privacy-contact').textContent=cfg.operatorName && cfg.supportEmail?`Operated by ${cfg.operatorName}. Support and privacy: ${cfg.supportEmail}`:'Private friend pilot. For help, contact the person who invited you.';
 if(!db){screen('setup');status('Online service not connected. The original prototype is still available.');}
 else {
   db.auth.onAuthStateChange((event,session)=>{
-    const previousUser=user?.id;user=session?.user || null;
+    const previousUser=user?.id;user=session?.user || null;setTimeout(()=>run(()=>connectLiveUpdates(session)),0);
     if(event==='PASSWORD_RECOVERY'){recovering=true;screen('recovery');return;}
     if(!user){screen('auth');$('invitation').hidden=true;status('Sign in to return to your games.');return;}
     if(recovering || !['SIGNED_IN','INITIAL_SESSION'].includes(event) || (previousUser===user.id && currentView!=='auth'))return;
