@@ -145,8 +145,18 @@ Added a GitHub Actions source-push APK workflow, stable pilot signing, reproduci
 native preparation, increasing version codes and downloadable artifact metadata.
 Workflow execution status is recorded after its first run. See docs/ANDROID.md.
 
-The first GitHub Actions Android APK run passed:
-https://github.com/xNorbertx/word-conquest/actions/runs/37154178426
+Verified Android APK pipeline run (supersedes the initial compilation-only runs):
+https://github.com/xNorbertx/word-conquest/actions/runs/37155587261
+Version `0.2.0-10135a0`, version code `23837708`, 4,910,205 bytes. Downloaded the
+actual CI artifact and independently verified its checksum, original pilot signing
+certificate, package/version metadata, notification permission and absence of PEM
+private-key material. Local copy: `dist/word-conquest-0.2.0.apk`.
+APK SHA-256: `b7aecff58ff1457e5013e829ce83a44bfcedbbeeb223e39f144296bb3c0ea6ba`.
+The first CI artifacts used a runner-generated signing identity; use the verified
+run above or a later successful run. CI now checks both the supplied key and the
+resulting APK certificate before upload. Source changes trigger builds; docs-only
+changes do not. APK installation remains manual; no public store release occurred.
+
 Native-origin hosted API registration and disable passed with an isolated test
 identity; client token-table reads were denied. The test registration remains
 explicitly disabled. Local APK signature verified. Physical Seeker delivery and

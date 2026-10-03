@@ -11,16 +11,19 @@ and real-device acceptance checks pass, not merely because source code was writt
 Current status: web app published on GitHub Pages, authoritative Supabase backend
 deployed, and authentication email delivered successfully through Resend. Automated
 hosted play completed 36 turns; owner reported a real 20-action play session on
-3 October. Live updates and visible game exit controls are deployed.
+3 October. Live updates and visible game exit controls are deployed. Android push
+is implemented/deployed and a versioned, signed pilot APK passed GitHub Actions.
+Physical Seeker notification and upgrade acceptance remains pending.
 
 Owner decisions: no turn-alert emails for this iteration; retain authentication
 confirmation/recovery email. In-app updates serve the web pilot; native push is the
 mobile notification goal. Owner will run the multi-day playtest and report results.
 Keep letter distribution unchanged; record consonant-heavy play as feedback.
 
-Next engineering priority: exercise interrupted submissions and resume/session
-recovery, then establish backup/restore and monitoring. Mobile packaging and push
-follow once the reliability checks and required build environment are ready.
+Owner advanced Android packaging and push ahead of remaining reliability work.
+The build pipeline is ready; next mobile acceptance is real Seeker delivery,
+notification taps and an in-place APK upgrade. Engineering work still includes
+interrupted submissions, resume/session recovery, backup/restore and monitoring.
 
 First milestone: invite a friend and reliably finish a game over several days.
 
@@ -47,6 +50,7 @@ First milestone: invite a friend and reliably finish a game over several days.
 
 ## Must-have when the relevant feature launches
 
+- [x] Android pilot build automation: reproducible Capacitor APKs, increasing versions, stable pilot signing, tests and downloadable artifacts on source pushes. This does not complete device acceptance or app-store signing.
 - [ ] Public opponents or free-text messaging: blocking, reporting, abuse handling, and appropriate moderation controls.
 - [ ] App-store distribution: signing and release setup, icons/screenshots/listings, required privacy disclosures, device testing, and an update process. Check platform requirements when preparing the release.
 

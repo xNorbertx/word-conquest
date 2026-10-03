@@ -116,4 +116,11 @@ Run the dependency-free checks with `node engine.test.cjs`, `node scoring.test.c
 
 ## GitHub Pages
 
-Publish from the `main` branch, repository root. All asset references are relative so the prototype works under a repository Pages URL.
+The deployed site publishes from the `gh-pages` branch. The original prototype
+remains at the site root; the Supabase-backed app is at `/word-conquest/online/`.
+Development source currently lives on `codex/async-friend-play`.
+
+## Android pilot
+
+See [Android builds and push notifications](docs/ANDROID.md) for the verified APK,
+automatic GitHub Actions builds, installation, local builds and device checks.

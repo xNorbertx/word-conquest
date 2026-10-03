@@ -3,6 +3,11 @@
 Target test phone: Solana Seeker / Android 16. Package: `com.wordconquest.app`.
 The APK uses the same Supabase accounts and games as the web app.
 
+Verified pilot build: `0.2.0-10135a0` (version code `23837708`), from
+[this successful pipeline run](https://github.com/xNorbertx/word-conquest/actions/runs/37155587261).
+Local APK: `dist/word-conquest-0.2.0.apk`. Earlier compilation-only artifacts are
+superseded; use this build or a later successful build for the stable pilot signer.
+
 ## Install and use
 
 Download the APK artifact from the latest successful **Android APK** run:
@@ -79,7 +84,9 @@ alerts for a game, but a delivery whose acknowledgment was lost may be retried.
 
 Edge Function `push` uses secrets `FCM_SERVICE_ACCOUNT_JSON` and `PUSH_SECRET`.
 The game API wakes it after successful invitation/turn transactions; `wc-push-retry`
-Cron calls it once a minute as a fallback using Vault secret `wc_push_secret`.
+Cron checks once a minute and invokes it only when deliveries are due, using Vault
+secret `wc_push_secret`. Reapply `supabase/operations/schedule-push.sql` to restore
+that named schedule; it preserves the queue and games.
 The email worker remains dormant. Inspect delivery outcome counts, not tokens.
 Invalidated tokens are disabled; renewed tokens register on app resume/sign-in.
 No paid plan enabled; monitor Supabase function/database and FCM usage limits.
