@@ -1,6 +1,6 @@
 # Word Conquest — app roadmap
 
-Updated: 29 September 2026
+Updated: 3 October 2026
 
 This is an acceptance checklist. The original local two-player prototype remains
 available; a separate online implementation now exists. Rules remain experimental.
@@ -8,15 +8,19 @@ See [implementation and verification status](docs/PROGRESS.md) and the single
 [manual setup checklist](docs/SETUP.md). Boxes remain unchecked until their hosted
 and real-device acceptance checks pass, not merely because source code was written.
 
-Implementation progress: authoritative Supabase game API and SQL transactions,
-versioned engine/dictionary, identity/recovery UI, invitations, game lists, recaps,
-saved retry IDs, inbox/email worker, lifecycle, grouped stats, account controls and
-Autumn Sunday client are built locally. Original tests plus 14 new integration/
-service tests pass. Android Capacitor project generated and synced; no APK/IPA.
-Update 30 September: Supabase access configured, database and functions deployed,
-local app connected, and full hosted 36-turn game verified. Email configuration,
-privacy/operator details, public frontend hosting, backup/monitoring setup and
-real-device multi-day play are still required. No new spending or public release.
+Current status: web app published on GitHub Pages, authoritative Supabase backend
+deployed, and authentication email delivered successfully through Resend. Automated
+hosted play completed 36 turns; owner reported a real 20-action play session on
+3 October. Live updates and visible game exit controls are deployed.
+
+Owner decisions: no turn-alert emails for this iteration; retain authentication
+confirmation/recovery email. In-app updates serve the web pilot; native push is the
+mobile notification goal. Owner will run the multi-day playtest and report results.
+Keep letter distribution unchanged; record consonant-heavy play as feedback.
+
+Next engineering priority: exercise interrupted submissions and resume/session
+recovery, then establish backup/restore and monitoring. Mobile packaging and push
+follow once the reliability checks and required build environment are ready.
 
 First milestone: invite a friend and reliably finish a game over several days.
 
@@ -25,20 +29,21 @@ First milestone: invite a friend and reliably finish a game over several days.
 - [ ] Product design: a coherent visual identity, readable board, clear score breakdown, selection feedback, loading/error states, and a short introduction to the rules.
 - [ ] Mobile and accessible interaction: comfortable touch targets, different screen sizes, clear joker entry, and ownership indicators that do not rely only on color.
 - [ ] Persistent player identity: sign-in, a simple profile/name, account recovery, and access to the same games across devices.
-- [ ] Persistent game service: save the board, letters, ownership, scores, remaining letter budget, current player, rules, and move history so games survive closing the app.
-- [ ] Server-authoritative play: validate players, turn order, paths, words, captures, and scores on the server; generate replacement letters there too. A modified client must not be able to award itself points.
+- [x] Persistent game service: save the board, letters, ownership, scores, remaining letter budget, current player, rules, and move history so games survive closing the app.
+- [x] Server-authoritative play: validate players, turn order, paths, words, captures, and scores on the server; generate replacement letters there too. A modified client must not be able to award itself points.
 - [ ] Reliable turn submission: retries cannot submit the same move twice; reconnecting restores the accepted state; stale boards cannot overwrite newer turns. Clearly distinguish pending and accepted moves.
 - [ ] Invitations: share a link or code, accept or decline, and cancel unaccepted invitations. Opening an invitation should lead to the right game after sign-in.
 - [ ] Game list: show invitations, active games, whose turn it is, and completed games.
-- [ ] Turn and invitation notifications, with preferences and links to the relevant game.
+- [x] Web pilot notifications: in-app inbox and live game updates, with participant-only access. Turn-alert email is out of scope by owner decision.
+- [ ] Mobile notifications: native push for turns/invitations, preferences, and links to the relevant game; verify permissions, background delivery and logout/token cleanup on devices.
 - [ ] Opponent-move recap: show the word, traced path, captures, score changes, and replaced letters when returning to a game.
 - [ ] English dictionary validation: choose a word list with suitable usage rights. Define treatment of inflections, slang, proper nouns, abbreviations, and offensive words. Explain rejected words clearly.
 - [ ] Game lifecycle rules: define resignation, draws, inactive opponents, and abandonment, including their effect on statistics. Make the ending and final-reply rule clear.
 - [ ] Basic statistics: wins, losses, draws, highest final score, and best-scoring turn/word. Record completed games and moves so richer statistics can be added later; do not count a result twice.
-- [ ] Versioned rules and dictionaries: games retain the versions they started with. Keep records comparable by separating statistics for materially different rulesets and languages.
+- [x] Versioned rules and dictionaries: games retain the versions they started with. Keep records comparable by separating statistics for materially different rulesets and languages.
 - [ ] Privacy and account controls: decide what profile/results information is public, collect only needed data, and provide account/data deletion.
 - [ ] Operational basics: backups and recovery, error reporting, service monitoring, and a way to investigate a broken game or receive a bug report.
-- [ ] Verification before release: scoring and rule tests, interrupted-submission/reconnection checks, and real-device playtests of a complete asynchronous game.
+- [ ] Verification before release (owner is handling the multi-day playtest; engineering handles interruption/resume tests): scoring and rule tests, interrupted-submission/reconnection checks, and real-device playtests of a complete asynchronous game.
 
 ## Must-have when the relevant feature launches
 
@@ -80,7 +85,7 @@ Keep these configurable and evaluate them through playtests rather than treating
 
 1. Define the first app's screens, dictionary policy, and game lifecycle.
 2. Complete the friend-play loop: identity, invitations, authoritative saved games, dictionary, game list, recap, and reliable submissions.
-3. Add notifications, basic statistics, account controls, monitoring, and full asynchronous playtesting.
+3. Finish reliability acceptance, backup/restore, monitoring and full asynchronous playtesting; statistics and account controls already have implementation/test coverage.
 4. Prepare mobile distribution once the complete loop works reliably.
 5. Add later features in response to actual player needs.
 

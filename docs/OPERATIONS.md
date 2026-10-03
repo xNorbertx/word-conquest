@@ -58,7 +58,11 @@ Host **contents of dist/** on the existing static host. This keeps the root prot
 and adds `/online/`. Do not publish raw source `online/app.js`, which needs bundling.
 GitHub Pages publishes built files from `gh-pages` at `/`. For updates: run tests and build locally, clone the existing `gh-pages` branch into an isolated directory, copy only contents of `dist/` there, retain `.nojekyll`, inspect the diff, commit and push without force. Never publish the source tree or server secrets. Verify all public assets and the root prototype after the Pages build completes. Roll back by reverting the deployment commit in that branch. Source work is in `codex/async-friend-play`; main remains the prototype. No paid runner or hosting plan was enabled.
 
-## Mail and scheduling
+## Authentication mail and deferred turn-email worker
+
+Owner decision, 3 October: do not enable turn-alert emails or their scheduler.
+The worker instructions below are retained only for a future explicit scope change.
+Authentication SMTP is configured and recovery email receipt is verified.
 
 Reuse Resend for SMTP confirmation/recovery, sending from `no_reply@word-conquest.com`. The owner deferred a support inbox for the private friend pilot; friends can contact their inviter. Zoho receiving setup is not a pilot blocker.
 For optional event email, set RESEND_API_KEY, MAIL_FROM, APP_URL, NOTIFY_SECRET in

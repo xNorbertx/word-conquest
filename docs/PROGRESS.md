@@ -1,4 +1,4 @@
-# Implementation and verification — updated 2 October 2026
+# Implementation and verification — updated 3 October 2026
 
 ## Web publishing - 2 October
 
@@ -8,8 +8,9 @@
 - Supabase public CORS, APP_URL and Auth Site URL configured; localhost retained.
 - All three original test suites and 14 integration tests pass.
 - Support inbox deferred by owner; sender chosen as no_reply@word-conquest.com.
-- SMTP/domain verification, email delivery, multi-device/multi-day acceptance,
-  notification scheduling and backup/restore acceptance remain outstanding.
+- Authentication email delivery confirmed by owner on 3 October. Full signup/reset
+  flow acceptance, multi-device/multi-day testing and backup/restore remain.
+- Turn-alert email and its scheduling are out of scope by owner decision.
 - No new paid plan enabled; existing hosting free-tier limits still apply.
 
 ## Hosted backend connected — 30 September
@@ -30,8 +31,9 @@
   were generated and held only in process memory, never logged or committed.
 - Reproducible opt-in test: `node scripts/hosted-smoke.mjs aumiyyjsdqdazzmdmprl --create-test-data`.
   Each run creates additional test data; do not run routinely or against another project.
-- Resend domain verification and SMTP are still pending. No reminder credentials or
-  scheduled delivery job enabled. No paid plans or store releases. Public frontend publishing followed on 2 October.
+- At this September checkpoint SMTP was pending; on 3 October configured SMTP
+  was verified and the owner confirmed receipt of a recovery email. No turn-email
+  delivery job enabled or required for the current scope. No paid plans or store releases. Public frontend publishing followed on 2 October.
 
 Local implementation and remaining acceptance work are detailed below.
 
@@ -67,31 +69,35 @@ Local implementation and remaining acceptance work are detailed below.
   lifecycle and deletion behavior.
 - Server tests cover actor spoofing, wrong turns, illegal words, client score injection,
   rules mismatch, missing dictionary, input bounds and authentication/origin rejection.
-- Notification tests cover secret enforcement, opt-out, failure retry, stable provider
-  idempotency and bounded delivery window. No real email sent.
+- Notification worker tests cover secret enforcement, opt-out, failure retry, stable provider
+  idempotency and bounded delivery window. Worker remains dormant/out of scope.
+  Separately, a real authentication recovery email was delivered on 3 October.
 - Browser preview inspected on desktop and narrow viewport; keyboard selection and
   joker input exercised. No horizontal document overflow observed on narrow layout.
 - Package audit after updating Capacitor to 7.6.9 reports zero known vulnerabilities.
 
 ## Explicitly incomplete / release gates
 
-- Hosted Auth/API/PostgREST tests pass with isolated confirmed test accounts. Real
-  signup confirmation and recovery email await Resend domain verification and SMTP.
+- Hosted Auth/API/PostgREST tests pass with isolated confirmed test accounts. Recovery
+  email delivery is verified; fresh signup and complete password reset/sign-in still
+  need explicit end-to-end acceptance.
 - Browser-level interrupted HTTP submission, cross-device session recovery and a
   human multi-day playtest remain required. The automated retry test is not a
   substitute for real-device network interruption testing.
-- No staging URL verified or deployed; GitHub remote exists, authenticated hosting
-  access was not found. No push or Pages setting change made.
-- No configured Cron, external monitor, backup job, restore drill or retention job.
-- Owner support/operator identity and privacy/retention approval remain outstanding.
+- Public web deployment verified at https://xnorbertx.github.io/word-conquest/online/.
+  No separate staging environment provisioned.
+- No external monitor, backup job, restore drill or retention job. Turn-email Cron
+  is no longer a requirement.
+- Dedicated support inbox deferred for friend pilot; operator details and
+  privacy/retention approval remain broader-release work.
 - No APK/IPA compiled, no signing, no physical-device testing. Android SDK absent;
   installed Java is 19, so a supported build JDK is also required. iOS needs Mac/Xcode. Native deep links, secure token-storage review and APNs/FCM
   are mobile release work; web links currently remain in the web app.
 - No public matchmaking/messaging, therefore their conditional moderation milestone
   is not launched. No public app-store release authorized.
 
-The first-online milestone must remain unaccepted until email, hosting, recovery and
-real-device checks above pass. Backend deployment alone is not release acceptance.
+The first-online milestone remains pending recovery-flow, operational and
+real-device acceptance; hosting and authentication email delivery are verified. Backend deployment alone is not release acceptance.
 
 ## Clear game exit - 3 October
 
@@ -100,3 +106,13 @@ Added a visible Cancel game / Quit game button above the board. Waiting games ca
 ## Live game updates - 3 October
 
 Games now publish updates through Supabase Realtime under the existing participant-only RLS policy. Authenticated clients reload authoritative state on changes and subscription recovery, retaining 20-second polling and focus/reconnect checks as fallback. Test subscriptions received updates for both isolated participants in 303 ms; outsider received none. All existing regression suites passed. Dictionary remains the unchanged 274,804-entry Letterpress-derived v1 snapshot added with the September backend.
+
+## Owner playtest and revised priorities - 3 October
+
+Owner reports real play with 20 actions (19 words and one refresh). This is human
+play evidence, not proof of multi-day recovery or of final-result correctness.
+Consonant-heavy distribution noted; no balancing change requested. Owner will
+run the multi-day test. Turn-alert emails are removed from iteration scope;
+authentication email stays, and native push is planned for mobile.
+Next: engineering interruption/resume/session tests, then backups/restore and
+monitoring. Visual design improvements are deferred.
