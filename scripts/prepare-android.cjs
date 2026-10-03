@@ -11,6 +11,15 @@ const sha=cp.execFileSync('git',['-c','safe.directory='+root.replaceAll('\\','/'
 const versionName=`${require('../package.json').version}-${sha}`;
 let gradle=fs.readFileSync('android/app/build.gradle','utf8');
 gradle=gradle.replace(/versionCode \d+/,`versionCode ${versionCode}`).replace(/versionName "[^"]+"/,`versionName "${versionName}"`);
+if(!gradle.includes('WC_ANDROID_KEYSTORE'))gradle=gradle.replace('    buildTypes {',`    signingConfigs {
+        debug {
+            storeFile file(System.getenv('WC_ANDROID_KEYSTORE') ?: new File(System.getProperty('user.home'), '.android/debug.keystore').absolutePath)
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+    }
+    buildTypes {`);
 fs.writeFileSync('android/app/build.gradle',gradle);
 let manifest=fs.readFileSync('android/app/src/main/AndroidManifest.xml','utf8').replace('android:allowBackup="true"','android:allowBackup="false"');
 if(!manifest.includes('ic_stat_word_conquest'))manifest=manifest.replace('<activity',`<meta-data android:name="com.google.firebase.messaging.default_notification_icon" android:resource="@drawable/ic_stat_word_conquest" />\n        <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="game_updates" />\n        <activity`);

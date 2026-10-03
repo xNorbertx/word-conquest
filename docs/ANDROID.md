@@ -50,6 +50,10 @@ builds on the same branch are cancelled. Build-only GitHub repository secrets:
   local and CI APKs share a signing identity. This key is for direct pilot builds,
   not a production store signing key. Never regenerate it for routine updates.
 
+CI explicitly selects that key using `WC_ANDROID_KEYSTORE` and verifies the APK
+certificate SHA-256 `306e097ad7c8d10fe0a5829e4e49420de84ac258e5056f9583447bdcc944c266`
+before upload. A build with a different certificate fails instead of publishing.
+
 The Firebase service-account private key is never uploaded to GitHub or bundled
 in the app. A future store release needs reviewed release signing and distribution.
 

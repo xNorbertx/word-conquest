@@ -14,6 +14,8 @@ jobs:
     # Standard runner in this public repository. Do not switch to a paid larger runner.
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      WC_ANDROID_KEYSTORE: ${{ runner.temp }}/word-conquest-pilot.keystore
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -34,8 +36,7 @@ jobs:
           const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
           if(!process.env.WC_PUBLIC_CONFIG || !process.env.ANDROID_DEBUG_KEYSTORE)throw Error('Android build configuration missing');
           fs.writeFileSync('online/config.local.js',process.env.WC_PUBLIC_CONFIG);
-          const folder=path.join(os.homedir(),'.android');fs.mkdirSync(folder,{recursive:true});
-          fs.writeFileSync(path.join(folder,'debug.keystore'),Buffer.from(process.env.ANDROID_DEBUG_KEYSTORE,'base64'),{mode:0o600});
+          fs.writeFileSync(process.env.WC_ANDROID_KEYSTORE,Buffer.from(process.env.ANDROID_DEBUG_KEYSTORE,'base64'),{mode:0o600});
           NODE
       - run: npm run build
       - name: Configure Android and Firebase
@@ -49,6 +50,9 @@ jobs:
         run: |
           chmod +x android/gradlew
           android/gradlew -p android assembleDebug --console=plain
+          signer=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -1)
+          cert=$("$signer" verify --print-certs android/app/build/outputs/apk/debug/app-debug.apk | sed -n 's/Signer #1 certificate SHA-256 digest: //p')
+          test "$cert" = "306e097ad7c8d10fe0a5829e4e49420de84ac258e5056f9583447bdcc944c266"
           mkdir -p apk
           cp android/app/build/outputs/apk/debug/app-debug.apk apk/word-conquest-android.apk
           cp dist/android-build.json apk/build.json
