@@ -128,3 +128,4 @@ build command: powershell -File scripts/build-android.ps1 (Node 24 bundled path)
 Firebase project selection/configuration is pending; Supabase remains the game
 backend and FCM is only Android push delivery. Native push is not complete yet.
 No APK has passed physical-device acceptance. No paid service enabled.
+`scripts/build-android.ps1` subsequently completed successfully, producing a debug APK with current native lifecycle changes. Push configuration and physical-device verification remain pending.
