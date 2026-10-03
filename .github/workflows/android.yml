@@ -57,8 +57,7 @@ jobs:
         run: |
           signer=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -1)
           "$signer" verify --print-certs android/app/build/outputs/apk/debug/app-debug.apk > /tmp/apk-certificates.txt
-          cat /tmp/apk-certificates.txt
-          cert=$(sed -n 's/^Signer .*certificate SHA-256 digest: //p' /tmp/apk-certificates.txt | sort -u)
+          cert=$(sed -n 's/^.* certificate SHA-256 digest: //p' /tmp/apk-certificates.txt | sort -u)
           echo "APK signing certificate SHA-256: $cert"
           test "$cert" = "306e097ad7c8d10fe0a5829e4e49420de84ac258e5056f9583447bdcc944c266"
           mkdir -p apk
