@@ -41,6 +41,7 @@ export function createHandler(db, settings={}) {
       if(authError || !auth?.user)throw new Fault('unauthorized','Sign in again to continue.',401);
       const actor=auth.user.id;
       const input=await readBody(req);
+      const wakePush=()=>{try{settings.wakePush?.();}catch{/* Cron retries the durable queue. */}};
       if(!unwrap(await db.rpc('wc_rate_limit',{p_actor:actor}))) throw new Fault('rate_limit','Please wait a minute before trying again.',429);
       unwrap(await db.from('profiles').upsert({id:actor},{onConflict:'id',ignoreDuplicates:true}));
       const profile=unwrap(await db.from('profiles').select('*').eq('id',actor).single());
@@ -79,6 +80,7 @@ export function createHandler(db, settings={}) {
           if(!uuid(input.token))throw new Fault('invalid_invite','Invalid invitation code.');
           if(!['preview','accept','decline','cancel'].includes(input.choice))throw new Fault('invalid_action','Choose an invitation action.');
           const result=unwrap(await db.rpc('wc_invitation',{p_actor:actor,p_token:input.token,p_action:input.choice}));
+          if(input.choice!=='preview')wakePush();
           return reply(input.choice==='preview'?{invitation:result}:{game:result});
         }
         case 'turn': {
@@ -92,7 +94,13 @@ export function createHandler(db, settings={}) {
           const {next,recap}=applyCommand(game,actor,input.command,dictionary,metadata.version,serverRandom);
           const result=unwrap(await db.rpc('wc_commit',{p_actor:actor,p_game:game.id,p_operation:input.command.operationId,
             p_fingerprint:fingerprint,p_expected:input.command.revision,p_next:next,p_recap:recap}));
-          result.game=await decorate(result.game);return reply(result);
+          wakePush();result.game=await decorate(result.game);return reply(result);
+        }
+        case 'push_device': {
+          if(!uuid(input.deviceId) || typeof input.enabled!=='boolean')throw new Fault('invalid_device','Invalid device registration.');
+          if(input.enabled && (typeof input.token!=='string' || input.token.length<20 || input.token.length>4096 || !/^[A-Za-z0-9_:\-]+$/.test(input.token)))throw new Fault('invalid_token','Invalid notification registration.');
+          unwrap(await db.rpc('wc_push_register',{p_actor:actor,p_device:input.deviceId,p_token:input.enabled?input.token:'',p_enabled:input.enabled}));
+          return reply({ok:true});
         }
         case 'profile': {
           const name=typeof input.name==='string'?input.name.trim():'';

@@ -8,3 +8,7 @@ verify_jwt = false
 [functions.notify]
 # Dedicated secret required in handler; no browser/session access.
 verify_jwt = false
+
+[functions.push]
+# Dedicated internal bearer secret, checked by handler.
+verify_jwt = false

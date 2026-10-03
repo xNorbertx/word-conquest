@@ -11,5 +11,6 @@ if(fs.existsSync('server/versions/LETTERPRESS-LICENSE.txt'))fs.appendFileSync('d
 Promise.all([
   esbuild.build({entryPoints:['online/app.js'],bundle:true,format:'esm',platform:'browser',target:'es2022',define:{module:'undefined'},outfile:'dist/online/app.js',minify:false}),
   esbuild.build({entryPoints:['server/api.mjs'],bundle:true,format:'esm',platform:'neutral',target:'es2022',define:{module:'undefined'},outfile:'supabase/functions/_shared/api.mjs'}),
-  esbuild.build({entryPoints:['server/notify.mjs'],bundle:true,format:'esm',platform:'neutral',target:'es2022',outfile:'supabase/functions/_shared/notify.mjs'})
+  esbuild.build({entryPoints:['server/notify.mjs'],bundle:true,format:'esm',platform:'neutral',target:'es2022',outfile:'supabase/functions/_shared/notify.mjs'}),
+  esbuild.build({entryPoints:['server/push.mjs'],bundle:true,format:'esm',platform:'neutral',target:'es2022',outfile:'supabase/functions/_shared/push.mjs'})
 ]).then(()=>console.log('Built prototype, online client and server function bundles.')).catch(e=>{console.error(e);process.exitCode=1;});

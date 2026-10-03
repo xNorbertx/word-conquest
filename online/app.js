@@ -1,5 +1,6 @@
 import {Capacitor} from '@capacitor/core';
 import {App} from '@capacitor/app';
+import {createPushControls} from './push.js';
 import {createClient} from '@supabase/supabase-js';
 import {Engine,config} from '../server/domain.mjs';
 const $=id=>document.getElementById(id), cfg=window.WC_CONFIG || {};
@@ -7,6 +8,15 @@ const configured=!!(cfg.supabaseUrl && cfg.supabaseAnonKey);
 const db=configured?createClient(cfg.supabaseUrl,cfg.supabaseAnonKey):null;
 let user=null,game=null,history=[],invite=null,selection=[],jokers={},busy=false,preview=false,recovering=false,dragging=false;
 let currentView='auth',homeData=null,polling=false,gameLoad=0;
+let notificationGame=null,authReady=false;
+const push=createPushControls({api,getUser:()=>user,onStatus:message=>{status(message);renderPush();},
+  onUpdate:()=>void poll(),onOpen:id=>{notificationGame=id;if(user && authReady && !recovering)void run(openNotification);}});
+async function openNotification(){if(notificationGame && user && !recovering){const id=notificationGame;notificationGame=null;await openGame(id);}}
+function renderPush(){
+  $('push-controls').hidden=!push.available;
+  $('enable-push').hidden=push.preferred();$('disable-push').hidden=!push.preferred();
+  $('push-state').textContent=push.preferred()?'Enabled on this phone.':'Get notified when your game has an update.';
+}
 let liveChannel=null,liveUser=null,refreshQueued=false;
 async function connectLiveUpdates(session){
   if(session?.access_token)await db.realtime.setAuth(session.access_token);
@@ -170,6 +180,7 @@ async function action(kind){
 }
 async function account(){
   if(!user)return;screen('account');const {profile}=await api({action:'home'});$('display-name').value=profile.display_name;$('email-notifications').checked=profile.email_notifications;
+  renderPush();
   const {statistics}=await api({action:'stats'});$('statistics').replaceChildren();
   if(!Object.keys(statistics).length)$('statistics').append(node('p','Finish a game to begin your record.'));
   for(const [version,s]of Object.entries(statistics)){const d=node('div');d.append(node('p',`${s.wins} wins · ${s.losses} losses · ${s.draws} draws`),node('p',`Highest final score ${s.highestFinalScore}. Best word ${s.bestWord || '—'} · ${s.bestTurn} word points.`),node('small',version));$('statistics').append(d);}
@@ -197,7 +208,9 @@ async function quitGame(){
 $('quit-game').onclick=$('cancel-invite').onclick=()=>run(quitGame);
 $('copy-invite').onclick=()=>run(async()=>{await navigator.clipboard.writeText($('share-link').value);status('Private invitation link copied.');});
 $('profile-form').onsubmit=e=>{e.preventDefault();run(async()=>{await api({action:'profile',name:$('display-name').value,emailNotifications:$('email-notifications').checked});status('Preferences saved.');});};
-$('signout').onclick=()=>run(async()=>{await db.auth.signOut();game=null;selection=[];$('password').value='';status('Signed out. Unconfirmed actions remain saved for this account.');});
+$('signout').onclick=()=>run(async()=>{await push.disable(false);notificationGame=null;await db.auth.signOut();game=null;selection=[];$('password').value='';status('Signed out. Unconfirmed actions remain saved for this account.');});
+$('enable-push').onclick=()=>run(async()=>{const b=$('enable-push');b.disabled=true;try{await push.enable();}finally{b.disabled=false;renderPush();}});
+$('disable-push').onclick=()=>run(async()=>{await push.disable();renderPush();status('Game notifications are off on this phone.');});
 $('export').onclick=()=>run(async()=>{const data=await api({action:'export'}),url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'})),a=node('a');a.href=url;a.download='word-conquest-data.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);status('Your data export is ready.');});
 $('delete-account').onclick=()=>run(async()=>{if($('delete-confirmation').value!=='DELETE'){status('Type DELETE to confirm.',true);return;}await api({action:'delete_account',confirmation:'DELETE'});for(const key of Object.keys(localStorage))if(key.startsWith(`wc-pending:${user.id}:`) || key===`wc-create:${user.id}`)localStorage.removeItem(key);await db.auth.signOut();status('Your account was deleted. Shared game history is anonymized.');});
 $('read-inbox').onclick=()=>run(async()=>{await api({action:'read_notifications'});await showHome(true);});
@@ -213,7 +226,8 @@ $('board').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();con
 $('preview-button').onclick=()=>{preview=true;game={id:'preview',state:Engine.newGame(config),status:'active',players:[],names:['You','Alex'],revision:0};history=[];invite=null;selection=[];jokers={};screen('game');renderGame();status('Design preview only — connect the service for saved online play.');};
 async function poll(){if(polling || busy || !user || document.hidden || recovering)return;polling=true;refreshQueued=false;try{if(currentView==='game')await openGame(game.id,true);else if(currentView==='home')await showHome(true);}catch{status('Unable to refresh. Your last loaded board remains visible; reconnect before playing.',true);}finally{polling=false;if(refreshQueued)void poll();}}
 if(Capacitor.isNativePlatform()){
-  void App.addListener('appStateChange',({isActive})=>{if(isActive)void poll();});
+  void push.initialize().catch(()=>status('Notifications are unavailable. Gameplay is still available.',true));
+  void App.addListener('appStateChange',({isActive})=>{if(isActive){void poll();void push.restore().catch(()=>{});}});
   void App.addListener('backButton',()=>{if(currentView!=='home' && user)void run(()=>showHome());else void App.minimizeApp();});
 }
 window.addEventListener('online',()=>run(poll));window.addEventListener('offline',()=>status('Offline. Accepted moves stay saved. A pending move must be retried when connected.',true));window.addEventListener('focus',()=>run(poll));document.addEventListener('visibilitychange',()=>{if(!document.hidden)run(poll);});setInterval(poll,20000);
@@ -222,10 +236,10 @@ if(!db){screen('setup');status('Online service not connected. The original proto
 else {
   db.auth.onAuthStateChange((event,session)=>{
     const previousUser=user?.id;user=session?.user || null;setTimeout(()=>run(()=>connectLiveUpdates(session)),0);
-    if(event==='PASSWORD_RECOVERY'){recovering=true;screen('recovery');return;}
-    if(!user){screen('auth');$('invitation').hidden=true;status('Sign in to return to your games.');return;}
+    if(event==='PASSWORD_RECOVERY'){authReady=false;recovering=true;screen('recovery');return;}
+    if(!user){authReady=false;screen('auth');$('invitation').hidden=true;status('Sign in to return to your games.');return;}
     if(recovering || !['SIGNED_IN','INITIAL_SESSION'].includes(event) || (previousUser===user.id && currentView!=='auth'))return;
     // Avoid nested Auth operations inside Supabase's synchronous auth callback.
-    setTimeout(()=>run(async()=>{if(recovering)return;await showHome();await showInvite();if(params.get('game') && $('invitation').hidden)await openGame(params.get('game'));}),0);
+    setTimeout(()=>run(async()=>{if(recovering)return;await showHome();await showInvite();authReady=true;if(notificationGame)await openNotification();else if(params.get('game') && $('invitation').hidden)await openGame(params.get('game'));void push.restore().catch(()=>status('Could not refresh notifications. You can retry in Account.',true));}),0);
   });
 }
