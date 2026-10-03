@@ -32,6 +32,536 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 ));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
+// node_modules/@capacitor/core/dist/index.js
+var ExceptionCode, CapacitorException, getPlatformId, createCapacitor, initCapacitorGlobal, Capacitor, registerPlugin, WebPlugin, encode, decode, CapacitorCookiesPluginWeb, CapacitorCookies, readBlobAsBase64, normalizeHttpHeaders, buildUrlParams, buildRequestInit, CapacitorHttpPluginWeb, CapacitorHttp;
+var init_dist = __esm({
+  "node_modules/@capacitor/core/dist/index.js"() {
+    (function(ExceptionCode2) {
+      ExceptionCode2["Unimplemented"] = "UNIMPLEMENTED";
+      ExceptionCode2["Unavailable"] = "UNAVAILABLE";
+    })(ExceptionCode || (ExceptionCode = {}));
+    CapacitorException = class extends Error {
+      constructor(message, code, data) {
+        super(message);
+        this.message = message;
+        this.code = code;
+        this.data = data;
+      }
+    };
+    getPlatformId = (win) => {
+      var _a, _b;
+      if (win === null || win === void 0 ? void 0 : win.androidBridge) {
+        return "android";
+      } else if ((_b = (_a = win === null || win === void 0 ? void 0 : win.webkit) === null || _a === void 0 ? void 0 : _a.messageHandlers) === null || _b === void 0 ? void 0 : _b.bridge) {
+        return "ios";
+      } else {
+        return "web";
+      }
+    };
+    createCapacitor = (win) => {
+      const capCustomPlatform = win.CapacitorCustomPlatform || null;
+      const cap = win.Capacitor || {};
+      const Plugins = cap.Plugins = cap.Plugins || {};
+      const getPlatform = () => {
+        return capCustomPlatform !== null ? capCustomPlatform.name : getPlatformId(win);
+      };
+      const isNativePlatform = () => getPlatform() !== "web";
+      const isPluginAvailable = (pluginName) => {
+        const plugin = registeredPlugins.get(pluginName);
+        if (plugin === null || plugin === void 0 ? void 0 : plugin.platforms.has(getPlatform())) {
+          return true;
+        }
+        if (getPluginHeader(pluginName)) {
+          return true;
+        }
+        return false;
+      };
+      const getPluginHeader = (pluginName) => {
+        var _a;
+        return (_a = cap.PluginHeaders) === null || _a === void 0 ? void 0 : _a.find((h) => h.name === pluginName);
+      };
+      const handleError3 = (err) => win.console.error(err);
+      const registeredPlugins = /* @__PURE__ */ new Map();
+      const registerPlugin2 = (pluginName, jsImplementations = {}) => {
+        const registeredPlugin = registeredPlugins.get(pluginName);
+        if (registeredPlugin) {
+          console.warn(`Capacitor plugin "${pluginName}" already registered. Cannot register plugins twice.`);
+          return registeredPlugin.proxy;
+        }
+        const platform = getPlatform();
+        const pluginHeader = getPluginHeader(pluginName);
+        let jsImplementation;
+        const loadPluginImplementation = async () => {
+          if (!jsImplementation && platform in jsImplementations) {
+            jsImplementation = typeof jsImplementations[platform] === "function" ? jsImplementation = await jsImplementations[platform]() : jsImplementation = jsImplementations[platform];
+          } else if (capCustomPlatform !== null && !jsImplementation && "web" in jsImplementations) {
+            jsImplementation = typeof jsImplementations["web"] === "function" ? jsImplementation = await jsImplementations["web"]() : jsImplementation = jsImplementations["web"];
+          }
+          return jsImplementation;
+        };
+        const createPluginMethod = (impl, prop) => {
+          var _a, _b;
+          if (pluginHeader) {
+            const methodHeader = pluginHeader === null || pluginHeader === void 0 ? void 0 : pluginHeader.methods.find((m) => prop === m.name);
+            if (methodHeader) {
+              if (methodHeader.rtype === "promise") {
+                return (options) => cap.nativePromise(pluginName, prop.toString(), options);
+              } else {
+                return (options, callback) => cap.nativeCallback(pluginName, prop.toString(), options, callback);
+              }
+            } else if (impl) {
+              return (_a = impl[prop]) === null || _a === void 0 ? void 0 : _a.bind(impl);
+            }
+          } else if (impl) {
+            return (_b = impl[prop]) === null || _b === void 0 ? void 0 : _b.bind(impl);
+          } else {
+            throw new CapacitorException(`"${pluginName}" plugin is not implemented on ${platform}`, ExceptionCode.Unimplemented);
+          }
+        };
+        const createPluginMethodWrapper = (prop) => {
+          let remove2;
+          const wrapper = (...args) => {
+            const p = loadPluginImplementation().then((impl) => {
+              const fn = createPluginMethod(impl, prop);
+              if (fn) {
+                const p2 = fn(...args);
+                remove2 = p2 === null || p2 === void 0 ? void 0 : p2.remove;
+                return p2;
+              } else {
+                throw new CapacitorException(`"${pluginName}.${prop}()" is not implemented on ${platform}`, ExceptionCode.Unimplemented);
+              }
+            });
+            if (prop === "addListener") {
+              p.remove = async () => remove2();
+            }
+            return p;
+          };
+          wrapper.toString = () => `${prop.toString()}() { [capacitor code] }`;
+          Object.defineProperty(wrapper, "name", {
+            value: prop,
+            writable: false,
+            configurable: false
+          });
+          return wrapper;
+        };
+        const addListener = createPluginMethodWrapper("addListener");
+        const removeListener = createPluginMethodWrapper("removeListener");
+        const addListenerNative = (eventName, callback) => {
+          const call = addListener({ eventName }, callback);
+          const remove2 = async () => {
+            const callbackId = await call;
+            removeListener({
+              eventName,
+              callbackId
+            }, callback);
+          };
+          const p = new Promise((resolve) => call.then(() => resolve({ remove: remove2 })));
+          p.remove = async () => {
+            console.warn(`Using addListener() without 'await' is deprecated.`);
+            await remove2();
+          };
+          return p;
+        };
+        const proxy = new Proxy({}, {
+          get(_, prop) {
+            switch (prop) {
+              // https://github.com/facebook/react/issues/20030
+              case "$$typeof":
+                return void 0;
+              case "toJSON":
+                return () => ({});
+              case "addListener":
+                return pluginHeader ? addListenerNative : addListener;
+              case "removeListener":
+                return removeListener;
+              default:
+                return createPluginMethodWrapper(prop);
+            }
+          }
+        });
+        Plugins[pluginName] = proxy;
+        registeredPlugins.set(pluginName, {
+          name: pluginName,
+          proxy,
+          platforms: /* @__PURE__ */ new Set([...Object.keys(jsImplementations), ...pluginHeader ? [platform] : []])
+        });
+        return proxy;
+      };
+      if (!cap.convertFileSrc) {
+        cap.convertFileSrc = (filePath) => filePath;
+      }
+      cap.getPlatform = getPlatform;
+      cap.handleError = handleError3;
+      cap.isNativePlatform = isNativePlatform;
+      cap.isPluginAvailable = isPluginAvailable;
+      cap.registerPlugin = registerPlugin2;
+      cap.Exception = CapacitorException;
+      cap.DEBUG = !!cap.DEBUG;
+      cap.isLoggingEnabled = !!cap.isLoggingEnabled;
+      return cap;
+    };
+    initCapacitorGlobal = (win) => win.Capacitor = createCapacitor(win);
+    Capacitor = /* @__PURE__ */ initCapacitorGlobal(typeof globalThis !== "undefined" ? globalThis : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : typeof global !== "undefined" ? global : {});
+    registerPlugin = Capacitor.registerPlugin;
+    WebPlugin = class {
+      constructor() {
+        this.listeners = {};
+        this.retainedEventArguments = {};
+        this.windowListeners = {};
+      }
+      addListener(eventName, listenerFunc) {
+        let firstListener = false;
+        const listeners = this.listeners[eventName];
+        if (!listeners) {
+          this.listeners[eventName] = [];
+          firstListener = true;
+        }
+        this.listeners[eventName].push(listenerFunc);
+        const windowListener = this.windowListeners[eventName];
+        if (windowListener && !windowListener.registered) {
+          this.addWindowListener(windowListener);
+        }
+        if (firstListener) {
+          this.sendRetainedArgumentsForEvent(eventName);
+        }
+        const remove2 = async () => this.removeListener(eventName, listenerFunc);
+        const p = Promise.resolve({ remove: remove2 });
+        return p;
+      }
+      async removeAllListeners() {
+        this.listeners = {};
+        for (const listener in this.windowListeners) {
+          this.removeWindowListener(this.windowListeners[listener]);
+        }
+        this.windowListeners = {};
+      }
+      notifyListeners(eventName, data, retainUntilConsumed) {
+        const listeners = this.listeners[eventName];
+        if (!listeners) {
+          if (retainUntilConsumed) {
+            let args = this.retainedEventArguments[eventName];
+            if (!args) {
+              args = [];
+            }
+            args.push(data);
+            this.retainedEventArguments[eventName] = args;
+          }
+          return;
+        }
+        listeners.forEach((listener) => listener(data));
+      }
+      hasListeners(eventName) {
+        var _a;
+        return !!((_a = this.listeners[eventName]) === null || _a === void 0 ? void 0 : _a.length);
+      }
+      registerWindowListener(windowEventName, pluginEventName) {
+        this.windowListeners[pluginEventName] = {
+          registered: false,
+          windowEventName,
+          pluginEventName,
+          handler: (event) => {
+            this.notifyListeners(pluginEventName, event);
+          }
+        };
+      }
+      unimplemented(msg = "not implemented") {
+        return new Capacitor.Exception(msg, ExceptionCode.Unimplemented);
+      }
+      unavailable(msg = "not available") {
+        return new Capacitor.Exception(msg, ExceptionCode.Unavailable);
+      }
+      async removeListener(eventName, listenerFunc) {
+        const listeners = this.listeners[eventName];
+        if (!listeners) {
+          return;
+        }
+        const index2 = listeners.indexOf(listenerFunc);
+        this.listeners[eventName].splice(index2, 1);
+        if (!this.listeners[eventName].length) {
+          this.removeWindowListener(this.windowListeners[eventName]);
+        }
+      }
+      addWindowListener(handle) {
+        window.addEventListener(handle.windowEventName, handle.handler);
+        handle.registered = true;
+      }
+      removeWindowListener(handle) {
+        if (!handle) {
+          return;
+        }
+        window.removeEventListener(handle.windowEventName, handle.handler);
+        handle.registered = false;
+      }
+      sendRetainedArgumentsForEvent(eventName) {
+        const args = this.retainedEventArguments[eventName];
+        if (!args) {
+          return;
+        }
+        delete this.retainedEventArguments[eventName];
+        args.forEach((arg) => {
+          this.notifyListeners(eventName, arg);
+        });
+      }
+    };
+    encode = (str) => encodeURIComponent(str).replace(/%(2[346B]|5E|60|7C)/g, decodeURIComponent).replace(/[()]/g, escape);
+    decode = (str) => str.replace(/(%[\dA-F]{2})+/gi, decodeURIComponent);
+    CapacitorCookiesPluginWeb = class extends WebPlugin {
+      async getCookies() {
+        const cookies = document.cookie;
+        const cookieMap = {};
+        cookies.split(";").forEach((cookie) => {
+          if (cookie.length <= 0)
+            return;
+          let [key, value] = cookie.replace(/=/, "CAP_COOKIE").split("CAP_COOKIE");
+          key = decode(key).trim();
+          value = decode(value).trim();
+          cookieMap[key] = value;
+        });
+        return cookieMap;
+      }
+      async setCookie(options) {
+        try {
+          const encodedKey = encode(options.key);
+          const encodedValue = encode(options.value);
+          const expires = options.expires ? `; expires=${options.expires.replace("expires=", "")}` : "";
+          const path = (options.path || "/").replace("path=", "");
+          const domain = options.url != null && options.url.length > 0 ? `domain=${options.url}` : "";
+          document.cookie = `${encodedKey}=${encodedValue || ""}${expires}; path=${path}; ${domain};`;
+        } catch (error) {
+          return Promise.reject(error);
+        }
+      }
+      async deleteCookie(options) {
+        try {
+          document.cookie = `${options.key}=; Max-Age=0`;
+        } catch (error) {
+          return Promise.reject(error);
+        }
+      }
+      async clearCookies() {
+        try {
+          const cookies = document.cookie.split(";") || [];
+          for (const cookie of cookies) {
+            document.cookie = cookie.replace(/^ +/, "").replace(/=.*/, `=;expires=${(/* @__PURE__ */ new Date()).toUTCString()};path=/`);
+          }
+        } catch (error) {
+          return Promise.reject(error);
+        }
+      }
+      async clearAllCookies() {
+        try {
+          await this.clearCookies();
+        } catch (error) {
+          return Promise.reject(error);
+        }
+      }
+    };
+    CapacitorCookies = registerPlugin("CapacitorCookies", {
+      web: () => new CapacitorCookiesPluginWeb()
+    });
+    readBlobAsBase64 = async (blob) => new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64String = reader.result;
+        resolve(base64String.indexOf(",") >= 0 ? base64String.split(",")[1] : base64String);
+      };
+      reader.onerror = (error) => reject(error);
+      reader.readAsDataURL(blob);
+    });
+    normalizeHttpHeaders = (headers = {}) => {
+      const originalKeys = Object.keys(headers);
+      const loweredKeys = Object.keys(headers).map((k) => k.toLocaleLowerCase());
+      const normalized = loweredKeys.reduce((acc, key, index2) => {
+        acc[key] = headers[originalKeys[index2]];
+        return acc;
+      }, {});
+      return normalized;
+    };
+    buildUrlParams = (params2, shouldEncode = true) => {
+      if (!params2)
+        return null;
+      const output = Object.entries(params2).reduce((accumulator, entry) => {
+        const [key, value] = entry;
+        let encodedValue;
+        let item;
+        if (Array.isArray(value)) {
+          item = "";
+          value.forEach((str) => {
+            encodedValue = shouldEncode ? encodeURIComponent(str) : str;
+            item += `${key}=${encodedValue}&`;
+          });
+          item.slice(0, -1);
+        } else {
+          encodedValue = shouldEncode ? encodeURIComponent(value) : value;
+          item = `${key}=${encodedValue}`;
+        }
+        return `${accumulator}&${item}`;
+      }, "");
+      return output.substr(1);
+    };
+    buildRequestInit = (options, extra = {}) => {
+      const output = Object.assign({ method: options.method || "GET", headers: options.headers }, extra);
+      const headers = normalizeHttpHeaders(options.headers);
+      const type = headers["content-type"] || "";
+      if (typeof options.data === "string") {
+        output.body = options.data;
+      } else if (type.includes("application/x-www-form-urlencoded")) {
+        const params2 = new URLSearchParams();
+        for (const [key, value] of Object.entries(options.data || {})) {
+          params2.set(key, value);
+        }
+        output.body = params2.toString();
+      } else if (type.includes("multipart/form-data") || options.data instanceof FormData) {
+        const form = new FormData();
+        if (options.data instanceof FormData) {
+          options.data.forEach((value, key) => {
+            form.append(key, value);
+          });
+        } else {
+          for (const key of Object.keys(options.data)) {
+            form.append(key, options.data[key]);
+          }
+        }
+        output.body = form;
+        const headers2 = new Headers(output.headers);
+        headers2.delete("content-type");
+        output.headers = headers2;
+      } else if (type.includes("application/json") || typeof options.data === "object") {
+        output.body = JSON.stringify(options.data);
+      }
+      return output;
+    };
+    CapacitorHttpPluginWeb = class extends WebPlugin {
+      /**
+       * Perform an Http request given a set of options
+       * @param options Options to build the HTTP request
+       */
+      async request(options) {
+        const requestInit = buildRequestInit(options, options.webFetchExtra);
+        const urlParams = buildUrlParams(options.params, options.shouldEncodeUrlParams);
+        const url = urlParams ? `${options.url}?${urlParams}` : options.url;
+        const response = await fetch(url, requestInit);
+        const contentType = response.headers.get("content-type") || "";
+        let { responseType = "text" } = response.ok ? options : {};
+        if (contentType.includes("application/json")) {
+          responseType = "json";
+        }
+        let data;
+        let blob;
+        switch (responseType) {
+          case "arraybuffer":
+          case "blob":
+            blob = await response.blob();
+            data = await readBlobAsBase64(blob);
+            break;
+          case "json":
+            data = await response.json();
+            break;
+          case "document":
+          case "text":
+          default:
+            data = await response.text();
+        }
+        const headers = {};
+        response.headers.forEach((value, key) => {
+          headers[key] = value;
+        });
+        return {
+          data,
+          headers,
+          status: response.status,
+          url: response.url
+        };
+      }
+      /**
+       * Perform an Http GET request given a set of options
+       * @param options Options to build the HTTP request
+       */
+      async get(options) {
+        return this.request(Object.assign(Object.assign({}, options), { method: "GET" }));
+      }
+      /**
+       * Perform an Http POST request given a set of options
+       * @param options Options to build the HTTP request
+       */
+      async post(options) {
+        return this.request(Object.assign(Object.assign({}, options), { method: "POST" }));
+      }
+      /**
+       * Perform an Http PUT request given a set of options
+       * @param options Options to build the HTTP request
+       */
+      async put(options) {
+        return this.request(Object.assign(Object.assign({}, options), { method: "PUT" }));
+      }
+      /**
+       * Perform an Http PATCH request given a set of options
+       * @param options Options to build the HTTP request
+       */
+      async patch(options) {
+        return this.request(Object.assign(Object.assign({}, options), { method: "PATCH" }));
+      }
+      /**
+       * Perform an Http DELETE request given a set of options
+       * @param options Options to build the HTTP request
+       */
+      async delete(options) {
+        return this.request(Object.assign(Object.assign({}, options), { method: "DELETE" }));
+      }
+    };
+    CapacitorHttp = registerPlugin("CapacitorHttp", {
+      web: () => new CapacitorHttpPluginWeb()
+    });
+  }
+});
+
+// node_modules/@capacitor/app/dist/esm/web.js
+var web_exports = {};
+__export(web_exports, {
+  AppWeb: () => AppWeb
+});
+var AppWeb;
+var init_web = __esm({
+  "node_modules/@capacitor/app/dist/esm/web.js"() {
+    init_dist();
+    AppWeb = class extends WebPlugin {
+      constructor() {
+        super();
+        this.handleVisibilityChange = () => {
+          const data = {
+            isActive: document.hidden !== true
+          };
+          this.notifyListeners("appStateChange", data);
+          if (document.hidden) {
+            this.notifyListeners("pause", null);
+          } else {
+            this.notifyListeners("resume", null);
+          }
+        };
+        document.addEventListener("visibilitychange", this.handleVisibilityChange, false);
+      }
+      exitApp() {
+        throw this.unimplemented("Not implemented on web.");
+      }
+      async getInfo() {
+        throw this.unimplemented("Not implemented on web.");
+      }
+      async getLaunchUrl() {
+        return { url: "" };
+      }
+      async getState() {
+        return { isActive: document.hidden !== true };
+      }
+      async minimizeApp() {
+        throw this.unimplemented("Not implemented on web.");
+      }
+      async toggleBackButtonHandler() {
+        throw this.unimplemented("Not implemented on web.");
+      }
+    };
+  }
+});
+
 // node_modules/@supabase/node-fetch/browser.js
 var browser_exports = {};
 __export(browser_exports, {
@@ -1265,6 +1795,120 @@ var require_cjs = __commonJS({
   }
 });
 
+// online/app.js
+init_dist();
+
+// node_modules/@capacitor/app/dist/esm/index.js
+init_dist();
+var App = registerPlugin("App", {
+  web: () => Promise.resolve().then(() => (init_web(), web_exports)).then((m) => new m.AppWeb())
+});
+
+// online/push.js
+init_dist();
+
+// node_modules/@capacitor/push-notifications/dist/esm/index.js
+init_dist();
+var PushNotifications = registerPlugin("PushNotifications", {});
+
+// online/push.js
+function createPushControls({ api: api2, getUser, onOpen, onUpdate, onStatus }) {
+  const available = Capacitor.getPlatform() === "android";
+  let initialized = null, registration = null, deviceId = null, chain = Promise.resolve();
+  const key = (id) => `wc-push-enabled:${id}`;
+  const preferred = () => !!getUser() && localStorage.getItem(key(getUser().id)) === "true";
+  const serial = (fn) => {
+    const job = chain.then(fn);
+    chain = job.catch(() => {
+    });
+    return job;
+  };
+  function device() {
+    if (!deviceId) {
+      deviceId = localStorage.getItem("wc-push-device") || crypto.randomUUID();
+      localStorage.setItem("wc-push-device", deviceId);
+    }
+    return deviceId;
+  }
+  async function initialize() {
+    if (!available) return;
+    if (!initialized) initialized = (async () => {
+      await PushNotifications.createChannel({ id: "game_updates", name: "Game updates", description: "Turns, invitation responses and completed games", importance: 4, visibility: 0 });
+      await PushNotifications.addListener("registration", ({ value }) => {
+        if (registration) {
+          const r = registration;
+          registration = null;
+          r.resolve(value);
+        }
+      });
+      await PushNotifications.addListener("registrationError", () => {
+        if (registration) {
+          const r = registration;
+          registration = null;
+          r.reject(Error("Notifications could not connect. Please try again."));
+        }
+      });
+      await PushNotifications.addListener("pushNotificationReceived", () => onUpdate());
+      await PushNotifications.addListener("pushNotificationActionPerformed", ({ notification }) => {
+        const id = notification.data?.gameId;
+        if (typeof id === "string" && /^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(id)) onOpen(id);
+      });
+    })();
+    return initialized;
+  }
+  async function token() {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        registration = null;
+        reject(Error("Notification setup timed out. Please retry."));
+      }, 15e3);
+      registration = { resolve: (t) => {
+        clearTimeout(timer);
+        resolve(t);
+      }, reject: (e) => {
+        clearTimeout(timer);
+        reject(e);
+      } };
+      PushNotifications.register().catch((e) => {
+        registration?.reject(e);
+        registration = null;
+      });
+    });
+  }
+  const enable = () => serial(async () => {
+    if (!available || !getUser()) return;
+    const actor = getUser().id;
+    await initialize();
+    let permission = await PushNotifications.checkPermissions();
+    if (permission.receive === "prompt" || permission.receive === "prompt-with-rationale") permission = await PushNotifications.requestPermissions();
+    if (permission.receive !== "granted") throw Error("Allow notifications for Word Conquest in Android Settings to enable game alerts.");
+    const value = await token();
+    if (getUser()?.id !== actor) return;
+    await api2({ action: "push_device", deviceId: device(), token: value, enabled: true });
+    localStorage.setItem(key(actor), "true");
+    onStatus("Game notifications are enabled on this phone.");
+  });
+  const disable = (forget = true) => serial(async () => {
+    if (!available) return;
+    const actor = getUser()?.id;
+    if (actor && localStorage.getItem("wc-push-device")) await api2({ action: "push_device", deviceId: device(), enabled: false });
+    if (actor && forget) localStorage.removeItem(key(actor));
+    await PushNotifications.unregister();
+    await PushNotifications.removeAllDeliveredNotifications();
+  });
+  async function restore() {
+    if (!available || !getUser()) return;
+    await initialize();
+    if (!preferred()) return;
+    if ((await PushNotifications.checkPermissions()).receive !== "granted") {
+      await disable();
+      return;
+    }
+    await enable();
+  }
+  return { available, preferred, initialize, enable, disable, restore };
+}
+
 // node_modules/@supabase/functions-js/dist/module/helper.js
 var resolveFetch = (customFetch) => {
   let _fetch;
@@ -2330,13 +2974,13 @@ var RealtimeChannel = class _RealtimeChannel {
     } else {
       return new Promise((resolve) => {
         var _a2, _b2, _c;
-        const push = this._push(args.type, args, opts.timeout || this.timeout);
+        const push2 = this._push(args.type, args, opts.timeout || this.timeout);
         if (args.type === "broadcast" && !((_c = (_b2 = (_a2 = this.params) === null || _a2 === void 0 ? void 0 : _a2.config) === null || _b2 === void 0 ? void 0 : _b2.broadcast) === null || _c === void 0 ? void 0 : _c.ack)) {
           resolve("ok");
         }
-        push.receive("ok", () => resolve("ok"));
-        push.receive("error", () => resolve("error"));
-        push.receive("timeout", () => resolve("timed out"));
+        push2.receive("ok", () => resolve("ok"));
+        push2.receive("error", () => resolve("error"));
+        push2.receive("timeout", () => resolve("timed out"));
       });
     }
   }
@@ -2385,7 +3029,7 @@ var RealtimeChannel = class _RealtimeChannel {
    * Destroys and stops related timers.
    */
   teardown() {
-    this.pushBuffer.forEach((push) => push.destroy());
+    this.pushBuffer.forEach((push2) => push2.destroy());
     this.pushBuffer = [];
     this.rejoinTimer.reset();
     this.joinPush.destroy();
@@ -8194,6 +8838,34 @@ var currentView = "auth";
 var homeData = null;
 var polling = false;
 var gameLoad = 0;
+var notificationGame = null;
+var authReady = false;
+var push = createPushControls({
+  api,
+  getUser: () => user,
+  onStatus: (message) => {
+    status(message);
+    renderPush();
+  },
+  onUpdate: () => void poll(),
+  onOpen: (id) => {
+    notificationGame = id;
+    if (user && authReady && !recovering) void run(openNotification);
+  }
+});
+async function openNotification() {
+  if (notificationGame && user && !recovering) {
+    const id = notificationGame;
+    notificationGame = null;
+    await openGame(id);
+  }
+}
+function renderPush() {
+  $("push-controls").hidden = !push.available;
+  $("enable-push").hidden = push.preferred();
+  $("disable-push").hidden = !push.preferred();
+  $("push-state").textContent = push.preferred() ? "Enabled on this phone." : "Get notified when your game has an update.";
+}
 var liveChannel = null;
 var liveUser = null;
 var refreshQueued = false;
@@ -8223,6 +8895,7 @@ async function connectLiveUpdates(session) {
 }
 var params = new URLSearchParams(location.search);
 if (params.get("invite")) localStorage.setItem("wc-invitation", params.get("invite"));
+var authRedirect = () => Capacitor.isNativePlatform() ? "https://xnorbertx.github.io/word-conquest/online/" : location.origin + location.pathname;
 var screens = ["setup", "auth", "recovery", "home", "account", "game"];
 var status = (text, error = false) => {
   $("connection").textContent = text;
@@ -8444,7 +9117,7 @@ function renderGame() {
   $("game-label").textContent = preview ? "DESIGN PREVIEW" : `Turn ${game.state.turns.reduce((a, b) => a + b, 0) + 1}`;
   $("game-id").textContent = preview ? "Preview \u2014 no online game" : "Support reference: " + game.id;
   $("share").hidden = !invite;
-  if (invite) $("share-link").value = `${location.origin}${location.pathname}?invite=${invite.token}`;
+  if (invite) $("share-link").value = `${Capacitor.isNativePlatform() ? "https://xnorbertx.github.io/word-conquest/online/" : location.origin + location.pathname}?invite=${invite.token}`;
   $("quit-game").hidden = preview || !["invited", "active"].includes(game.status);
   $("quit-game").disabled = busy || !!pending();
   $("quit-game").textContent = game.status === "invited" ? "Cancel game" : "Quit game";
@@ -8542,6 +9215,7 @@ async function account() {
   const { profile } = await api({ action: "home" });
   $("display-name").value = profile.display_name;
   $("email-notifications").checked = profile.email_notifications;
+  renderPush();
   const { statistics } = await api({ action: "stats" });
   $("statistics").replaceChildren();
   if (!Object.keys(statistics).length) $("statistics").append(node("p", "Finish a game to begin your record."));
@@ -8560,13 +9234,13 @@ $("auth-form").onsubmit = (e) => {
 };
 $("signup").onclick = () => run(async () => {
   if (!$("auth-form").reportValidity()) return;
-  const { error } = await db.auth.signUp({ email: $("email").value, password: $("password").value, options: { emailRedirectTo: location.origin + location.pathname } });
+  const { error } = await db.auth.signUp({ email: $("email").value, password: $("password").value, options: { emailRedirectTo: authRedirect() } });
   if (error) throw error;
   status("Check your email to confirm your account, then sign in.");
 });
 $("recover").onclick = () => run(async () => {
   if (!$("email").reportValidity()) return;
-  const { error } = await db.auth.resetPasswordForEmail($("email").value, { redirectTo: location.origin + location.pathname });
+  const { error } = await db.auth.resetPasswordForEmail($("email").value, { redirectTo: authRedirect() });
   if (error) throw error;
   status("If an account exists, a recovery email will arrive shortly.");
 });
@@ -8633,11 +9307,28 @@ $("profile-form").onsubmit = (e) => {
   });
 };
 $("signout").onclick = () => run(async () => {
+  await push.disable(false);
+  notificationGame = null;
   await db.auth.signOut();
   game = null;
   selection = [];
   $("password").value = "";
   status("Signed out. Unconfirmed actions remain saved for this account.");
+});
+$("enable-push").onclick = () => run(async () => {
+  const b = $("enable-push");
+  b.disabled = true;
+  try {
+    await push.enable();
+  } finally {
+    b.disabled = false;
+    renderPush();
+  }
+});
+$("disable-push").onclick = () => run(async () => {
+  await push.disable();
+  renderPush();
+  status("Game notifications are off on this phone.");
 });
 $("export").onclick = () => run(async () => {
   const data = await api({ action: "export" }), url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" })), a = node("a");
@@ -8724,6 +9415,20 @@ async function poll() {
     if (refreshQueued) void poll();
   }
 }
+if (Capacitor.isNativePlatform()) {
+  void push.initialize().catch(() => status("Notifications are unavailable. Gameplay is still available.", true));
+  void App.addListener("appStateChange", ({ isActive }) => {
+    if (isActive) {
+      void poll();
+      void push.restore().catch(() => {
+      });
+    }
+  });
+  void App.addListener("backButton", () => {
+    if (currentView !== "home" && user) void run(() => showHome());
+    else void App.minimizeApp();
+  });
+}
 window.addEventListener("online", () => run(poll));
 window.addEventListener("offline", () => status("Offline. Accepted moves stay saved. A pending move must be retried when connected.", true));
 window.addEventListener("focus", () => run(poll));
@@ -8741,11 +9446,13 @@ if (!db) {
     user = session?.user || null;
     setTimeout(() => run(() => connectLiveUpdates(session)), 0);
     if (event === "PASSWORD_RECOVERY") {
+      authReady = false;
       recovering = true;
       screen("recovery");
       return;
     }
     if (!user) {
+      authReady = false;
       screen("auth");
       $("invitation").hidden = true;
       status("Sign in to return to your games.");
@@ -8756,7 +9463,15 @@ if (!db) {
       if (recovering) return;
       await showHome();
       await showInvite();
-      if (params.get("game") && $("invitation").hidden) await openGame(params.get("game"));
+      authReady = true;
+      if (notificationGame) await openNotification();
+      else if (params.get("game") && $("invitation").hidden) await openGame(params.get("game"));
+      void push.restore().catch(() => status("Could not refresh notifications. You can retry in Account.", true));
     }), 0);
   });
 }
+/*! Bundled license information:
+
+@capacitor/core/dist/index.js:
+  (*! Capacitor: https://capacitorjs.com/ - MIT License *)
+*/
