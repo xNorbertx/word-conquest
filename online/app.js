@@ -8261,7 +8261,12 @@ async function showHome(quiet = false) {
   if (!user) return;
   const result = await api({ action: "home" });
   homeData = result;
-  if (!quiet) screen("home");
+  if (!quiet) {
+    ++gameLoad;
+    screen("home");
+    params.delete("game");
+    window.history.replaceState(null, "", location.pathname);
+  }
   $("game-list").replaceChildren();
   if (!result.games.length) $("game-list").append(node("p", "A fresh page. Invite a friend to begin.", "notice"));
   for (const g of result.games) {
@@ -8413,6 +8418,9 @@ function renderGame() {
   $("game-id").textContent = preview ? "Preview \u2014 no online game" : "Support reference: " + game.id;
   $("share").hidden = !invite;
   if (invite) $("share-link").value = `${location.origin}${location.pathname}?invite=${invite.token}`;
+  $("quit-game").hidden = preview || !["invited", "active"].includes(game.status);
+  $("quit-game").disabled = busy || !!pending();
+  $("quit-game").textContent = game.status === "invited" ? "Cancel game" : "Quit game";
   $("accept-draw").hidden = !game.draw_by || game.draw_by === user?.id;
   for (const id of ["offer-draw", "accept-draw", "resign", "abandon"]) $(id).disabled = preview || game.status !== "active" || busy || !!pending();
   $("offer-draw").disabled ||= !!game.draw_by;
@@ -8467,7 +8475,10 @@ async function sendPending() {
         game = result.game;
         selection = [];
         jokers = {};
-        await openGame(sentGame, true);
+        if (command.action === "resign") {
+          await showHome();
+          status("You quit the game. Invite a friend to start a new one.");
+        } else await openGame(sentGame, true);
       }
     }
   } catch (e) {
@@ -8565,10 +8576,23 @@ $("create-game").onclick = () => run(async () => {
     $("create-game").disabled = false;
   }
 });
-$("cancel-invite").onclick = () => run(async () => {
-  await api({ action: "invitation", choice: "cancel", token: invite.token });
-  await openGame(game.id);
-});
+async function quitGame() {
+  if (preview || busy || pending()) return;
+  if (game.status === "invited") {
+    if (!invite || !confirm("Cancel this waiting game? Your invitation link will stop working.")) return;
+    busy = true;
+    renderGame();
+    try {
+      await api({ action: "invitation", choice: "cancel", token: invite.token });
+      await showHome();
+      status("Game cancelled. Invite a friend to start a new one.");
+    } finally {
+      busy = false;
+      if (currentView === "game") renderGame();
+    }
+  } else if (game.status === "active" && confirm("Quit this game? Your opponent wins and this counts as a loss.")) await action("resign");
+}
+$("quit-game").onclick = $("cancel-invite").onclick = () => run(quitGame);
 $("copy-invite").onclick = () => run(async () => {
   await navigator.clipboard.writeText($("share-link").value);
   status("Private invitation link copied.");
