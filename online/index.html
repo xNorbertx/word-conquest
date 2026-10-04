@@ -24,6 +24,8 @@
   <div class="welcome-art" aria-hidden="true"><span>W<small>2</small></span><span>O<small>1</small></span><span>R<small>1</small></span><span>D<small>2</small></span></div>
   <p class="eyebrow">WORDS BRING US TOGETHER</p><h1 id="auth-heading">Your next good word<br>is waiting.</h1><p id="auth-intro" class="muted">A friendly game, at your own pace.</p>
   <form id="auth-form" class="stack-form">
+    <label id="username-label" for="username" hidden>Username</label><input id="username" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="40" aria-describedby="username-hint username-error" hidden>
+    <p id="username-hint" class="field-hint" hidden>Your unique name, shown to other players.</p><p id="username-error" class="field-hint" role="alert" hidden></p>
     <label for="email">Email</label><input id="email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" required>
     <div id="password-label" class="field-heading"><label for="password">Password</label><button id="recover" type="button" class="text-button">Forgot?</button></div>
     <div id="password-field" class="password-field"><input id="password" type="password" autocomplete="current-password" required><button id="show-password" type="button" class="icon-button" aria-label="Show password" data-icon="eye"></button></div>
@@ -42,14 +44,14 @@
 </section>
 <section id="friends" class="page" hidden>
   <div class="page-heading"><h1>Friends<span class="heading-dot">.</span></h1><button id="friend-code-button" class="secondary"><span data-icon="share"></span>My code</button></div>
-  <form id="friend-search" class="friend-search" role="search"><label class="sr-only" for="friend-search-input">Find friends by name or friend code</label><span data-icon="search"></span><input id="friend-search-input" type="search" placeholder="Name or friend code" autocomplete="off" minlength="3" maxlength="64" required><button id="friend-search-submit" class="icon-button" aria-label="Search friends" data-icon="arrow"></button></form>
+  <form id="friend-search" class="friend-search" role="search"><label class="sr-only" for="friend-search-input">Find friends by username or friend code</label><span data-icon="search"></span><input id="friend-search-input" type="search" placeholder="Username or friend code" autocomplete="off" minlength="1" maxlength="64" required><button id="friend-search-submit" class="icon-button" aria-label="Search friends" data-icon="arrow"></button></form>
   <div class="friend-search-meta"><span id="friend-search-status" class="small-note" role="status"></span><button id="clear-friend-search" class="text-button" hidden>Clear search</button></div>
   <div id="friend-search-results" aria-live="polite"></div><div id="friend-list"></div>
 </section>
 <section id="activity" class="page" hidden><div class="page-heading"><div><p class="eyebrow">AROUND THE TABLE</p><h1>Activity<span class="heading-dot">.</span></h1></div><button id="read-inbox" class="icon-button" aria-label="Mark all updates as read" data-icon="check-all"></button></div><div id="inbox" class="activity-list"></div></section>
 <section id="account" class="page" hidden>
   <div class="page-heading"><div><h1>Your corner<span class="heading-dot">.</span></h1></div></div>
-  <div class="profile-card"><span id="profile-avatar" class="avatar avatar-large"></span><div><h2 id="profile-name"></h2><p id="profile-email" class="muted"></p></div><button id="edit-profile" class="icon-button" aria-label="Edit display name" data-icon="edit"></button></div>
+  <div class="profile-card"><span id="profile-avatar" class="avatar avatar-large"></span><div><h2 id="profile-name"></h2><p id="profile-email" class="muted"></p></div><button id="edit-profile" class="icon-button" aria-label="Edit username" data-icon="edit"></button></div>
   <div class="section-label"><h2>Your record</h2></div><div id="statistics"></div>
   <div class="settings-list">
     <button id="activity-button" class="settings-row"><span data-icon="history"></span><span>Activity<small id="activity-state"></small></span><span id="activity-badge" class="badge" hidden></span><span data-icon="chevron"></span></button>

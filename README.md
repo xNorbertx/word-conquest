@@ -30,17 +30,21 @@ See [Android installation](docs/ANDROID.md) and [0.3.0 UX review](docs/UX.md). H
 36-turn and owner playtests passed; multi-day/device acceptance, backup restoration
 and operational monitoring remain open. The local prototype below is unchanged.
 
-### Friends (0.6.0)
+### Usernames and Friends (0.6.1)
 
-Friends replaces Activity in the bottom navigation. Search by display name, send
+Friends replaces Activity in the bottom navigation. Search by username, send
 a request, accept it, then use Invite beside a friend. Their game invitation
 appears in Games and can trigger their enabled Android notifications. Only the
 addressed friend can accept. Activity remains available under You.
 
-Display names are searchable to signed-in players; emails are never searched or
-returned. Duplicate names remain supported, with a distinct friend code in
-search results. My code also offers sharing and blocked-player management.
-Unique names are tracked in the backlog. Existing games and rules are unchanged.
+Signup requires a unique username, which is also your displayed name. Existing
+accounts retain their names. Uniqueness ignores case and normalizes Unicode width
+and composition; names use 1–40 letters, numbers, spaces or simple punctuation.
+You can change your username under You, provided the new name is available.
+Email/password sign-in is unchanged. Signed-in players can search usernames;
+signup checks reveal only whether a name is taken, never an email or profile.
+Friend codes still support sharing and exact lookup. My code includes blocked-player
+management. Existing games, friendships and rules are unchanged.
 
 ### Castle income experiment (0.5.0)
 

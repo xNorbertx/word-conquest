@@ -4,6 +4,7 @@ import {App} from '@capacitor/app';
 import {createClient} from '@supabase/supabase-js';
 import {createPushControls} from './push.js';
 import {createFriends} from './friends.js';
+import {requireUsername,signUpWithUsername,usernameHint} from './username.mjs';
 import {Engine,config as defaultConfig,configFor,RULES_VERSION,SUPPORTED_RULES,rulesLabel,captureRule,castleRule} from '../server/domain.mjs';
 let config=defaultConfig;
 import {$,svg,icon,node,button,setting,notify,showSheet,closeSheet,ask,initUI,closeTopDialog,emptyState} from './ui.js';
@@ -263,7 +264,14 @@ async function account({route=true}={}){
   const entries=Object.entries(statistics);if(!entries.length)entries.push(['',{wins:0,losses:0,draws:0,highestFinalScore:0,bestTurn:0,bestWord:''}]);
   for(const [version,s]of entries){if(version)$('statistics').append(node('p',rulesLabel(version.split('/')[0])+' · English','record-note'));const grid=node('div',undefined,'stats-grid');for(const [label,count]of [['Wins',s.wins],['Draws',s.draws],['Losses',s.losses]]){const item=node('div',undefined,'stat');item.append(node('strong',count),node('span',label));grid.append(item);}$('statistics').append(grid);if(s.bestWord){const best=node('div',undefined,'best-word');best.append(icon('award'),node('span','Best word'),node('strong',`${s.bestWord} · ${s.bestTurn}`));$('statistics').append(best,node('p',`Highest final score: ${s.highestFinalScore}`,'record-note'));}else $('statistics').append(node('p','Your first finished game starts your record.','record-note'));}
 }
-function editProfile(){const form=node('form',undefined,'stack-form'),label=node('label','Display name'),input=node('input');input.id='display-name';label.htmlFor=input.id;input.maxLength=40;input.required=true;input.autocomplete='nickname';input.value=homeData.profile.display_name;const save=button('Save name',null,'primary full','check');save.type='submit';form.append(label,input,save);form.onsubmit=e=>{e.preventDefault();void run(async()=>{save.disabled=true;try{const name=input.value.trim();if(!name)throw Error('Add a name for your friends to see.');await api({action:'profile',name,emailNotifications:homeData.profile.email_notifications});homeData.profile.display_name=name;closeSheet();await account({route:false});status('Your name is updated.');}finally{save.disabled=false;}});};showSheet('What should we call you?',form);}
+function editProfile(){
+  const form=node('form',undefined,'stack-form'),label=node('label','Username'),input=node('input'),hint=node('p',usernameHint,'field-hint'),error=node('p',undefined,'field-hint');
+  input.id='edit-username';label.htmlFor=input.id;input.maxLength=40;input.required=true;input.autocomplete='username';input.autocapitalize='none';input.spellcheck=false;input.value=homeData.profile.username||homeData.profile.display_name;
+  hint.id='edit-username-hint';error.id='edit-username-error';error.setAttribute('role','alert');error.hidden=true;input.setAttribute('aria-describedby',hint.id+' '+error.id);
+  input.oninput=()=>{input.removeAttribute('aria-invalid');error.hidden=true;};
+  const save=button('Save username',null,'primary full','check');save.type='submit';form.append(label,input,hint,error,save);
+  form.onsubmit=e=>{e.preventDefault();void run(async()=>{save.disabled=true;try{const username=requireUsername(input.value);const result=await api({action:'profile',username,emailNotifications:homeData.profile.email_notifications});homeData.profile.username=result.username;homeData.profile.display_name=result.username;closeSheet();await account({route:false});status('Your username is updated.');}catch(e){error.textContent=friendlyError(e);error.hidden=false;if(['username_taken','invalid_username'].includes(e.code)){input.setAttribute('aria-invalid','true');input.focus();}}finally{save.disabled=false;}});};showSheet('Your name at the table.',form);
+}
 async function connectPush(){try{await push.enable();}catch{showPush();}}
 function showPush(){
   const info=push.snapshot(),content=[];
@@ -287,7 +295,7 @@ function showPrivacy(){
   if(lastProblem){content.push(node('p',`Last issue: ${lastProblem}`,'menu-note'));if(lastRequestId)content.push(act('Copy support reference',async()=>{await navigator.clipboard.writeText(lastRequestId);status('Support reference copied.');},'text-button'));}
   showSheet('Privacy & your account.',content);
 }
-function showDataInfo(){showSheet('A private little table.',[node('p','Signed-in players can search display names and see friend codes. Your email stays private. Friend requests must be accepted. Only players in a game can see its board and moves.'),node('p','Supabase stores games and accounts. Resend sends account emails. Optional Android notifications use Google Firebase Cloud Messaging with a device token and game reference.'),node('p','There are no ads, contacts uploads or analytics trackers. Account deletion removes your login, profile, friendships, blocks and private inbox. Shared history stays anonymized for your opponents; backups expire under the hosting provider\'s retention policy.')]);}
+function showDataInfo(){showSheet('A private little table.',[node('p','Signed-in players can search usernames and see friend codes. During signup, anyone can check whether a username is taken. Your email stays private. Friend requests must be accepted. Only players in a game can see its board and moves.'),node('p','Supabase stores games and accounts. Resend sends account emails. Optional Android notifications use Google Firebase Cloud Messaging with a device token and game reference.'),node('p','There are no ads, contacts uploads or analytics trackers. Account deletion removes your login, profile, friendships, blocks and private inbox. Shared history stays anonymized for your opponents; backups expire under the hosting provider\'s retention policy.')]);}
 async function exportData(){const data=await api({action:'export'}),url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'})),link=node('a');link.href=url;link.download='word-conquest-data.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);closeSheet();status('Your data export is ready.');}
 function showDelete(){
   const form=node('form',undefined,'stack-form'),label=node('label','Type DELETE to confirm'),input=node('input');input.id='delete-confirmation';input.autocomplete='off';input.required=true;input.pattern='DELETE';label.htmlFor=input.id;const remove=button('Permanently delete account',null,'primary danger full','trash');remove.type='submit';form.append(label,input,remove);
@@ -296,6 +304,7 @@ function showDelete(){
 }
 function setAuthMode(mode){
   authMode=mode;const signup=mode==='signup',forgot=mode==='recover';
+  for(const id of ['username','username-label','username-hint'])$(id).hidden=!signup;$('username').required=signup;$('username').disabled=!signup;$('username-error').hidden=true;$('username').removeAttribute('aria-invalid');
   $('auth-heading').replaceChildren();if(signup)$('auth-heading').textContent='Your seat at the table.';else if(forgot)$('auth-heading').textContent='Let us get you back in.';else $('auth-heading').append(document.createTextNode('Your next good word'),node('br'),document.createTextNode('is waiting.'));
   $('auth-intro').textContent=signup?'Invite a friend. See where the words take you.':forgot?'We will email you a link to reset your password.':'A friendly game, at your own pace.';
   $('password-label').hidden=forgot;$('password-field').hidden=forgot;$('password').required=!forgot;$('password').minLength=signup?12:1;$('password').autocomplete=signup?'new-password':'current-password';$('password-hint').hidden=!signup;$('recover').hidden=signup;
@@ -306,11 +315,15 @@ $('auth-form').onsubmit=e=>{e.preventDefault();void run(async()=>{
   if(authBusy)return;authBusy=true;$('auth-submit').disabled=true;
   try{const email=$('email').value.trim(),password=$('password').value;
     if(authMode==='recover'){const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo:authRedirect()});if(error)throw error;showSheet('Check your inbox.',[node('p','If an account uses that address, a password reset link will arrive shortly.'),act('Back to sign in',()=>{closeSheet();setAuthMode('signin');},'primary full')]);}
-    else if(authMode==='signup'){const {data,error}=await db.auth.signUp({email,password,options:{emailRedirectTo:authRedirect()}});if(error)throw error;if(!data.session){$('password').value='';setAuthMode('signin');showSheet('One last step.',[node('p','Open the confirmation email, then come back here to sign in.'),act('Got it',closeSheet,'primary full','check')]);}}
+    else if(authMode==='signup'){
+      try{const {data}=await signUpWithUsername(db,{username:$('username').value,email,password,redirectTo:authRedirect()});if(!data.session){$('password').value='';setAuthMode('signin');showSheet('One last step.',[node('p','Open the confirmation email, then come back here to sign in.'),act('Got it',closeSheet,'primary full','check')]);}}
+      catch(e){if(['username_taken','invalid_username'].includes(e.code)){$('username-error').textContent=friendlyError(e);$('username-error').hidden=false;$('username').setAttribute('aria-invalid','true');$('username').focus();}else throw e;}
+    }
     else {const {error}=await db.auth.signInWithPassword({email,password});if(error)throw error;}
   }finally{authBusy=false;$('auth-submit').disabled=false;}
 });};
 $('signup').onclick=()=>setAuthMode(authMode==='signin'?'signup':'signin');$('recover').onclick=()=>setAuthMode('recover');
+$('username').oninput=()=>{$('username-error').hidden=true;$('username').removeAttribute('aria-invalid');};
 $('show-password').onclick=()=>{const showing=$('password').type==='password';$('password').type=showing?'text':'password';$('show-password').setAttribute('aria-label',showing?'Hide password':'Show password');};
 $('recovery-form').onsubmit=e=>{e.preventDefault();void run(async()=>{const submit=e.currentTarget?.querySelector('button')||$('recovery-form').querySelector('button');submit.disabled=true;try{const {error}=await db.auth.updateUser({password:$('new-password').value});if(error)throw error;recovering=false;authReady=true;$('new-password').value='';await showHome();status('Password updated.');await openNotification();}finally{submit.disabled=false;}});};
 $('retry-load').onclick=()=>run(async()=>{await showHome(false,{route:false});authReady=true;await showInvite();});

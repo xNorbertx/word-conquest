@@ -49,7 +49,7 @@ export function createFriends({api,getUser,getData,setData,run,status,invite,ope
     $('friend-list').replaceChildren();
     if(searchResults!==null){
       $('friend-search-results').replaceChildren(node('p',`Results for “${searchQuery}”`,'small-note'),...searchResults.map(p=>personRow(p,true)));
-      if(!searchResults.length)$('friend-search-results').append(node('p','No players found. Check their display name or try their friend code.','friend-empty-note'));
+      if(!searchResults.length)$('friend-search-results').append(node('p','No players found. Check their username or try their friend code.','friend-empty-note'));
       $('clear-friend-search').hidden=false;
     }else{$('friend-search-results').replaceChildren();$('clear-friend-search').hidden=true;}
     group('Requests',incoming.map(p=>personRow(p)));
@@ -60,15 +60,15 @@ export function createFriends({api,getUser,getData,setData,run,status,invite,ope
   async function refresh(){if(mutating)return;const ticket=++loadVersion,actor=getUser()?.id,{social,profile}=await api({action:'friends'});if(getUser()?.id!==actor||ticket!==loadVersion)return;setData({social,profile});render();}
   async function search(){
     const query=$('friend-search-input').value.trim(),ticket=++searchVersion,actor=getUser()?.id;
-    if(query.length<3){searchResults=null;render();status('Enter at least 3 letters or a friend code.',true);return;}
+    if(!query){searchResults=null;render();status('Enter a username or friend code.',true);return;}
     $('friend-search-submit').disabled=true;$('friend-search-status').textContent='Searching…';
     try{const {people}=await api({action:'friend_search',query});if(ticket!==searchVersion||getUser()?.id!==actor)return;searchResults=people;searchQuery=query;render();}
     finally{if(ticket===searchVersion){$('friend-search-submit').disabled=false;$('friend-search-status').textContent='';}}
   }
   function showCode(){
     const profile=getData().profile,code=formatFriendCode(profile.friend_code),content=[node('p','Share this code so a friend can find you.'),node('p',code,'friend-code friend-code-large'),act('Copy friend code',async()=>{await navigator.clipboard.writeText(code);status('Friend code copied.');},'primary full','copy')];
-    content.push(node('p',`Friends can search for “${profile.display_name}”. Your code helps them pick the right person when names match.`,'field-hint'));
-    content.push(act('Edit display name',editProfile,'text-button full','edit'));
+    content.push(node('p',`Friends can also find you by your username: ${profile.username||profile.display_name}.`,'field-hint'));
+    content.push(act('Edit username',editProfile,'text-button full','edit'));
     if(data().blocked.length)content.push(act('Blocked players',()=>showSheet('Blocked players.',data().blocked.map(p=>{const b=node('div',undefined,'friend-row');b.append(node('strong',p.display_name),act('Unblock',()=>action(p,'unblock'),'secondary friend-action'));return b;})),'text-button full','shield'));
     showSheet('Your friend code.',content);
   }

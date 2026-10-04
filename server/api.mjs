@@ -1,11 +1,13 @@
 import {applyCommand,checkCommand,commandKey,configFor,Engine,Fault,LEGACY_RULES_VERSION,statistics,uuid} from './domain.mjs';
 import words from './versions/dictionary-v1.json' with {type:'json'};
 import metadata from './versions/dictionary-v1.meta.json' with {type:'json'};
+import {normalizeUsername,validUsername,usernameHint} from '../online/username.mjs';
 const dictionary = new Set(words);
 const serverRandom=()=>crypto.getRandomValues(new Uint32Array(1))[0]/4294967296;
 function unwrap(result) {
   if (result.error) {
-    const code = ['friend_stale','friend_unavailable','friend_cooldown','friend_limit','invitation_pending','stale','idempotency_conflict','ended','forbidden','invitation_unavailable','cannot_accept_own_invitation','game_limit','account_deleting']
+    if(result.error.code==='23505'&&result.error.message.includes('profiles_username_key'))throw new Fault('username_taken','That username is already taken. Try another.',409);
+    const code = ['username_required','invalid_username','friend_stale','friend_unavailable','friend_cooldown','friend_limit','invitation_pending','stale','idempotency_conflict','ended','forbidden','invitation_unavailable','cannot_accept_own_invitation','game_limit','account_deleting']
       .find(c => result.error.message.includes(c));
     if (code) throw new Fault(code, code.replaceAll('_',' '), code==='forbidden'?403:409);
     throw new Fault('service_unavailable','The service could not complete this request. Retry with the same operation.',503);
@@ -49,7 +51,6 @@ export function createHandler(db, settings={}) {
       };
       const wakePush=()=>{try{settings.wakePush?.();}catch{/* Cron retries the durable queue. */}};
       if(!unwrap(await db.rpc('wc_rate_limit',{p_actor:actor}))) throw new Fault('rate_limit','Please wait a minute before trying again.',429);
-      unwrap(await db.from('profiles').upsert({id:actor},{onConflict:'id',ignoreDuplicates:true}));
       const profile=unwrap(await db.from('profiles').select('*').eq('id',actor).single());
       if(profile.deleting && input.action!=='delete_account')throw new Fault('account_deleting','Account deletion is in progress. Retry deletion.',409);
       const gameForActor=async id=>{
@@ -143,7 +144,7 @@ export function createHandler(db, settings={}) {
         case 'friends': return reply({social:unwrap(await db.rpc('wc_friends',{p_actor:actor})),profile});
         case 'friend_search': {
           const query=typeof input.query==='string'?input.query.trim():'';
-          if(query.length<3||query.length>64)throw new Fault('invalid_search','Enter at least 3 letters or a friend code.');
+          if(!query||query.length>64)throw new Fault('invalid_search','Enter a username or friend code.');
           return reply({people:unwrap(await db.rpc('wc_friend_search',{p_actor:actor,p_query:query}))});
         }
         case 'friend_action': {
@@ -152,10 +153,10 @@ export function createHandler(db, settings={}) {
           return reply({social:unwrap(await db.rpc('wc_friends',{p_actor:actor}))});
         }
         case 'profile': {
-          const name=typeof input.name==='string'?input.name.trim():'';
-          if(!name || name.length>40 || /[\p{C}<>]/u.test(name))throw new Fault('invalid_name','Use a name of 1–40 ordinary characters.');
-          unwrap(await db.from('profiles').update({display_name:name,email_notifications:input.emailNotifications===true}).eq('id',actor));
-          return reply({ok:true});
+          const name=normalizeUsername(input.username??input.name);
+          if(!validUsername(name))throw new Fault('invalid_username',usernameHint);
+          unwrap(await db.from('profiles').update({username:name,email_notifications:input.emailNotifications===true}).eq('id',actor));
+          return reply({ok:true,username:name});
         }
         case 'read_notifications': {
           unwrap(await db.from('notifications').update({read_at:new Date().toISOString()}).eq('user_id',actor).is('read_at',null));

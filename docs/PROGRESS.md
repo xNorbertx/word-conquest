@@ -1,4 +1,34 @@
-# Implementation and verification — updated 3 October 2026
+# Implementation and verification - updated 4 October 2026
+
+## Unique usernames - 4 October, 0.6.1
+
+- Owner promoted unique names into this iteration. Signup requires a username;
+  it is also the visible identity in games, Friends, recaps and notifications.
+  Existing six profile names (three player accounts and three test accounts) were
+  verified unique and migrated unchanged, preserving IDs, games and friendships.
+- Migration `202610040002_usernames.sql` and `game-api` deployed. Auth creation
+  and profile reservation share a transaction; a partial unique index enforces
+  case-insensitive uniqueness after NFKC normalization and outer-space trimming.
+  Existing display_name stays synchronized for installed APKs and RPCs. Renames
+  enforce the same rule, including legacy payloads. Auth metadata edits do not
+  change the displayed identity. Deletion retries remain safe and anonymized.
+- Signup availability exposes a boolean only, with clear conflict feedback beside
+  the field. Email/password login and recovery remain unchanged. Unconfirmed
+  accounts reserve their username until renamed/deleted; no automatic cleanup.
+  Policy and reuse semantics are in PRIVACY.md. Names use 1–40 letters/numbers,
+  spaces and simple punctuation, with at least one letter or number.
+- Three original engine suites and 70 integration/service/controller tests pass,
+  including 11 new username tests. Local phone browser checks cover required
+  signup entry, duplicate-name feedback, email-confirmation handoff, sign-in,
+  rename conflict/success, and 390x844/320x640 layouts.
+- Hosted verification: concurrent real Auth creations with the same username
+  produced exactly one account/profile; missing username failed atomically.
+  Anonymous availability rejected case/width variants, profiles stayed hidden,
+  rename conflict returned 409, old payload remained compatible, and home/search
+  displayed canonical names without emails. All six existing names/IDs remained
+  unchanged after the checks. One isolated example.invalid test account was added
+  and retained; no email/notification sent or real player/game changed.
+- Web and APK release verification follows below when publication completes.
 
 ## Web publishing - 2 October
 

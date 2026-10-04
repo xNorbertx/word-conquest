@@ -4,18 +4,32 @@ Not approved for public release until the operator name, support address, hostin
 region, backup destination and retention have been confirmed in SETUP.md.
 
 The app stores an email address for confirmed login and recovery in Supabase Auth,
-a player-chosen display name, game boards and moves,
+a player-chosen unique username, game boards and moves,
 invitation capabilities, friendships, blocks, and an inbox. No contacts upload, anonymous public directory,
 advertising, chat or analytics scripts are included. Optional Android push stores
 a random installation ID and FCM registration token, linked to the signed-in account.
 Firebase messaging auto-initialization is off until the user enables notifications.
 
 Only participants can read their game records. Owner decision, 4 October: signed-in
-players can search display names without an opt-in step. Results contain a name,
+players can search usernames without an opt-in step. Results contain a name,
 friend code, opaque ID and the caller's own friendship state; no email, game record,
-statistics or device information. Codes distinguish duplicate names and can be
-shared as an exact lookup. Search requires at least three characters, returns at
+statistics or device information. Friend codes can also be shared as an exact
+lookup. Partial search requires three characters; shorter usernames match exactly. Search returns at
 most 20 matches, and is covered by authenticated API rate limiting.
+
+Owner decision, 4 October: usernames are required at signup and serve as display
+names. Existing account names are retained. A database unique index ignores case;
+Unicode NFKC normalization and outer-space trimming precede reservation. Names
+contain 1–40 letters, numbers, spaces or `. _ - ( ) '` and at least one letter/number.
+Signup and profile reservation are atomic, including unconfirmed accounts. The
+signup availability endpoint is public and exposes only a boolean, not a directory,
+profile or email. Auth's signup/email limits remain enabled. Username reservation
+has no automatic expiry; no accounts are deleted by this feature. An authenticated
+rename releases the old name, and account deletion releases the name. Names may
+therefore be reused; friendships, invitations and games identify accounts by UUID,
+never by username. Auth metadata is input at initial creation, not the source of
+displayed identity after a rename. `display_name` remains a synchronized database
+alias for installed older clients.
 
 Friend requests require acceptance. Users can decline, cancel, remove or block;
 blocks hide both players from each other's search and stop new requests/invitations.
@@ -32,7 +46,7 @@ deletion also removes friendships, blocks and pending invitations to the account
 
 Resend sends signup confirmation and recovery mail. Turn-alert emails are out of
 scope. Google Firebase Cloud Messaging delivers opted-in Android game alerts;
-turn alerts include the opponent display name and points gained, as requested by
+turn alerts include the opponent username and points gained, as requested by
 the owner on 4 October. Payloads also contain an event ID and game reference;
 they do not include email addresses, board contents or played words.
 Google handles installation identifiers and delivery metadata. Disable alerts in
