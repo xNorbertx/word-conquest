@@ -444,4 +444,27 @@ GARDENS previews/saves 19 word +10 territory +4 income =33, with the opponent
 losing 9 territory and earning 2 income. Scores 50:62 become 83:55; the recap and
 score breakdown agree. Physical phone acceptance remains a user playtest.
 
-Deployment and APK verification will be recorded after release. No new costs.
+Released and verified:
+- Source implementation: 6654bdce8eac086828cbd352248780609aa7e012.
+- game-api deployed to the existing aumiyyjsdqdazzmdmprl project, no migration.
+- Isolated hosted games 46fa9b7f-8cc6-4c60-bea1-bbfd0765a75a and
+  12b4dc37-81da-4a29-ac60-7bf7c53406fa verify both starting-order fixtures,
+  simultaneous income, final reply, stale rejection, one payout on retry and
+  exact opponent reload. Both completed and were retained. Both server draws
+  happened to choose player 2; the first fixture then deliberately exercised
+  player 1 starting. Deterministic tests cover both sides of the random draw.
+  Test identities are existing example.invalid accounts with no push devices;
+  no owner games changed.
+- Pages 501d7048d27878a1e64de9f38614c46377d08e39 built successfully. All nine
+  public assets match the build, including the untouched root prototype.
+  API preflight 204 and unauthenticated request 401.
+- Android CI 37205389608 passed: 0.5.0-6654bdc, version code 23894600,
+  4,941,968 bytes. Original pilot signing certificate and notification permission
+  verified; no private keys or local fixtures included.
+- Anonymous release APK download is HTTP 200 with verified SHA-256:
+  a79816c91a8755a483b762202c5bd268c81d68a7f52ad9eb0c8a6f7449ada52a.
+- Release: https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-23894600
+- Local APK: dist/word-conquest-0.5.0.apk.
+
+Physical Seeker installation/gameplay remains owner acceptance. No new costs,
+services, database changes or app-store submission.

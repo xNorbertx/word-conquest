@@ -30,14 +30,19 @@ See [Android installation](docs/ANDROID.md) and [0.3.0 UX review](docs/UX.md). H
 36-turn and owner playtests passed; multi-day/device acceptance, backup restoration
 and operational monitoring remain open. The local prototype below is unchanged.
 
-### Unlimited captures experiment (0.4.0)
+### Castle income experiment (0.5.0)
 
-New games created by the updated online/Android client use autumn-v2: a legal word
-can capture every opponent tile in its path, with no three-tile cap. Existing
-autumn-v1 games keep their original rules. Both players should update the APK or
-reload the web app before starting this experiment. The in-game How to play menu
-shows the game's rules; records remain separate. Scoring, dictionary, letter
-distribution, adjacency and the root prototype are unchanged.
+New games use autumn-v3: side castles earn 2 points per complete round and the
+centre earns 4. Final ownership values are 3 and 5. A round ends after both
+players move, including the final round; earned income stays yours after loss.
+The server randomly chooses and saves who starts, keeping colours fixed and
+both players' turn counts equal. Unlimited captures remain enabled.
+
+Both players should update the APK or reload the web app, then start a new game.
+Existing autumn-v1/v2 games retain their original scoring and starting order.
+How to play, score breakdowns and recaps explain the saved game's rules.
+Dictionary, word bonuses, letter distribution, adjacency, jokers and the root
+prototype are unchanged. Statistics remain separate by rules version.
 
 ## Play locally
 

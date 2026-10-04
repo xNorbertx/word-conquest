@@ -161,3 +161,35 @@ change only the default for future games and ship a new client/API deployment;
 never revert the server to a v1-only bundle or rewrite existing games/receipts.
 The original root prototype stays available and unchanged. No additional service
 or recurring cost is introduced.
+
+
+## Castle income ruleset 0.5.0
+
+The default online rules version is autumn-v3. server/engine.mjs dispatches v1/v2
+games to immutable engine-v1 and v3 to engine-v2. rules-v3 adds castleIncome
+(side 2, centre 4), centre ownership value 5, and random starting-player policy.
+The server's cryptographic RNG draws the starter once at creation. Stored
+startingPlayer, player and turn counts survive create retries and acceptance.
+Colours remain tied to participant seats. A round closes when the two turn
+counts become equal; payout is not hard-coded to the walnut/player-2 turn.
+
+State castleIncome accumulates both players' payments at that boundary, including
+the final round. The move receipt preserves both income amounts and the round,
+and word score totalGain includes the actor's income. Existing push wording
+therefore stays accurate without a push-worker deployment. Lifecycle actions
+(resign/draw/abandon) preserve earned income and do not cause a payout.
+
+Deployment: tests, build, game-api, then client. No migration or data rewrite.
+All five engine/rules files in the integrity manifest and the pinned dictionary
+are checked during build. New clients advertise v1/v2/v3 and create v3. Older
+clients retain their supported creation defaults and receive an update message
+before joining/opening/moving in v3. Statistics remain version-separated.
+
+Once v3 games exist, rollback must retain the v3 engine and API support.
+A future rules experiment needs a new version, not an edit to v3 or existing
+state/receipts. To stop new v3 creation, change the default in a new client release
+while retaining all supported engine/config modules. No additional maintenance
+service or ongoing cost is introduced.
+
+Verified release: source 6654bdc, Pages 501d704, Android 0.5.0-6654bdc
+(version code 23894600). See docs/ANDROID.md for the current direct download.
