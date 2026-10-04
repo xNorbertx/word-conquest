@@ -1317,7 +1317,7 @@ var require_PostgrestFilterBuilder = __commonJS({
        * @param options.config - The text search configuration to use
        * @param options.type - Change how the `query` text is interpreted
        */
-      textSearch(column, query, { config: config2, type } = {}) {
+      textSearch(column, query, { config: config3, type } = {}) {
         let typePart = "";
         if (type === "plain") {
           typePart = "pl";
@@ -1326,7 +1326,7 @@ var require_PostgrestFilterBuilder = __commonJS({
         } else if (type === "websearch") {
           typePart = "w";
         }
-        const configPart = config2 === void 0 ? "" : `(${config2})`;
+        const configPart = config3 === void 0 ? "" : `(${config3})`;
         this.url.searchParams.append(column, `${typePart}fts${configPart}.${query}`);
         return this;
       }
@@ -1796,7 +1796,7 @@ var require_cjs = __commonJS({
 });
 
 // package.json
-var version = "0.3.2";
+var version = "0.4.0";
 
 // online/app.js
 init_dist();
@@ -2751,7 +2751,7 @@ var RealtimeChannel = class _RealtimeChannel {
       const postgres_changes = (_b = (_a = this.bindings.postgres_changes) === null || _a === void 0 ? void 0 : _a.map((r) => r.filter)) !== null && _b !== void 0 ? _b : [];
       const presence_enabled = !!this.bindings[REALTIME_LISTEN_TYPES.PRESENCE] && this.bindings[REALTIME_LISTEN_TYPES.PRESENCE].length > 0 || ((_c = this.params.config.presence) === null || _c === void 0 ? void 0 : _c.enabled) === true;
       const accessTokenPayload = {};
-      const config2 = {
+      const config3 = {
         broadcast,
         presence: Object.assign(Object.assign({}, presence), { enabled: presence_enabled }),
         postgres_changes,
@@ -2762,7 +2762,7 @@ var RealtimeChannel = class _RealtimeChannel {
       }
       this._onError((e) => callback === null || callback === void 0 ? void 0 : callback(REALTIME_SUBSCRIBE_STATES.CHANNEL_ERROR, e));
       this._onClose(() => callback === null || callback === void 0 ? void 0 : callback(REALTIME_SUBSCRIBE_STATES.CLOSED));
-      this.updateJoinPayload(Object.assign({ config: config2 }, accessTokenPayload));
+      this.updateJoinPayload(Object.assign({ config: config3 }, accessTokenPayload));
       this.joinedOnce = true;
       this._rejoin(timeout);
       this.joinPush.receive("ok", async ({ postgres_changes: postgres_changes2 }) => {
@@ -8617,7 +8617,7 @@ function createPushControls(options) {
 var WordConquest = /* @__PURE__ */ (() => {
   const distance = (a, b) => Math.max(Math.abs(a.q - b.q), Math.abs(a.r - b.r));
   const adjacent = (a, b) => distance(a, b) === 1;
-  const letterType = (value, config2) => ["vowels", "flexible", "ordinary", "rare"].find((type) => config2.letterBalance[type].includes(value));
+  const letterType = (value, config3) => ["vowels", "flexible", "ordinary", "rare"].find((type) => config3.letterBalance[type].includes(value));
   function shuffled(values, random) {
     const result = [...values];
     for (let i = result.length - 1; i > 0; i--) {
@@ -8626,8 +8626,8 @@ var WordConquest = /* @__PURE__ */ (() => {
     }
     return result;
   }
-  function categoryPlan(count, config2, random, allowRare = true) {
-    const balance = config2.letterBalance;
+  function categoryPlan(count, config3, random, allowRare = true) {
+    const balance = config3.letterBalance;
     if (!count) return [];
     if (count === 1) {
       const roll = random();
@@ -8644,22 +8644,22 @@ var WordConquest = /* @__PURE__ */ (() => {
       ...Array(rare).fill("rare")
     ];
   }
-  function placeLetters(tiles, batch, plan, config2, random, previous = /* @__PURE__ */ new Map()) {
+  function placeLetters(tiles, batch, plan, config3, random, previous = /* @__PURE__ */ new Map()) {
     if (!batch.length) return;
-    const values = shuffled(plan, random).map((type) => letter(config2, random, (value) => config2.letterBalance[type].includes(value)));
+    const values = shuffled(plan, random).map((type) => letter(config3, random, (value) => config3.letterBalance[type].includes(value)));
     let best = null, bestCost = Infinity;
-    for (let attempt = 0; attempt < config2.letterBalance.placementAttempts; attempt++) {
-      const candidate = shuffled(values, random).map((value, i) => value === previous.get(batch[i].id) ? letter(config2, random, (next) => letterType(next, config2) === letterType(value, config2) && next !== value) : value);
+    for (let attempt = 0; attempt < config3.letterBalance.placementAttempts; attempt++) {
+      const candidate = shuffled(values, random).map((value, i) => value === previous.get(batch[i].id) ? letter(config3, random, (next) => letterType(next, config3) === letterType(value, config3) && next !== value) : value);
       const letters = new Map(batch.map((t, i) => [t.id, candidate[i]]));
       const valueAt = (t) => letters.get(t.id) || t.letter;
       let cost = 0;
       for (const tile of batch) {
-        const value = valueAt(tile), type = letterType(value, config2), neighbors = tiles.filter((t) => adjacent(t, tile));
-        const vowelAccess = neighbors.some((t) => valueAt(t) === "?" || letterType(valueAt(t), config2) === "vowels");
+        const value = valueAt(tile), type = letterType(value, config3), neighbors = tiles.filter((t) => adjacent(t, tile));
+        const vowelAccess = neighbors.some((t) => valueAt(t) === "?" || letterType(valueAt(t), config3) === "vowels");
         if (type !== "vowels" && !vowelAccess) cost += 3;
         if (type === "rare") {
           if (!vowelAccess) cost += 8;
-          if (neighbors.some((t) => letterType(valueAt(t), config2) === "rare")) cost += 8;
+          if (neighbors.some((t) => letterType(valueAt(t), config3) === "rare")) cost += 8;
         }
       }
       if (cost < bestCost) {
@@ -8671,8 +8671,8 @@ var WordConquest = /* @__PURE__ */ (() => {
     batch.forEach((tile, i) => tile.letter = best[i]);
   }
   const openingBand = (tile, tiles) => tile.owner ? "base" : tiles.some((t) => t.owner && adjacent(tile, t)) ? "near" : "outer";
-  function letter(config2, random = Math.random, accept = () => true) {
-    const weights = Object.entries(config2.letterWeights).filter(([value, weight]) => weight > 0 && accept(value));
+  function letter(config3, random = Math.random, accept = () => true) {
+    const weights = Object.entries(config3.letterWeights).filter(([value, weight]) => weight > 0 && accept(value));
     if (!weights.length) throw new Error("Letter distribution needs vowels and consonants.");
     let roll = random() * weights.reduce((sum, [, weight]) => sum + weight, 0);
     for (const [value, weight] of weights) {
@@ -8681,15 +8681,15 @@ var WordConquest = /* @__PURE__ */ (() => {
     }
     return weights.at(-1)[0];
   }
-  function generateBoard(config2, random = Math.random) {
-    const tiles = [], radius = config2.boardRadius;
+  function generateBoard(config3, random = Math.random) {
+    const tiles = [], radius = config3.boardRadius;
     for (let q = -radius; q <= radius; q++) for (let r = -radius; r <= radius; r++) {
-      if (Math.abs(q) + Math.abs(r) > 2 * radius - config2.cornerCut) continue;
-      tiles.push({ id: `${q},${r}`, q, r, letter: letter(config2, random), owner: 0, castle: false });
+      if (Math.abs(q) + Math.abs(r) > 2 * radius - config3.cornerCut) continue;
+      tiles.push({ id: `${q},${r}`, q, r, letter: letter(config3, random), owner: 0, castle: false });
     }
     const mirror = (t) => tiles.find((a) => a.q === -t.q && a.r === t.r);
     const anchor = tiles.find((t) => t.q === -radius && t.r === 0), region = [anchor];
-    while (region.length < config2.startingTerritories) {
+    while (region.length < config3.startingTerritories) {
       const next = tiles.filter((t) => t.q < 0 && !region.includes(t) && region.some((a) => adjacent(a, t))).sort((a, b) => distance(a, anchor) - distance(b, anchor) || a.r - b.r || a.q - b.q)[0];
       if (!next) break;
       region.push(next);
@@ -8700,12 +8700,12 @@ var WordConquest = /* @__PURE__ */ (() => {
     });
     const starts = tiles.filter((t) => t.owner);
     const castles = [];
-    if (config2.castleCount % 2) {
+    if (config3.castleCount % 2) {
       const center2 = tiles.find((t) => t.q === 0 && t.r === 0);
       if (center2 && !center2.owner) castles.push(center2);
     }
     const castleCandidates = tiles.filter((t) => !t.owner && t.q < 0).map((tile) => ({ tile, tie: random() }));
-    while (castles.length + 2 <= config2.castleCount && castleCandidates.length) {
+    while (castles.length + 2 <= config3.castleCount && castleCandidates.length) {
       const pair = Math.floor(castles.length / 2);
       const target = { q: -Math.max(1, Math.floor(radius / 2)), r: (pair % 2 === 0 ? -1 : 1) * Math.max(1, radius - 1) };
       const rank = (t) => Math.min(...starts.map((a) => distance(a, t))) + (castles.length ? Math.min(...castles.map((a) => distance(a, t))) : 0);
@@ -8715,17 +8715,17 @@ var WordConquest = /* @__PURE__ */ (() => {
     }
     castles.forEach((t) => t.castle = true);
     const jokers2 = [];
-    if (config2.jokerCount >= 2) {
+    if (config3.jokerCount >= 2) {
       const first = shuffled(region, random)[0];
       const other = shuffled(tiles.filter((t) => t.owner === 2 && t.id !== mirror(first).id), random)[0] || mirror(first);
       jokers2.push(first, other);
     }
-    if (config2.jokerCount % 2) {
+    if (config3.jokerCount % 2) {
       const centerline = tiles.filter((t) => t.q === 0 && !t.castle && !t.owner);
       if (centerline.length) jokers2.push(centerline[Math.floor(random() * centerline.length)]);
     }
     const reach = (t) => Math.min(...starts.filter((a) => a.owner === (t.q < 0 ? 1 : 2)).map((a) => distance(a, t)));
-    while (jokers2.length + 2 <= config2.jokerCount) {
+    while (jokers2.length + 2 <= config3.jokerCount) {
       const available = tiles.filter((t) => t.q !== 0 && !t.owner && !t.castle && !jokers2.includes(t));
       const left = shuffled(available.filter((t) => t.q < 0), random).sort((a, b) => Math.min(...jokers2.map((t) => distance(t, b)), 99) - Math.min(...jokers2.map((t) => distance(t, a)), 99));
       const first = left.find((t) => available.some((a) => a.q > 0 && reach(a) === reach(t)));
@@ -8737,79 +8737,79 @@ var WordConquest = /* @__PURE__ */ (() => {
     jokers2.forEach((t) => t.letter = "?");
     for (const band of ["base", "near", "outer"]) {
       const batches = [-1, 1].map((side) => tiles.filter((t) => Math.sign(t.q) === side && t.letter !== "?" && openingBand(t, tiles) === band));
-      const plan = categoryPlan(batches[0].length, config2, random, band === "outer");
-      batches.forEach((batch) => placeLetters(tiles, batch, batch.length === plan.length ? plan : categoryPlan(batch.length, config2, random, band === "outer"), config2, random));
+      const plan = categoryPlan(batches[0].length, config3, random, band === "outer");
+      batches.forEach((batch) => placeLetters(tiles, batch, batch.length === plan.length ? plan : categoryPlan(batch.length, config3, random, band === "outer"), config3, random));
     }
     const center = tiles.filter((t) => t.q === 0 && t.letter !== "?");
-    placeLetters(tiles, center, categoryPlan(center.length, config2, random), config2, random);
+    placeLetters(tiles, center, categoryPlan(center.length, config3, random), config3, random);
     return tiles;
   }
-  const newGame = (config2, random) => ({ tiles: generateBoard(config2, random), player: 1, turns: [0, 0], wordPoints: [0, 0], lettersUsed: 0, log: [], over: false });
-  const canReenter = (state, config2) => config2.allowReentry && !state.tiles.some((t) => t.owner === state.player);
+  const newGame = (config3, random) => ({ tiles: generateBoard(config3, random), player: 1, turns: [0, 0], wordPoints: [0, 0], lettersUsed: 0, log: [], over: false });
+  const canReenter = (state, config3) => config3.allowReentry && !state.tiles.some((t) => t.owner === state.player);
   const wordForPath = (state, ids, jokerLetters = {}) => ids.map((id) => {
     const tile = state.tiles.find((t) => t.id === id);
     return tile.letter === "?" ? jokerLetters[id] || "?" : tile.letter;
   }).join("");
-  function validatePath(state, ids, config2, complete = true, dictionary = null, jokerLetters = {}) {
+  function validatePath(state, ids, config3, complete = true, dictionary = null, jokerLetters = {}) {
     if (state.over) return "The game has ended. Start a new game.";
     const tiles = ids.map((id) => state.tiles.find((t) => t.id === id));
-    if (!tiles.length) return canReenter(state, config2) ? "You have no territory. Start on any tile." : "Start on one of your territories.";
+    if (!tiles.length) return canReenter(state, config3) ? "You have no territory. Start on any tile." : "Start on one of your territories.";
     if (tiles.some((t) => !t)) return "Unknown territory.";
     if (new Set(ids).size !== ids.length) return "A tile can only be used once.";
-    if (tiles[0].owner !== state.player && !canReenter(state, config2)) return "Start on one of your territories.";
+    if (tiles[0].owner !== state.player && !canReenter(state, config3)) return "Start on one of your territories.";
     if (tiles.some((t, i) => i > 0 && !adjacent(t, tiles[i - 1]))) return "Choose an adjacent tile (diagonals count).";
-    if (tiles.filter((t) => t.owner && t.owner !== state.player).length > config2.maxEnemyTilesPerWord)
-      return `Use at most ${config2.maxEnemyTilesPerWord} enemy tiles per word.`;
-    if (complete && tiles.length < config2.minimumWordLength) return `Choose at least ${config2.minimumWordLength} letters.`;
+    if (tiles.filter((t) => t.owner && t.owner !== state.player).length > config3.maxEnemyTilesPerWord)
+      return `Use at most ${config3.maxEnemyTilesPerWord} enemy tiles per word.`;
+    if (complete && tiles.length < config3.minimumWordLength) return `Choose at least ${config3.minimumWordLength} letters.`;
     if (complete && tiles.some((t) => t.letter === "?" && !/^[A-Z]$/.test(jokerLetters[t.id] || "")))
       return "Choose one letter from A\u2013Z for each joker.";
-    if (complete && config2.dictionaryEnabled) {
+    if (complete && config3.dictionaryEnabled) {
       if (!dictionary) return "Dictionary unavailable. Load a word list or disable validation in config.js.";
       if (!dictionary.has(wordForPath(state, ids, jokerLetters).toLowerCase())) return "That word is not in the dictionary.";
     }
     return null;
   }
   const capturedTiles = (state, ids) => state.tiles.filter((t) => ids.includes(t.id) && t.owner !== state.player);
-  const territoryValue = (tile, config2) => tile.castle ? config2.castlePoints : config2.normalTerritoryPoints;
-  const letterValue = (value, config2) => value === "?" ? config2.wordScoring.jokerPoints : config2.wordScoring.letterGroups.find((group) => group.letters.includes(value))?.points ?? 0;
-  function lengthBonus(length, config2) {
-    const bonuses = config2.wordScoring.lengthBonuses, last = bonuses.length - 1;
-    return length <= last ? bonuses[length] : bonuses[last] + (length - last) * config2.wordScoring.extraLetterBonus;
+  const territoryValue = (tile, config3) => tile.castle ? config3.castlePoints : config3.normalTerritoryPoints;
+  const letterValue = (value, config3) => value === "?" ? config3.wordScoring.jokerPoints : config3.wordScoring.letterGroups.find((group) => group.letters.includes(value))?.points ?? 0;
+  function lengthBonus(length, config3) {
+    const bonuses = config3.wordScoring.lengthBonuses, last = bonuses.length - 1;
+    return length <= last ? bonuses[length] : bonuses[last] + (length - last) * config3.wordScoring.extraLetterBonus;
   }
-  function scoreMove(state, ids, config2) {
+  function scoreMove(state, ids, config3) {
     const tiles = ids.map((id) => state.tiles.find((t) => t.id === id));
-    const letters = tiles.reduce((sum, t) => sum + letterValue(t.letter, config2), 0);
-    const bonus = lengthBonus(ids.length, config2);
+    const letters = tiles.reduce((sum, t) => sum + letterValue(t.letter, config3), 0);
+    const bonus = lengthBonus(ids.length, config3);
     const captured = capturedTiles(state, ids);
-    const territoryGain = captured.reduce((sum, t) => sum + territoryValue(t, config2), 0);
-    const enemyLoss = captured.filter((t) => t.owner !== 0).reduce((sum, t) => sum + territoryValue(t, config2), 0);
+    const territoryGain = captured.reduce((sum, t) => sum + territoryValue(t, config3), 0);
+    const enemyLoss = captured.filter((t) => t.owner !== 0).reduce((sum, t) => sum + territoryValue(t, config3), 0);
     return { letters, lengthBonus: bonus, wordPoints: letters + bonus, territoryGain, enemyLoss, totalGain: letters + bonus + territoryGain };
   }
-  const scoreBreakdown = (state, config2) => [1, 2].map((player) => {
+  const scoreBreakdown = (state, config3) => [1, 2].map((player) => {
     const words = state.wordPoints?.[player - 1] || 0;
-    const territory = state.tiles.filter((t) => t.owner === player).reduce((sum, t) => sum + territoryValue(t, config2), 0);
+    const territory = state.tiles.filter((t) => t.owner === player).reduce((sum, t) => sum + territoryValue(t, config3), 0);
     return { words, territory, total: words + territory };
   });
-  const scores = (state, config2) => scoreBreakdown(state, config2).map((score) => score.total);
-  const lettersRemaining = (state, config2) => Math.max(0, config2.letterBudget - (state.lettersUsed || 0));
-  function advanceTurn(state, config2, letterCost = 0) {
+  const scores = (state, config3) => scoreBreakdown(state, config3).map((score) => score.total);
+  const lettersRemaining = (state, config3) => Math.max(0, config3.letterBudget - (state.lettersUsed || 0));
+  function advanceTurn(state, config3, letterCost = 0) {
     state.lettersUsed = (state.lettersUsed || 0) + letterCost;
     state.turns[state.player - 1]++;
-    state.over = config2.endCondition === "letters" ? lettersRemaining(state, config2) === 0 && state.turns[0] === state.turns[1] : state.turns.every((n) => n >= config2.turnsPerPlayer);
+    state.over = config3.endCondition === "letters" ? lettersRemaining(state, config3) === 0 && state.turns[0] === state.turns[1] : state.turns.every((n) => n >= config3.turnsPerPlayer);
     if (!state.over) state.player = 3 - state.player;
   }
-  function refreshLetters(tiles, ids, config2, random = Math.random) {
+  function refreshLetters(tiles, ids, config3, random = Math.random) {
     const selected = new Set(ids), previous = new Map(tiles.map((t) => [t.id, t.letter]));
     const next = tiles.map((t) => selected.has(t.id) && t.letter !== "?" ? { ...t } : t);
     const refreshed = next.filter((t) => selected.has(t.id) && t.letter !== "?");
-    placeLetters(next, refreshed, categoryPlan(refreshed.length, config2, random), config2, random, previous);
+    placeLetters(next, refreshed, categoryPlan(refreshed.length, config3, random), config3, random, previous);
     return { tiles: next, refreshed: refreshed.map((t) => t.id) };
   }
-  function submit(state, ids, config2, dictionary = null, jokerLetters = {}, random = Math.random) {
-    const error = validatePath(state, ids, config2, true, dictionary, jokerLetters);
+  function submit(state, ids, config3, dictionary = null, jokerLetters = {}, random = Math.random) {
+    const error = validatePath(state, ids, config3, true, dictionary, jokerLetters);
     if (error) return { error };
     const captured = capturedTiles(state, ids);
-    const scoring = scoreMove(state, ids, config2);
+    const scoring = scoreMove(state, ids, config3);
     const move = {
       type: "word",
       player: state.player,
@@ -8821,23 +8821,23 @@ var WordConquest = /* @__PURE__ */ (() => {
       letterCost: ids.length
     };
     const claimed = state.tiles.map((t) => ids.includes(t.id) ? { ...t, owner: state.player } : t);
-    const updated = config2.refreshUsedLetters ? refreshLetters(claimed, ids, config2, random) : { tiles: claimed, refreshed: [] };
+    const updated = config3.refreshUsedLetters ? refreshLetters(claimed, ids, config3, random) : { tiles: claimed, refreshed: [] };
     move.refreshed = updated.refreshed.length;
     const wordPoints = [...state.wordPoints || [0, 0]];
     wordPoints[state.player - 1] += scoring.wordPoints;
     const next = { ...state, tiles: updated.tiles, wordPoints, turns: [...state.turns], log: [move, ...state.log] };
-    advanceTurn(next, config2, move.letterCost);
+    advanceTurn(next, config3, move.letterCost);
     return { state: next, captured: captured.map((t) => t.id), refreshed: updated.refreshed };
   }
-  function refreshTurn(state, config2, random = Math.random) {
+  function refreshTurn(state, config3, random = Math.random) {
     if (state.over) return { error: "The game has ended. Start a new game." };
-    if (!config2.allowRefreshTurn) return { error: "Refreshing is disabled." };
+    if (!config3.allowRefreshTurn) return { error: "Refreshing is disabled." };
     const ids = state.tiles.filter((t) => t.owner === state.player && t.letter !== "?").map((t) => t.id);
     if (!ids.length) return { error: "No ordinary owned letters to refresh. Play a word instead." };
-    const updated = refreshLetters(state.tiles, ids, config2, random);
-    const move = { type: "refresh", player: state.player, refreshed: updated.refreshed.length, letterCost: Math.max(config2.refreshMinimumLetterCost, updated.refreshed.length) };
+    const updated = refreshLetters(state.tiles, ids, config3, random);
+    const move = { type: "refresh", player: state.player, refreshed: updated.refreshed.length, letterCost: Math.max(config3.refreshMinimumLetterCost, updated.refreshed.length) };
     const next = { ...state, tiles: updated.tiles, turns: [...state.turns], log: [move, ...state.log] };
-    advanceTurn(next, config2, move.letterCost);
+    advanceTurn(next, config3, move.letterCost);
     return { state: next, captured: [], refreshed: updated.refreshed };
   }
   return { distance, adjacent, letterType, openingBand, generateBoard, newGame, canReenter, wordForPath, validatePath, capturedTiles, letterValue, lengthBonus, scoreMove, scoreBreakdown, scores, lettersRemaining, advanceTurn, refreshLetters, submit, refreshTurn };
@@ -8895,8 +8895,20 @@ var GAME_CONFIG = Object.freeze({
 if (false) (void 0).exports = GAME_CONFIG;
 var rules_v1_default = GAME_CONFIG;
 
-// server/domain.mjs
-var config = Object.freeze({ ...rules_v1_default, dictionaryEnabled: true });
+// server/versions/rules-v2.mjs
+var rules_v2_default = Object.freeze({ ...rules_v1_default, maxEnemyTilesPerWord: Infinity });
+
+// server/rules.mjs
+var RULES_VERSION = "autumn-v2";
+var rules = Object.freeze({
+  "autumn-v1": Object.freeze({ ...rules_v1_default, dictionaryEnabled: true }),
+  "autumn-v2": Object.freeze({ ...rules_v2_default, dictionaryEnabled: true })
+});
+var SUPPORTED_RULES = Object.freeze(Object.keys(rules));
+var configFor = (version6) => typeof version6 === "string" && Object.hasOwn(rules, version6) ? rules[version6] : null;
+var config = rules[RULES_VERSION];
+var rulesLabel = (version6) => ({ "autumn-v1": "Classic \xB7 3 captures", "autumn-v2": "Unlimited captures" })[version6] || "Other rules";
+var captureRule = (rules2) => Number.isFinite(rules2.maxEnemyTilesPerWord) ? `Capture up to ${rules2.maxEnemyTilesPerWord} opponent tiles per word.` : "No capture limit: every opponent tile in your word becomes yours.";
 
 // online/ui.js
 var $ = (id) => document.getElementById(id);
@@ -9104,13 +9116,14 @@ function activityText(kind, name) {
   return labels[kind] || "Your game has an update";
 }
 function friendlyError(error) {
-  const messages = { stale: "A new turn came in. Your board has been updated.", not_your_turn: "It is your friend's turn.", invitation_unavailable: "This invitation is no longer available.", cannot_accept_own_invitation: "This is your invitation. Share it with a friend.", rate_limit: "A little too quick. Try again in a moment.", unauthorized: "Please sign in again to continue.", not_found: "This game is no longer available.", dictionary_unavailable: "Word checking is unavailable. Your turn has not been used.", version_unavailable: "This game needs an update. Please contact your inviter.", ended: "This game has already ended." };
+  const messages = { client_update_required: "Update Word Conquest or open the latest web app to play this game.", stale: "A new turn came in. Your board has been updated.", not_your_turn: "It is your friend's turn.", invitation_unavailable: "This invitation is no longer available.", cannot_accept_own_invitation: "This is your invitation. Share it with a friend.", rate_limit: "A little too quick. Try again in a moment.", unauthorized: "Please sign in again to continue.", not_found: "This game is no longer available.", dictionary_unavailable: "Word checking is unavailable. Your turn has not been used.", version_unavailable: "This game needs an update. Please contact your inviter.", ended: "This game has already ended." };
   if (messages[error.code]) return messages[error.code];
   if (["TimeoutError", "AbortError", "TypeError"].includes(error.name)) return "Could not connect. Please try again.";
   return error.message || "Something went wrong. Please try again.";
 }
 
 // online/app.js
+var config2 = config;
 initUI();
 $("app-version").textContent = version;
 var cfg = window.WC_CONFIG || {};
@@ -9204,7 +9217,7 @@ async function api(body) {
   if (!db) throw new Error("Online play is not connected yet.");
   const { data: { session }, error } = await db.auth.getSession();
   if (error || !session) throw apiError("Sign in to continue.", "unauthorized", 401);
-  const response = await fetch(`${cfg.supabaseUrl}/functions/v1/game-api`, { method: "POST", signal: AbortSignal.timeout(2e4), headers: { "Content-Type": "application/json", apikey: cfg.supabaseAnonKey, Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify(body) });
+  const response = await fetch(`${cfg.supabaseUrl}/functions/v1/game-api`, { method: "POST", signal: AbortSignal.timeout(2e4), headers: { "Content-Type": "application/json", apikey: cfg.supabaseAnonKey, Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ ...body, supportedRules: SUPPORTED_RULES }) });
   const result = await response.json();
   if (!response.ok) throw apiError(result.error || "Request failed.", result.code, response.status, result.requestId);
   return result;
@@ -9290,7 +9303,7 @@ function renderHome() {
     const bottom = node("div", void 0, "game-card-bottom");
     if (g.status === "invited") bottom.append(node("span", "Your invitation is ready to share", "small-note"));
     else {
-      const scores = engine_v1_default.scores(g.state, config), seat = seatOf(g, user.id) - 1, score = node("span", void 0, "card-score");
+      const scores = engine_v1_default.scores(g.state, configFor(g.rules_version) || config), seat = seatOf(g, user.id) - 1, score = node("span", void 0, "card-score");
       score.append(node("strong", scores[seat]), node("span", "  :  "), node("strong", scores[1 - seat]));
       bottom.append(score);
     }
@@ -9371,7 +9384,7 @@ async function showInvite() {
   }
   const heading = node("div", void 0, "invitation-summary");
   heading.append(avatar(i.host, "avatar-large"), node("h3", `${i.host} saved you a seat.`));
-  showSheet("You are invited.", [heading, node("p", "A game of words, in your own time."), act("Join game", () => decideInvite("accept"), "primary full", "arrow"), act("Not this time", () => decideInvite("decline"), "text-button full")]);
+  showSheet("You are invited.", [heading, node("p", captureRule(configFor(i.rulesVersion) || configFor("autumn-v1"))), act("Join game", () => decideInvite("accept"), "primary full", "arrow"), act("Not this time", () => decideInvite("decline"), "text-button full")]);
   return true;
 }
 async function decideInvite(choice) {
@@ -9392,7 +9405,10 @@ async function openGame(id, quiet = false, { route = true } = {}) {
   if (quiet && (currentView !== "game" || game?.id !== id)) return;
   if (game?.id === id && game.revision > result.game.revision) return;
   const changed = !game || game.id !== id || game.revision !== result.game.revision;
+  const gameConfig = configFor(result.game.rules_version);
+  if (!gameConfig) throw apiError("Update Word Conquest to play this game.", "client_update_required", 409);
   preview = false;
+  config2 = gameConfig;
   game = result.game;
   history = result.history;
   invite = result.invitation;
@@ -9424,12 +9440,12 @@ function drawBoard() {
   if (!focusTile) focusTile = game.state.tiles.find((t) => t.owner === seat)?.id || game.state.tiles[0].id;
   for (const t of game.state.tiles) {
     const p = pos(t), step = selection.indexOf(t.id), letter = t.letter === "?" && step >= 0 ? jokers[t.id] || "?" : t.letter;
-    const g = svg("g", { "data-id": t.id, role: "button", tabindex: t.id === focusTile ? 0 : -1, "aria-pressed": step >= 0, "aria-disabled": !canPlay() && !preview, "aria-label": `${letter === "?" ? "Joker" : letter}, ${t.owner === seat ? "yours" : t.owner ? "opponent" : "neutral"}, ${engine_v1_default.letterValue(t.letter, config)} points${t.castle ? ", castle" : ""}`, class: `tile owner${t.owner}${t.owner === seat ? " your-tile" : ""}${step >= 0 ? " selected" : ""}${highlightLast && last?.path?.includes(t.id) ? " last-move" : ""}` });
+    const g = svg("g", { "data-id": t.id, role: "button", tabindex: t.id === focusTile ? 0 : -1, "aria-pressed": step >= 0, "aria-disabled": !canPlay() && !preview, "aria-label": `${letter === "?" ? "Joker" : letter}, ${t.owner === seat ? "yours" : t.owner ? "opponent" : "neutral"}, ${engine_v1_default.letterValue(t.letter, config2)} points${t.castle ? ", castle" : ""}`, class: `tile owner${t.owner}${t.owner === seat ? " your-tile" : ""}${step >= 0 ? " selected" : ""}${highlightLast && last?.path?.includes(t.id) ? " last-move" : ""}` });
     const points = Array.from({ length: 8 }, (_, i) => {
       const a = (45 * i + 22.5) * Math.PI / 180;
       return `${p.x + 32 * Math.cos(a)},${p.y + 32 * Math.sin(a)}`;
     }).join(" ");
-    g.append(svg("polygon", { points }), svg("text", { x: p.x, y: p.y - 2 }, letter), svg("text", { x: p.x, y: p.y + 19, class: "value" }, engine_v1_default.letterValue(t.letter, config)));
+    g.append(svg("polygon", { points }), svg("text", { x: p.x, y: p.y - 2 }, letter), svg("text", { x: p.x, y: p.y + 19, class: "value" }, engine_v1_default.letterValue(t.letter, config2)));
     if (t.owner) g.append(svg("circle", { cx: p.x + 20, cy: p.y - 19, r: 4.3, class: "marker" }));
     if (t.castle) {
       const points2 = Array.from({ length: 10 }, (_, i) => {
@@ -9471,23 +9487,23 @@ function renderJokers() {
 }
 function selectionHint(error) {
   if (pending()) return "Your move is waiting to be confirmed.";
-  if (!selection.length) return engine_v1_default.canReenter(game.state, config) ? "No territory left? Start on any tile." : `Start on one of your ${seatOf(game, user?.id) === 2 ? "brown" : "green"} tiles.`;
+  if (!selection.length) return engine_v1_default.canReenter(game.state, config2) ? "No territory left? Start on any tile." : `Start on one of your ${seatOf(game, user?.id) === 2 ? "brown" : "green"} tiles.`;
   if (selection.some((id) => game.state.tiles.find((t) => t.id === id).letter === "?" && !jokers[id])) return "Choose a letter for your joker.";
-  if (selection.length < config.minimumWordLength) return `Add ${config.minimumWordLength - selection.length} more ${config.minimumWordLength - selection.length === 1 ? "letter" : "letters"}.`;
+  if (selection.length < config2.minimumWordLength) return `Add ${config2.minimumWordLength - selection.length} more ${config2.minimumWordLength - selection.length === 1 ? "letter" : "letters"}.`;
   return error || "Ready when you are.";
 }
 function renderSelection() {
   const word = selection.length ? engine_v1_default.wordForPath(game.state, selection, jokers) : "Find your word.";
-  const error = engine_v1_default.validatePath(game.state, selection, { ...config, dictionaryEnabled: false }, true, null, jokers);
+  const error = engine_v1_default.validatePath(game.state, selection, { ...config2, dictionaryEnabled: false }, true, null, jokers);
   $("word").textContent = word;
   $("word").classList.toggle("placeholder", !selection.length);
   $("submit-word").disabled = !canPlay() || !!error;
   $("clear-word").disabled = !selection.length || busy || !!pending();
   $("selection-help").textContent = preview ? "Board preview. Moves are not saved." : selectionHint(error);
-  $("selection-help").classList.toggle("invalid", !!error && selection.length >= config.minimumWordLength && !selection.some((id) => game.state.tiles.find((t) => t.id === id).letter === "?" && !jokers[id]));
+  $("selection-help").classList.toggle("invalid", !!error && selection.length >= config2.minimumWordLength && !selection.some((id) => game.state.tiles.find((t) => t.id === id).letter === "?" && !jokers[id]));
   $("score-preview").hidden = !selection.length;
   if (selection.length) {
-    const s = engine_v1_default.scoreMove(game.state, selection, config);
+    const s = engine_v1_default.scoreMove(game.state, selection, config2);
     $("score-preview").replaceChildren(node("span", `${s.wordPoints} word points + ${s.territoryGain} land`), icon("info"));
     $("submit-label").textContent = `Play word \xB7 ${s.totalGain}`;
   } else $("submit-label").textContent = "Play word";
@@ -9497,7 +9513,7 @@ function renderSelection() {
   $("retry").disabled = busy;
 }
 function renderGame() {
-  const totals = engine_v1_default.scoreBreakdown(game.state, config), seat = seatOf(game, user?.id) || 1;
+  const totals = engine_v1_default.scoreBreakdown(game.state, config2), seat = seatOf(game, user?.id) || 1;
   const active = game.status === "active", ownTurn = preview || myTurn(), unconfirmed = !!pending();
   const other = opponentName(game, user?.id);
   $("game-table").dataset.side = seat === 1 ? "sage" : "walnut";
@@ -9533,9 +9549,9 @@ function renderGame() {
   $("turn").dataset.side = active && !unconfirmed ? game.state.player === 1 ? "sage" : "walnut" : "none";
   $("waiting-heading").textContent = `Over to ${other}.`;
   $("waiting-copy").textContent = "We will keep your place at the table.";
-  const left = engine_v1_default.lettersRemaining(game.state, config);
+  const left = engine_v1_default.lettersRemaining(game.state, config2);
   $("supply").textContent = isFinished(game) ? "Final score" : left === 0 ? "Final reply" : `${left} letters left`;
-  $("supply-fill").style.width = `${Math.max(0, Math.min(100, left / config.letterBudget * 100))}%`;
+  $("supply-fill").style.width = `${Math.max(0, Math.min(100, left / config2.letterBudget * 100))}%`;
   $("share").hidden = !invite;
   $("game-table").hidden = !!invite;
   if (invite) {
@@ -9546,7 +9562,7 @@ function renderGame() {
   $("waiting-turn").hidden = myTurn() || preview || isFinished(game) || !!pending();
   $("game-result").hidden = !isFinished(game);
   $("draw-offer").hidden = !game.draw_by || game.draw_by === user?.id || game.status !== "active";
-  const colour = seat === 1 ? "green" : "brown", context = highlightLast ? "Last word highlighted" : preview ? "Explore the board" : isFinished(game) ? "Your final territory" : ownTurn ? engine_v1_default.canReenter(game.state, config) ? "No territory left. Start anywhere." : `Start on your ${colour} tiles` : `Your tiles \xB7 ${colour}`;
+  const colour = seat === 1 ? "green" : "brown", context = highlightLast ? "Last word highlighted" : preview ? "Explore the board" : isFinished(game) ? "Your final territory" : ownTurn ? engine_v1_default.canReenter(game.state, config2) ? "No territory left. Start anywhere." : `Start on your ${colour} tiles` : `Your tiles \xB7 ${colour}`;
   $("board-context").replaceChildren(node("span", void 0, seat === 1 ? "owner-dot" : "owner-ring"), node("span", context));
   if (isFinished(game)) {
     $("result-title").textContent = game.status === "completed" ? gameStatus(game, user?.id) + "." : game.status === "abandoned" ? "A game left unfinished." : "Invitation cancelled.";
@@ -9568,7 +9584,7 @@ function choose(id) {
   if (!canPlay() && !preview || !id || id === selection.at(-1)) return;
   if (selection.length > 1 && id === selection.at(-2)) delete jokers[selection.pop()];
   else {
-    const error = engine_v1_default.validatePath(game.state, [...selection, id], config, false);
+    const error = engine_v1_default.validatePath(game.state, [...selection, id], config2, false);
     if (error) {
       if (!dragging) status(error, true);
       return;
@@ -9650,18 +9666,19 @@ function scoreLines(rows) {
   return container;
 }
 function showScore(player) {
-  const s = engine_v1_default.scoreBreakdown(game.state, config)[player - 1];
+  const s = engine_v1_default.scoreBreakdown(game.state, config2)[player - 1];
   showSheet(player === seatOf(game, user?.id) ? "Your score" : `${game.names[player - 1]}'s score`, [scoreLines([["Word points", s.words], ["Current territory", s.territory], ["Total", s.total, true]]), node("p", "Word points stay yours. Territory points change when tiles are captured.")]);
 }
 function showWordScore() {
   if (!selection.length) return;
-  const s = engine_v1_default.scoreMove(game.state, selection, config);
+  const s = engine_v1_default.scoreMove(game.state, selection, config2);
   const content = [scoreLines([["Letter points", s.letters], ["Length bonus", s.lengthBonus], ["New territory", s.territoryGain], ["Added to your score", s.totalGain, true]])];
   if (s.enemyLoss) content.push(node("p", `Your opponent also loses ${s.enemyLoss} territory points.`));
   showSheet("A good word adds up.", content);
 }
 function showRules() {
-  const steps = [["Find a word", `Start on a tile you own. Connect at least ${config.minimumWordLength} letters in any of the eight directions. Use each tile once. No territory left? Start anywhere.`], ["Make it yours", `Claim the tiles in your word, including up to ${config.maxEnemyTilesPerWord} enemy tiles. Ordinary tiles score ${config.normalTerritoryPoints} for territory; castles are worth ${config.castlePoints}.`], ["Every letter counts", "Small numbers are letter points. Longer words earn a bonus. Jokers can be any letter. Ordinary letters in a played word are replaced; jokers stay wild."], ["Take your time", `Both players share ${config.letterBudget} letters. When they run out, Player 2 gets a final reply if needed. The highest final score wins. Refreshing your letters uses your turn.`]];
+  const config3 = currentView === "game" && game ? configFor(game.rules_version) || config : config;
+  const steps = [["Find a word", `Start on a tile you own. Connect at least ${config3.minimumWordLength} letters in any of the eight directions. Use each tile once. No territory left? Start anywhere.`], ["Make it yours", `${captureRule(config3)} Neutral tiles in your word become yours too. Ordinary tiles score ${config3.normalTerritoryPoints} for territory; castles are worth ${config3.castlePoints}.`], ["Every letter counts", "Small numbers are letter points. Longer words earn a bonus. Jokers can be any letter. Ordinary letters in a played word are replaced; jokers stay wild."], ["Take your time", `Both players share ${config3.letterBudget} letters. When they run out, Player 2 gets a final reply if needed. The highest final score wins. Refreshing your letters uses your turn.`]];
   const content = steps.map(([title, copy], i) => {
     const row2 = node("div", void 0, "rule-step"), text = node("div");
     text.append(node("h3", title), node("p", copy));
@@ -9720,7 +9737,7 @@ function showRecap() {
   showSheet("The last move.", content);
 }
 function showNewGame() {
-  showSheet("Pull up a chair.", [node("p", "Start a game with someone you know."), act("Invite a friend", createGame, "primary full", "user-plus"), act("I have an invitation", showJoin, "secondary full", "mail")]);
+  showSheet("Pull up a chair.", [node("p", captureRule(config)), act("Invite a friend", createGame, "primary full", "user-plus"), act("I have an invitation", showJoin, "secondary full", "mail")]);
 }
 function showJoin() {
   const form = node("form", void 0, "stack-form"), label = node("label", "Invitation link or code"), input = node("input");
@@ -9756,7 +9773,7 @@ async function createGame() {
   try {
     const key = `wc-create:${user.id}`, id = localStorage.getItem(key) || crypto.randomUUID();
     localStorage.setItem(key, id);
-    const { game: g } = await api({ action: "create", gameId: id });
+    const { game: g } = await api({ action: "create", gameId: id, rulesVersion: RULES_VERSION });
     localStorage.removeItem(key);
     await openGame(g.id);
   } finally {
@@ -9798,13 +9815,13 @@ async function quitGame() {
   } else if (game.status === "active" && await ask({ title: "Leave this game?", message: "Your friend wins and this counts as a loss. Your game history will stay in Finished.", label: "Leave game", danger: true, symbol: "flag" })) await action("resign");
 }
 async function confirmAction(kind) {
-  const cost = Math.max(config.refreshMinimumLetterCost, game.state.tiles.filter((t) => t.owner === game.state.player && t.letter !== "?").length);
+  const cost = Math.max(config2.refreshMinimumLetterCost, game.state.tiles.filter((t) => t.owner === game.state.player && t.letter !== "?").length);
   const options = { refresh: { title: "Fresh letters?", message: `Replace your ordinary owned letters. This uses your turn and ${cost} letters from the shared supply.`, label: "Refresh letters", symbol: "refresh" }, offer_draw: { title: "Call it a draw?", message: "Your friend can accept the offer. You can both keep playing until then.", label: "Offer draw", symbol: "handshake" }, accept_draw: { title: "Share the honours?", message: "This ends the game as a draw for both players.", label: "Accept draw", symbol: "handshake" }, abandon: { title: "Close this inactive game?", message: "After 30 days without a turn, you can close a game without a win or loss.", label: "Close game", symbol: "hourglass" } };
   if (await ask(options[kind])) await action(kind);
 }
 function showGameMenu() {
   const list = node("div", void 0, "settings-list");
-  list.append(row("Move history", "history", showHistory), row("How to play", "book", showRules));
+  list.append(row("Move history", "history", showHistory), row("How to play", "book", showRules, { note: rulesLabel(game.rules_version) }));
   if (game.status === "active" && !preview) {
     const refresh = row("Refresh letters", "refresh", () => confirmAction("refresh"), { note: "Replace your letters instead of playing a word" });
     refresh.disabled = !canPlay();
@@ -9840,7 +9857,7 @@ async function account({ route = true } = {}) {
   const entries = Object.entries(statistics);
   if (!entries.length) entries.push(["", { wins: 0, losses: 0, draws: 0, highestFinalScore: 0, bestTurn: 0, bestWord: "" }]);
   for (const [version6, s] of entries) {
-    if (entries.length > 1) $("statistics").append(node("p", version6.startsWith("autumn-v1") ? "Standard English" : "Earlier rules", "record-note"));
+    if (version6) $("statistics").append(node("p", rulesLabel(version6.split("/")[0]) + " \xB7 English", "record-note"));
     const grid = node("div", void 0, "stats-grid");
     for (const [label, count] of [["Wins", s.wins], ["Draws", s.draws], ["Losses", s.losses]]) {
       const item = node("div", void 0, "stat");
@@ -10163,7 +10180,8 @@ $("board").onkeydown = (e) => {
 };
 $("preview-button").onclick = () => {
   preview = true;
-  game = { id: "preview", state: engine_v1_default.newGame(config), status: "active", players: [], names: ["You", "Alex"], revision: 0 };
+  config2 = config;
+  game = { id: "preview", rules_version: RULES_VERSION, state: engine_v1_default.newGame(config2), status: "active", players: [], names: ["You", "Alex"], revision: 0 };
   history = [];
   invite = null;
   selection = [];
