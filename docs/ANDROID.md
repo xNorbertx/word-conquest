@@ -3,16 +3,22 @@
 Target test phone: Solana Seeker / Android 16. Package: `com.wordconquest.app`.
 The APK uses the same Supabase accounts and games as the web app.
 
-Verified pilot build: `0.6.0-634371f` (version code `23914106`), from
-[this successful pipeline run](https://github.com/xNorbertx/word-conquest/actions/runs/37225809567).
-Local APK: `dist/word-conquest-0.6.0.apk`. Earlier compilation-only artifacts are
+Verified pilot build: `0.6.1-5ba714e` (version code `23915880`), from
+[this successful pipeline run](https://github.com/xNorbertx/word-conquest/actions/runs/37227714472).
+Local APK: `dist/word-conquest-0.6.1.apk`. Earlier compilation-only artifacts are
 superseded; use this build or a later successful build for the stable pilot signer.
 
-Version 0.6.0 adds Friends: search display names, accept friend requests and invite
+Version 0.6.1 requires a unique username at signup and uses it as the display name.
+Existing accounts keep their names and games. Names ignore case when checking
+uniqueness; You lets you change to an available username. Email/password login
+stays unchanged. Older APKs can use existing accounts; install this update to
+create an account with the new required username field.
+
+Version 0.6.0 added Friends: search usernames, accept friend requests and invite
 someone directly from your list. Activity is under You. Incoming game invitations
 appear in Games; enabled Android push opens the invitation for its intended player.
-Names are searchable without an opt-in. Distinct friend codes identify duplicates;
-unique display names are a future backlog item. Both players should install this
+Names are searchable without an opt-in. Friend codes remain available for sharing.
+Both players should install this
 update to use the Friends flow. Friend requests currently use in-app badges/live
 updates; game invitations use the existing native push queue.
 
@@ -28,7 +34,7 @@ statistics stay separate.
 On your Android phone, open the repository's [Releases page](https://github.com/xNorbertx/word-conquest/releases).
 Open the newest published Android pilot and, under **Assets**, download
 `word-conquest-android.apk`. No GitHub account or ZIP extraction is needed.
-[Direct verified APK download](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-23914106/word-conquest-android.apk).
+[Direct verified APK download](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-23915880/word-conquest-android.apk).
 Open the downloaded APK and allow installation from your browser if Android asks.
 Updates install over the existing pilot app; do not uninstall it, because that
 removes locally saved sessions and pending actions.
@@ -42,7 +48,7 @@ it for seven days. **Send a test notification** targets only this phone and acco
 Firebase acceptance is reported separately from an actual receipt. Preferences are per account and phone. Turning notifications
 off disables server delivery; signing out disables registration and removes
 delivered notifications. Signing in again restores a previously enabled preference.
-Turn notifications include the opponent display name and total points gained
+Turn notifications include the opponent username and total points gained
 (word points plus territory gained and any castle income earned on that turn), matching the Play word total. The worker
 reads the saved receipt at the notification revision, so delayed delivery cannot
 accidentally quote a newer move. Refreshes say the opponent refreshed their letters;
@@ -50,8 +56,8 @@ final turns retain their score and say the game finished. Other alerts stay gene
 Payloads include the game reference, but not email, board contents or played words.
 Tapping one opens the saved game after sign-in. This wording is server-controlled;
 the existing pilot APK receives it without an upgrade.
-Invitations are share links: push reports acceptance/decline to known players;
-there is no way to push an initial link to an unidentified recipient.
+Shared-link invitations notify known players about acceptance/decline. Invitations
+from Friends also notify the addressed account when that player has enabled push.
 
 Verify on the phone: foreground update, background and closed-app delivery, tap
 to correct game, denial/opt-out, sign-out, account switching, and an APK upgrade

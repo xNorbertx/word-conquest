@@ -28,7 +28,21 @@
   displayed canonical names without emails. All six existing names/IDs remained
   unchanged after the checks. One isolated example.invalid test account was added
   and retained; no email/notification sent or real player/game changed.
-- Web and APK release verification follows below when publication completes.
+- Release source: `5ba714eb60f9574210b640f82b6c5d75a4627990`. Pages commit
+  `4041f2f6d066382faaeaa425830bfa6f1834eb71` built successfully; all nine public
+  assets match the verified build, including the unchanged root prototype.
+  Live signup screen inspected; API CORS preflight 204 and unauthenticated 401.
+- Android CI [37227714472](https://github.com/xNorbertx/word-conquest/actions/runs/37227714472)
+  passed tests/build. APK `0.6.1-5ba714e`, code `23915880`, 4,948,256 bytes;
+  package/notification permission and stable original pilot certificate verified.
+  No private keys or fixtures included. Local APK: `dist/word-conquest-0.6.1.apk`.
+  SHA-256: `3be2cf5d4003fc214b76bb30bb864be4b78467a4caa0845ded255a4b2ab60e93`.
+- [Pilot release](https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-23915880)
+  published; anonymous APK download returned 200 with the verified checksum.
+  Install over the existing app. Existing-account login remains compatible with
+  older APKs; new account creation requires the username UI in 0.6.1 or the web.
+  Physical Seeker upgrade acceptance remains open. No new ongoing cost or service,
+  account deletion, game-rule change, or app-store submission.
 
 ## Web publishing - 2 October
 
