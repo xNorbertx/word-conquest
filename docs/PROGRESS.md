@@ -276,3 +276,21 @@ turn), named waiting state, long names on a narrow phone, finished games and
 no-territory reentry. Desktop and mobile browser layouts reviewed. Three original
 rule suites and 35 integration/service/controller tests pass. Release evidence
 follows below. No server/database change or added cost.
+
+Published player-identity update evidence:
+
+- Source: e6b8b278e514e7a292d89dd3784837e0f82b6dca.
+- Web: gh-pages 60d2ead; all nine checked public assets match the build. Root
+  prototype unchanged; API preflight 204 and unauthenticated request 401.
+- CI: https://github.com/xNorbertx/word-conquest/actions/runs/37196225486
+- APK: 0.3.2-e6b8b27, version code 23884955, 4,939,462 bytes. Stable pilot
+  signing certificate and notification permission verified; no private key or
+  local fixture adapter included.
+- Release: https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-23884955
+- Anonymous download: HTTP 200, SHA-256
+  ee59a42df349d90be31abd6ed931ad24ca9ca5d60024d8d5bc415a8cc6907224.
+- Verified local APK: dist/word-conquest-0.3.2.apk.
+
+Install over the existing pilot to preserve the session. Physical Seeker touch
+and upgrade acceptance remain with the owner. The owner also confirmed the
+previously deployed opponent-name/points notification wording works.
