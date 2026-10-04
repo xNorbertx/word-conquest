@@ -262,3 +262,17 @@ change. Firebase accepted that payload in validation-only mode: no test alert se
 Deployed worker returns 401 without its secret, 200 with it; queue was empty.
 Updated notification/privacy docs and roadmap. No migration, client upgrade,
 new cost or game-data change. The existing APK receives the new copy automatically.
+
+## Clearer player identity and turn status - 4 October
+
+Version 0.3.2 adds named YOU/opponent score cards, explicit sage-green/walnut-brown
+labels, an outlined current player and a larger named turn indicator. Your owned
+tiles have stronger borders; selection, path and play button use your own colour.
+Game list turn badges are stronger and opponent avatars follow their actual side.
+Preserved fixed board orientation and ownership mechanics.
+
+Checked both accounts, walnut word submission, lost-response retry (one saved
+turn), named waiting state, long names on a narrow phone, finished games and
+no-territory reentry. Desktop and mobile browser layouts reviewed. Three original
+rule suites and 35 integration/service/controller tests pass. Release evidence
+follows below. No server/database change or added cost.

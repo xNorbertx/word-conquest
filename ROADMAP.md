@@ -29,6 +29,11 @@ UX revision 0.3.0: rebuilt navigation, board presentation, invitations, identity
 activity and account screens. Browser checks and regression suites pass; owner
 visual feedback is positive; physical-phone acceptance remains open. See [UX review](docs/UX.md).
 
+UX revision 0.3.2 makes your name, YOU label, sage/walnut side, starting tiles and
+current turn explicit. Selection and Play word colours follow your actual seat;
+both player perspectives and narrow-screen states have browser verification.
+Seeker touch/upgrade acceptance remains a device check.
+
 First milestone: invite a friend and reliably finish a game over several days.
 
 ## Must-have — first asynchronous friend-play app

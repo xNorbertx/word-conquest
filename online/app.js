@@ -68,10 +68,10 @@ function renderHome(){
   $('active-games').setAttribute('aria-pressed',filter==='active');$('finished-games').setAttribute('aria-pressed',filter==='finished');
   const list=$('game-list');list.replaceChildren();
   for(const g of visibleGames(games,user.id,filter)){
-    const name=opponentName(g,user.id),card=act('',()=>openGame(g.id),'game-card');card.replaceChildren();card.setAttribute('aria-label',`${name}. ${gameStatus(g,user.id)}. Open game`);
+    const name=opponentName(g,user.id),card=act('',()=>openGame(g.id),'game-card'+(gameStatus(g,user.id)==='Your turn'?' has-turn':''));card.replaceChildren();card.setAttribute('aria-label',`${name}. ${gameStatus(g,user.id)}. Open game`);
     const top=node('div',undefined,'game-card-top'),copy=node('div');copy.append(node('div',name,'game-card-name'));
     const meta=node('div',undefined,'game-card-meta'),dot=node('span',undefined,'status-dot'+(gameStatus(g,user.id)==='Your turn'?' active':''));meta.append(dot,node('span',timeAgo(g.updated_at)));copy.append(meta);
-    const chevron=node('span',undefined,'card-chevron');chevron.append(icon('chevron'));top.append(avatar(g.status==='invited'?'+':name,'walnut'),copy,chevron);
+    const chevron=node('span',undefined,'card-chevron');chevron.append(icon('chevron'));top.append(avatar(g.status==='invited'?'+':name,seatOf(g,user.id)===2?'sage':'walnut'),copy,chevron);
     const bottom=node('div',undefined,'game-card-bottom');
     if(g.status==='invited')bottom.append(node('span','Your invitation is ready to share','small-note'));
     else {const scores=Engine.scores(g.state,config),seat=seatOf(g,user.id)-1,score=node('span',undefined,'card-score');score.append(node('strong',scores[seat]),node('span','  :  '),node('strong',scores[1-seat]));bottom.append(score);}
@@ -119,10 +119,10 @@ function drawBoard(){
   const board=$('board');board.replaceChildren();board.setAttribute('viewBox','-295 -295 590 590');
   const last=history[0]?.recap,seat=seatOf(game,user?.id)||1;if(!focusTile)focusTile=game.state.tiles.find(t=>t.owner===seat)?.id||game.state.tiles[0].id;
   for(const t of game.state.tiles){const p=pos(t),step=selection.indexOf(t.id),letter=t.letter==='?'&&step>=0?(jokers[t.id]||'?'):t.letter;
-    const g=svg('g',{'data-id':t.id,role:'button',tabindex:t.id===focusTile?0:-1,'aria-pressed':step>=0,'aria-disabled':!canPlay()&&!preview,'aria-label':`${letter==='?'?'Joker':letter}, ${t.owner===seat?'yours':t.owner?'opponent':'neutral'}, ${Engine.letterValue(t.letter,config)} points${t.castle?', castle':''}`,class:`tile owner${t.owner}${step>=0?' selected':''}${highlightLast&&last?.path?.includes(t.id)?' last-move':''}`});
+    const g=svg('g',{'data-id':t.id,role:'button',tabindex:t.id===focusTile?0:-1,'aria-pressed':step>=0,'aria-disabled':!canPlay()&&!preview,'aria-label':`${letter==='?'?'Joker':letter}, ${t.owner===seat?'yours':t.owner?'opponent':'neutral'}, ${Engine.letterValue(t.letter,config)} points${t.castle?', castle':''}`,class:`tile owner${t.owner}${t.owner===seat?' your-tile':''}${step>=0?' selected':''}${highlightLast&&last?.path?.includes(t.id)?' last-move':''}`});
     const points=Array.from({length:8},(_,i)=>{const a=(45*i+22.5)*Math.PI/180;return `${p.x+32*Math.cos(a)},${p.y+32*Math.sin(a)}`;}).join(' ');
     g.append(svg('polygon',{points}),svg('text',{x:p.x,y:p.y-2},letter),svg('text',{x:p.x,y:p.y+19,class:'value'},Engine.letterValue(t.letter,config)));
-    if(t.owner)g.append(svg('circle',{cx:p.x+20,cy:p.y-19,r:3.1,class:'marker'}));
+    if(t.owner)g.append(svg('circle',{cx:p.x+20,cy:p.y-19,r:4.3,class:'marker'}));
     if(t.castle){const points=Array.from({length:10},(_,i)=>{const a=(i*36-90)*Math.PI/180,r=i%2?2.7:6;return `${p.x+19+r*Math.cos(a)},${p.y+18+r*Math.sin(a)}`;}).join(' ');g.append(svg('polygon',{points,class:'castle'}));}
     if(step>=0)g.append(svg('text',{x:p.x-19,y:p.y-18,class:'step'},step+1));board.append(g);
   }
@@ -132,7 +132,7 @@ function renderJokers(){
   $('jokers').replaceChildren();for(const id of selection){if(game.state.tiles.find(t=>t.id===id).letter!=='?')continue;const label=node('label',`Joker ${selection.indexOf(id)+1}`),input=node('input');input.maxLength=1;input.pattern='[A-Za-z]';input.autocomplete='off';input.autocapitalize='characters';input.value=jokers[id]||'';input.setAttribute('aria-label',`Joker at position ${selection.indexOf(id)+1}`);input.oninput=()=>{input.value=input.value.replace(/[^a-z]/gi,'').toUpperCase();jokers[id]=input.value;drawBoard();renderSelection();};label.append(input);$('jokers').append(label);}
 }
 function selectionHint(error){
-  if(pending())return 'Your move is waiting to be confirmed.';if(!selection.length)return Engine.canReenter(game.state,config)?'No territory left? Start on any tile.':'Start on a tile you own.';
+  if(pending())return 'Your move is waiting to be confirmed.';if(!selection.length)return Engine.canReenter(game.state,config)?'No territory left? Start on any tile.':`Start on one of your ${seatOf(game,user?.id)===2?'brown':'green'} tiles.`;
   if(selection.some(id=>game.state.tiles.find(t=>t.id===id).letter==='?'&&!jokers[id]))return 'Choose a letter for your joker.';
   if(selection.length<config.minimumWordLength)return `Add ${config.minimumWordLength-selection.length} more ${config.minimumWordLength-selection.length===1?'letter':'letters'}.`;
   return error||'Ready when you are.';
@@ -148,16 +148,31 @@ function renderSelection(){
 }
 function renderGame(){
   const totals=Engine.scoreBreakdown(game.state,config),seat=seatOf(game,user?.id)||1;
-  [1,2].forEach(p=>{$(`name-${p}`).textContent=p===seat?'You':game.names?.[p-1]||'Your friend';$(`score-${p}`).textContent=totals[p-1].total;$(`player-score-${p}`).style.order=p===seat?1:3;$(`player-score-${p}`).setAttribute('aria-label',`${p===seat?'Your':game.names?.[p-1]||'Player'} score: ${totals[p-1].total}. View breakdown`);});
-  document.querySelector('.turn').style.order=2;
-  $('game-heading-name').textContent=preview?'The Sunday table':opponentName(game,user?.id);$('game-heading-subtitle').textContent=game.status==='invited'?'Invitation':isFinished(game)?'Finished game':`Turn ${game.state.turns.reduce((a,b)=>a+b,0)+1}`;
-  $('turn').textContent=preview?'Your turn':gameStatus(game,user?.id);$('turn').classList.toggle('waiting',!myTurn()&&!preview);
+  const active=game.status==='active',ownTurn=preview||myTurn(),unconfirmed=!!pending();
+  const other=opponentName(game,user?.id);
+  $('game-table').dataset.side=seat===1?'sage':'walnut';
+  [1,2].forEach(p=>{
+    const mine=p===seat,name=game.names?.[p-1]||(mine?'You':'Your friend'),colour=p===1?'Sage green':'Walnut brown',card=$('player-score-'+p);
+    $('role-'+p).textContent=mine?'You':'Opponent';$('name-'+p).textContent=name;$('name-'+p).title=name;$('colour-'+p).textContent=colour;
+    $('score-'+p).textContent=totals[p-1].total;card.style.order=mine?1:2;
+    card.classList.toggle('is-you',mine);card.classList.toggle('is-turn',active&&!unconfirmed&&game.state.player===p);
+    card.setAttribute('aria-label',`${mine?'You, ':''}${name}. ${colour}. ${active&&!unconfirmed&&game.state.player===p?'Current turn. ':''}Score: ${totals[p-1].total}. View breakdown`);
+  });
+  const scoreboard=document.querySelector('.scoreboard'),ownCard=$('player-score-'+seat);if(scoreboard.firstElementChild!==ownCard)scoreboard.prepend(ownCard);
+  document.querySelector('.turn').style.order=3;
+  $('game-heading-name').textContent=preview?'The Sunday table':other;$('game-heading-subtitle').textContent=game.status==='invited'?'Invitation':isFinished(game)?'Finished game':`Turn ${game.state.turns.reduce((a,b)=>a+b,0)+1}`;
+  const turnText=unconfirmed?(busy?'Saving your turn...':'Turn awaiting confirmation'):preview?'Your turn':active?(ownTurn?'Your turn':`${other}'s turn`):gameStatus(game,user?.id);
+  const turnIcon=unconfirmed?'refresh':!active?'flag':ownTurn?'arrow':'hourglass';
+  if($('turn').dataset.label!==turnText){const copy=node('span',undefined,'turn-copy');if(active&&!ownTurn&&!unconfirmed){copy.append(node('span',other,'turn-player'),node('span',"'s turn",'turn-suffix'));}else copy.textContent=turnText;$('turn').replaceChildren(icon(turnIcon),copy);$('turn').dataset.label=turnText;}
+  $('turn').title=turnText;$('turn').classList.toggle('waiting',!ownTurn||unconfirmed);$('turn').dataset.side=active&&!unconfirmed?(game.state.player===1?'sage':'walnut'):'none';
+  $('waiting-heading').textContent=`Over to ${other}.`;$('waiting-copy').textContent='We will keep your place at the table.';
   const left=Engine.lettersRemaining(game.state,config);$('supply').textContent=isFinished(game)?'Final score':left===0?'Final reply':`${left} letters left`;$('supply-fill').style.width=`${Math.max(0,Math.min(100,left/config.letterBudget*100))}%`;
   $('share').hidden=!invite;$('game-table').hidden=!!invite;
   if(invite){$('share-link').value=`${authRedirect()}?invite=${invite.token}`;$('invite-expiry').textContent=`Available until ${new Date(invite.expires_at).toLocaleDateString(undefined,{month:'short',day:'numeric'})}`;}
   $('composer').hidden=(!myTurn()&&!preview)||isFinished(game)||!!pending()&&!busy;$('waiting-turn').hidden=myTurn()||preview||isFinished(game)||!!pending();$('game-result').hidden=!isFinished(game);
   $('draw-offer').hidden=!game.draw_by||game.draw_by===user?.id||game.status!=='active';
-  $('board-context').textContent=highlightLast?'Last word highlighted':preview?'DESIGN PREVIEW':`You play ${seat===1?'sage':'walnut'}`;
+  const colour=seat===1?'green':'brown',context=highlightLast?'Last word highlighted':preview?'Explore the board':isFinished(game)?'Your final territory':ownTurn?(Engine.canReenter(game.state,config)?'No territory left. Start anywhere.':`Start on your ${colour} tiles`):`Your tiles · ${colour}`;
+  $('board-context').replaceChildren(node('span',undefined,seat===1?'owner-dot':'owner-ring'),node('span',context));
   if(isFinished(game)){$('result-title').textContent=game.status==='completed'?gameStatus(game,user?.id)+'.':game.status==='abandoned'?'A game left unfinished.':'Invitation cancelled.';$('result-description').textContent=game.status==='completed'?`${totals[seat-1].total} to ${totals[seat===1?1:0].total}. A little word, a little world.`:'This game does not count towards your record.';}
   const last=history[0]?.recap;$('recap').hidden=!last;
   if(last){const copy=node('span'),symbol=node('span',undefined,'recap-symbol');symbol.append(icon('history'));copy.append(node('small','LAST MOVE'),node('strong',last.word?`${game.names[last.player-1]} played ${last.word}`:activityText(last.action,game.names[last.player-1])));$('recap').replaceChildren(symbol,copy,node('span',last.score?`+${last.score.wordPoints}`:''));}

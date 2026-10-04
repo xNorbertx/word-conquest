@@ -13,9 +13,12 @@ unchanged. No new service, paid asset, tracker or font dependency was added.
   delayed responses cannot override a newer destination.
 - Rules, detailed scores, move history and account controls open in accessible
   dialogs. There are no expandable folds. Icons have text or accessible labels.
-- The board and selected word lead. Your score is always on the left, with sage
-  dots and walnut rings preserving ownership cues beyond colour. Selection has
-  numbered steps, a connecting path, clear/undo behaviour and a visible score.
+- The board and selected word lead. Your named YOU card is always on the left,
+  labelled Sage green or Walnut brown. The current player has a heavier border
+  and the turn line explicitly says Your turn or names the opponent. Your own
+  territory has stronger outlines; sage dots and walnut rings preserve ownership
+  cues beyond colour. Selected tiles, path and Play word button match your side.
+  Selection has numbered steps, clear/undo behaviour and a visible score.
 - Refresh, resignation and draws retain explicit consequence confirmations.
   Pending turns stay conspicuous with a retry action; dictionary rejection keeps
   the selected word available to correct. Routine support IDs are on demand.
@@ -49,7 +52,9 @@ layout. No browser console errors were reported during the navigation checks.
 
 Run `node scripts/ux-preview.cjs` and open http://127.0.0.1:4175/.
 Its clearly labelled scenario selector supplies home, game, waiting, completed,
-invitation, empty, authentication, joker, draw and long-name states. Lose reply
+invitation, empty, authentication, joker, draw and long-name states. The walnut
+and walnut_waiting scenarios sign in as the second player; reentry has no owned
+tiles. Lose reply
 commits a turn but drops its response; Stale rejects the next turn. Valid word:
 WORD along -4,-1 / -4,-2 / -3,-3 / -3,-2. Reload resets fixture server state.
 
@@ -64,3 +69,19 @@ notification delivery/taps, in-place upgrade, and multi-day recovery remain open
 The fitted 69-tile board is inherently dense on narrow phones; use Enlarge board
 when larger targets help. This revision does not claim full accessibility
 certification. Existing operational backup/restore and monitoring gates remain.
+
+## Player identity and turn clarity - 0.3.2
+
+Replaced the small three-column score strip with two named player cards and a
+stronger turn line. YOU is explicit beside the signed-in profile name, colour
+names sit beside matching ownership symbols, and the card for the current turn
+is outlined. Own card comes first visually and in keyboard order. Long opponent
+names truncate while the word "turn" remains visible. Unconfirmed submissions
+say Saving your turn / Turn awaiting confirmation rather than implying acceptance.
+
+Reviewed both sides at 390 x 844, long names and waiting at 320 x 640, and desktop
+at 1280 x 900. Verified walnut selection and submission, one-commit response-loss
+retry, the resulting named opponent turn, no-territory reentry, and finished games
+without an active-turn highlight. Browser warnings/errors absent in checked flows.
+All three original rule suites and 35 service/integration/controller tests pass.
+No changes to rules, scoring, territory ownership or board orientation.
