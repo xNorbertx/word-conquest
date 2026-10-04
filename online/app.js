@@ -1796,7 +1796,7 @@ var require_cjs = __commonJS({
 });
 
 // package.json
-var version = "0.6.0";
+var version = "0.6.1";
 
 // online/app.js
 init_dist();
@@ -8867,7 +8867,7 @@ function createFriends({ api: api2, getUser, getData, setData, run: run2, status
     $("friend-list").replaceChildren();
     if (searchResults !== null) {
       $("friend-search-results").replaceChildren(node("p", `Results for \u201C${searchQuery}\u201D`, "small-note"), ...searchResults.map((p) => personRow(p, true)));
-      if (!searchResults.length) $("friend-search-results").append(node("p", "No players found. Check their display name or try their friend code.", "friend-empty-note"));
+      if (!searchResults.length) $("friend-search-results").append(node("p", "No players found. Check their username or try their friend code.", "friend-empty-note"));
       $("clear-friend-search").hidden = false;
     } else {
       $("friend-search-results").replaceChildren();
@@ -8888,10 +8888,10 @@ function createFriends({ api: api2, getUser, getData, setData, run: run2, status
   }
   async function search() {
     const query = $("friend-search-input").value.trim(), ticket = ++searchVersion, actor = getUser()?.id;
-    if (query.length < 3) {
+    if (!query) {
       searchResults = null;
       render();
-      status2("Enter at least 3 letters or a friend code.", true);
+      status2("Enter a username or friend code.", true);
       return;
     }
     $("friend-search-submit").disabled = true;
@@ -8914,8 +8914,8 @@ function createFriends({ api: api2, getUser, getData, setData, run: run2, status
       await navigator.clipboard.writeText(code);
       status2("Friend code copied.");
     }, "primary full", "copy")];
-    content.push(node("p", `Friends can search for \u201C${profile.display_name}\u201D. Your code helps them pick the right person when names match.`, "field-hint"));
-    content.push(act2("Edit display name", editProfile2, "text-button full", "edit"));
+    content.push(node("p", `Friends can also find you by your username: ${profile.username || profile.display_name}.`, "field-hint"));
+    content.push(act2("Edit username", editProfile2, "text-button full", "edit"));
     if (data().blocked.length) content.push(act2("Blocked players", () => showSheet("Blocked players.", data().blocked.map((p) => {
       const b = node("div", void 0, "friend-row");
       b.append(node("strong", p.display_name), act2("Unblock", () => action2(p, "unblock"), "secondary friend-action"));
@@ -8948,6 +8948,39 @@ function createFriends({ api: api2, getUser, getData, setData, run: run2, status
     $("friend-search-status").textContent = "";
   }
   return { render, refresh, reset };
+}
+
+// online/username.mjs
+var normalizeUsername = (value) => typeof value === "string" ? value.normalize("NFKC").trim() : "";
+var usernameHint = "1\u201340 characters. Letters, numbers and simple punctuation.";
+function validUsername(value) {
+  return typeof value === "string" && value === normalizeUsername(value) && [...value].length >= 1 && [...value].length <= 40 && /^[\p{L}\p{N}_.() '\-]+$/u.test(value) && /[\p{L}\p{N}]/u.test(value);
+}
+function requireUsername(value) {
+  const name = normalizeUsername(value);
+  if (!validUsername(name)) throw Object.assign(new Error(usernameHint), { code: "invalid_username" });
+  return name;
+}
+async function signUpWithUsername(db2, { username, email, password, redirectTo }) {
+  const name = requireUsername(username);
+  const available = async () => {
+    const { data, error } = await db2.rpc("wc_username_available", { p_username: name });
+    if (error) throw Error("We could not check that username. Please try again.");
+    return data;
+  };
+  const taken = () => Object.assign(new Error("That username is already taken. Try another."), { code: "username_taken" });
+  if (!await available()) throw taken();
+  const result = await db2.auth.signUp({ email, password, options: { emailRedirectTo: redirectTo, data: { username: name } } });
+  if (result.error) {
+    let free = true;
+    try {
+      free = await available();
+    } catch {
+    }
+    if (!free) throw taken();
+    throw result.error;
+  }
+  return result;
 }
 
 // server/versions/engine-v1.mjs
@@ -9365,6 +9398,8 @@ function activityText(kind, name) {
   return labels[kind] || "Your game has an update";
 }
 function friendlyError(error) {
+  if (error.code === "username_taken") return "That username is already taken. Try another.";
+  if (error.code === "username_required") return "Choose a username to continue.";
   const social = { friend_stale: "This friend request has changed. Refresh Friends and try again.", friend_unavailable: "This player is not available for a new invitation.", friend_cooldown: "Give them a little time. You can send another request tomorrow.", friend_limit: "Your friend request limit has been reached. Try again later.", invitation_pending: "An invitation is already waiting for this friend. Open it from Games." };
   if (social[error.code]) return social[error.code];
   const messages = { client_update_required: "Update Word Conquest or open the latest web app to play this game.", stale: "A new turn came in. Your board has been updated.", not_your_turn: "It is your friend's turn.", invitation_unavailable: "This invitation is no longer available.", cannot_accept_own_invitation: "This is your invitation. Share it with a friend.", rate_limit: "A little too quick. Try again in a moment.", unauthorized: "Please sign in again to continue.", not_found: "This game is no longer available.", dictionary_unavailable: "Word checking is unavailable. Your turn has not been used.", version_unavailable: "This game needs an update. Please contact your inviter.", ended: "This game has already ended." };
@@ -10169,34 +10204,52 @@ async function account({ route = true } = {}) {
   }
 }
 function editProfile() {
-  const form = node("form", void 0, "stack-form"), label = node("label", "Display name"), input = node("input");
-  input.id = "display-name";
+  const form = node("form", void 0, "stack-form"), label = node("label", "Username"), input = node("input"), hint = node("p", usernameHint, "field-hint"), error = node("p", void 0, "field-hint");
+  input.id = "edit-username";
   label.htmlFor = input.id;
   input.maxLength = 40;
   input.required = true;
-  input.autocomplete = "nickname";
-  input.value = homeData.profile.display_name;
-  const save = button("Save name", null, "primary full", "check");
+  input.autocomplete = "username";
+  input.autocapitalize = "none";
+  input.spellcheck = false;
+  input.value = homeData.profile.username || homeData.profile.display_name;
+  hint.id = "edit-username-hint";
+  error.id = "edit-username-error";
+  error.setAttribute("role", "alert");
+  error.hidden = true;
+  input.setAttribute("aria-describedby", hint.id + " " + error.id);
+  input.oninput = () => {
+    input.removeAttribute("aria-invalid");
+    error.hidden = true;
+  };
+  const save = button("Save username", null, "primary full", "check");
   save.type = "submit";
-  form.append(label, input, save);
+  form.append(label, input, hint, error, save);
   form.onsubmit = (e) => {
     e.preventDefault();
     void run(async () => {
       save.disabled = true;
       try {
-        const name = input.value.trim();
-        if (!name) throw Error("Add a name for your friends to see.");
-        await api({ action: "profile", name, emailNotifications: homeData.profile.email_notifications });
-        homeData.profile.display_name = name;
+        const username = requireUsername(input.value);
+        const result = await api({ action: "profile", username, emailNotifications: homeData.profile.email_notifications });
+        homeData.profile.username = result.username;
+        homeData.profile.display_name = result.username;
         closeSheet();
         await account({ route: false });
-        status("Your name is updated.");
+        status("Your username is updated.");
+      } catch (e2) {
+        error.textContent = friendlyError(e2);
+        error.hidden = false;
+        if (["username_taken", "invalid_username"].includes(e2.code)) {
+          input.setAttribute("aria-invalid", "true");
+          input.focus();
+        }
       } finally {
         save.disabled = false;
       }
     });
   };
-  showSheet("What should we call you?", form);
+  showSheet("Your name at the table.", form);
 }
 async function connectPush() {
   try {
@@ -10245,7 +10298,7 @@ function showPrivacy() {
   showSheet("Privacy & your account.", content);
 }
 function showDataInfo() {
-  showSheet("A private little table.", [node("p", "Signed-in players can search display names and see friend codes. Your email stays private. Friend requests must be accepted. Only players in a game can see its board and moves."), node("p", "Supabase stores games and accounts. Resend sends account emails. Optional Android notifications use Google Firebase Cloud Messaging with a device token and game reference."), node("p", "There are no ads, contacts uploads or analytics trackers. Account deletion removes your login, profile, friendships, blocks and private inbox. Shared history stays anonymized for your opponents; backups expire under the hosting provider's retention policy.")]);
+  showSheet("A private little table.", [node("p", "Signed-in players can search usernames and see friend codes. During signup, anyone can check whether a username is taken. Your email stays private. Friend requests must be accepted. Only players in a game can see its board and moves."), node("p", "Supabase stores games and accounts. Resend sends account emails. Optional Android notifications use Google Firebase Cloud Messaging with a device token and game reference."), node("p", "There are no ads, contacts uploads or analytics trackers. Account deletion removes your login, profile, friendships, blocks and private inbox. Shared history stays anonymized for your opponents; backups expire under the hosting provider's retention policy.")]);
 }
 async function exportData() {
   const data = await api({ action: "export" }), url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" })), link = node("a");
@@ -10288,6 +10341,11 @@ function showDelete() {
 function setAuthMode(mode) {
   authMode = mode;
   const signup = mode === "signup", forgot = mode === "recover";
+  for (const id of ["username", "username-label", "username-hint"]) $(id).hidden = !signup;
+  $("username").required = signup;
+  $("username").disabled = !signup;
+  $("username-error").hidden = true;
+  $("username").removeAttribute("aria-invalid");
   $("auth-heading").replaceChildren();
   if (signup) $("auth-heading").textContent = "Your seat at the table.";
   else if (forgot) $("auth-heading").textContent = "Let us get you back in.";
@@ -10320,12 +10378,20 @@ $("auth-form").onsubmit = (e) => {
           setAuthMode("signin");
         }, "primary full")]);
       } else if (authMode === "signup") {
-        const { data, error } = await db.auth.signUp({ email, password, options: { emailRedirectTo: authRedirect() } });
-        if (error) throw error;
-        if (!data.session) {
-          $("password").value = "";
-          setAuthMode("signin");
-          showSheet("One last step.", [node("p", "Open the confirmation email, then come back here to sign in."), act("Got it", closeSheet, "primary full", "check")]);
+        try {
+          const { data } = await signUpWithUsername(db, { username: $("username").value, email, password, redirectTo: authRedirect() });
+          if (!data.session) {
+            $("password").value = "";
+            setAuthMode("signin");
+            showSheet("One last step.", [node("p", "Open the confirmation email, then come back here to sign in."), act("Got it", closeSheet, "primary full", "check")]);
+          }
+        } catch (e2) {
+          if (["username_taken", "invalid_username"].includes(e2.code)) {
+            $("username-error").textContent = friendlyError(e2);
+            $("username-error").hidden = false;
+            $("username").setAttribute("aria-invalid", "true");
+            $("username").focus();
+          } else throw e2;
         }
       } else {
         const { error } = await db.auth.signInWithPassword({ email, password });
@@ -10339,6 +10405,10 @@ $("auth-form").onsubmit = (e) => {
 };
 $("signup").onclick = () => setAuthMode(authMode === "signin" ? "signup" : "signin");
 $("recover").onclick = () => setAuthMode("recover");
+$("username").oninput = () => {
+  $("username-error").hidden = true;
+  $("username").removeAttribute("aria-invalid");
+};
 $("show-password").onclick = () => {
   const showing = $("password").type === "password";
   $("password").type = showing ? "text" : "password";
