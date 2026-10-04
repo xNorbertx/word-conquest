@@ -1796,7 +1796,7 @@ var require_cjs = __commonJS({
 });
 
 // package.json
-var version = "0.3.0";
+var version = "0.3.1";
 
 // online/app.js
 init_dist();
@@ -8439,12 +8439,21 @@ init_dist();
 init_dist();
 var PushNotifications = registerPlugin("PushNotifications", {});
 
-// online/push.js
-function createPushControls({ api: api2, getUser, onOpen, onUpdate, onStatus }) {
-  const available = Capacitor.getPlatform() === "android";
-  let initialized = null, registration = null, deviceId = null, chain = Promise.resolve();
-  const key = (id) => `wc-push-enabled:${id}`;
-  const preferred = () => !!getUser() && localStorage.getItem(key(getUser().id)) === "true";
+// online/push-controller.mjs
+function pushController({ available, plugin, settings, storage, api: api2, getUser, onOpen, onUpdate, onStatus = () => {
+}, onChange = () => {
+}, now = Date.now, timeoutMs = 15e3 }) {
+  let initialized = null, registration = null, chain = Promise.resolve(), owner = null, state = "off", problem = "";
+  const key = (id) => "wc-push-enabled:" + id;
+  const preferred = () => !!getUser() && storage.getItem(key(getUser().id)) === "true";
+  const snapshot = () => ({ state: owner === getUser()?.id ? state : "off", problem: owner === getUser()?.id ? problem : "", preferred: preferred() });
+  const change = (next, message = "", actor = getUser()?.id) => {
+    if (actor !== getUser()?.id) return;
+    owner = actor;
+    state = next;
+    problem = message;
+    onChange(snapshot());
+  };
   const serial = (fn) => {
     const job = chain.then(fn);
     chain = job.catch(() => {
@@ -8452,89 +8461,156 @@ function createPushControls({ api: api2, getUser, onOpen, onUpdate, onStatus }) 
     return job;
   };
   function device() {
-    if (!deviceId) {
-      deviceId = localStorage.getItem("wc-push-device") || crypto.randomUUID();
-      localStorage.setItem("wc-push-device", deviceId);
+    let id = storage.getItem("wc-push-device");
+    if (!id) {
+      id = crypto.randomUUID();
+      storage.setItem("wc-push-device", id);
     }
-    return deviceId;
+    return id;
   }
   async function initialize() {
     if (!available) return;
     if (!initialized) initialized = (async () => {
-      await PushNotifications.createChannel({ id: "game_updates", name: "Game updates", description: "Turns, invitation responses and completed games", importance: 4, visibility: 0 });
-      await PushNotifications.addListener("registration", ({ value }) => {
-        if (registration) {
-          const r = registration;
+      const handles = [];
+      try {
+        await plugin.createChannel({ id: "game_updates", name: "Game updates", description: "Turns, invitation responses and completed games", importance: 4, visibility: 0 });
+        handles.push(await plugin.addListener("registration", ({ value }) => {
+          if (registration) {
+            const pending2 = registration;
+            registration = null;
+            pending2.resolve(value);
+          } else if (preferred() && snapshot().state === "ready") {
+            const actor = getUser().id;
+            void serial(async () => {
+              if (actor !== getUser()?.id || !preferred()) return;
+              await api2({ action: "push_device", deviceId: device(), token: value, enabled: true });
+              change("ready", "", actor);
+            }).catch(() => change("error", "Could not reconnect notifications. Try again.", actor));
+          }
+        }));
+        handles.push(await plugin.addListener("registrationError", () => {
+          const pending2 = registration;
           registration = null;
-          r.resolve(value);
-        }
-      });
-      await PushNotifications.addListener("registrationError", () => {
-        if (registration) {
-          const r = registration;
-          registration = null;
-          r.reject(Error("Notifications could not connect. Please try again."));
-        }
-      });
-      await PushNotifications.addListener("pushNotificationReceived", () => onUpdate());
-      await PushNotifications.addListener("pushNotificationActionPerformed", ({ notification }) => {
-        const id = notification.data?.gameId;
-        if (typeof id === "string" && /^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(id)) onOpen(id);
-      });
+          pending2?.reject(Error("Notifications could not connect to Google. Check your connection and try again."));
+        }));
+        handles.push(await plugin.addListener("pushNotificationReceived", (notification) => {
+          if (!getUser() || !preferred()) return;
+          if (notification.data?.test === "true") onStatus("Test notification received on this phone.");
+          else {
+            onUpdate();
+            onStatus("A game has an update. Check Activity or your games.");
+          }
+        }));
+        handles.push(await plugin.addListener("pushNotificationActionPerformed", ({ notification }) => {
+          if (notification.data?.test === "true") {
+            onStatus("Test notification received on this phone.");
+            return;
+          }
+          const id = notification.data?.gameId;
+          if (typeof id === "string" && /^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(id)) onOpen(id);
+        }));
+      } catch (e) {
+        await Promise.all(handles.map((h) => h?.remove()));
+        initialized = null;
+        throw e;
+      }
     })();
     return initialized;
   }
-  async function token() {
+  function token() {
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         registration = null;
-        reject(Error("Notification setup timed out. Please retry."));
-      }, 15e3);
-      registration = { resolve: (t) => {
+        reject(Error("Notification setup timed out. Check your connection and retry."));
+      }, timeoutMs);
+      const pending2 = { resolve: (value) => {
         clearTimeout(timer);
-        resolve(t);
-      }, reject: (e) => {
+        resolve(value);
+      }, reject: (error) => {
         clearTimeout(timer);
-        reject(e);
+        reject(error);
       } };
-      PushNotifications.register().catch((e) => {
-        registration?.reject(e);
-        registration = null;
+      registration = pending2;
+      plugin.register().catch((e) => {
+        if (registration === pending2) {
+          registration = null;
+          pending2.reject(e);
+        }
       });
     });
   }
-  const enable = () => serial(async () => {
+  async function connect(requestPermission = false) {
     if (!available || !getUser()) return;
     const actor = getUser().id;
-    await initialize();
-    let permission = await PushNotifications.checkPermissions();
-    if (permission.receive === "prompt" || permission.receive === "prompt-with-rationale") permission = await PushNotifications.requestPermissions();
-    if (permission.receive !== "granted") throw Error("Allow notifications for Word Conquest in Android Settings to enable game alerts.");
-    const value = await token();
-    if (getUser()?.id !== actor) return;
-    await api2({ action: "push_device", deviceId: device(), token: value, enabled: true });
-    localStorage.setItem(key(actor), "true");
-    onStatus("Game notifications are enabled on this phone.");
+    change("connecting", "", actor);
+    try {
+      await initialize();
+      let permission = await plugin.checkPermissions();
+      if (requestPermission && ["prompt", "prompt-with-rationale"].includes(permission.receive)) permission = await plugin.requestPermissions();
+      if (actor !== getUser()?.id) return;
+      const system = await settings.status();
+      if (permission.receive !== "granted" || !system.enabled || system.channelBlocked) {
+        if (storage.getItem("wc-push-device")) await api2({ action: "push_device", deviceId: device(), enabled: false });
+        change("blocked", "Allow Word Conquest and Game updates in Android notification settings.", actor);
+        return;
+      }
+      const value = await token();
+      if (actor !== getUser()?.id || !preferred()) return;
+      await api2({ action: "push_device", deviceId: device(), token: value, enabled: true });
+      if (actor !== getUser()?.id) return;
+      storage.removeItem("wc-push-snooze:" + actor);
+      change("ready", "", actor);
+      if (requestPermission) onStatus("Game notifications are connected on this phone.");
+    } catch (e) {
+      change("error", e.message || "Notifications could not connect. Please retry.", actor);
+      throw e;
+    }
+  }
+  const enable = () => serial(async () => {
+    if (!available || !getUser()) return;
+    storage.setItem(key(getUser().id), "true");
+    await connect(true);
+  });
+  const restore = () => serial(async () => {
+    if (!available || !getUser()) return;
+    if (!preferred()) {
+      change("off");
+      return;
+    }
+    await connect(false);
   });
   const disable = (forget = true) => serial(async () => {
     if (!available) return;
     const actor = getUser()?.id;
-    if (actor && localStorage.getItem("wc-push-device")) await api2({ action: "push_device", deviceId: device(), enabled: false });
-    if (actor && forget) localStorage.removeItem(key(actor));
-    await PushNotifications.unregister();
-    await PushNotifications.removeAllDeliveredNotifications();
-  });
-  async function restore() {
-    if (!available || !getUser()) return;
-    await initialize();
-    if (!preferred()) return;
-    if ((await PushNotifications.checkPermissions()).receive !== "granted") {
-      await disable();
-      return;
+    if (actor && storage.getItem("wc-push-device")) await api2({ action: "push_device", deviceId: device(), enabled: false });
+    if (actor && forget) {
+      storage.setItem(key(actor), "false");
+      storage.setItem("wc-push-snooze:" + actor, String(now() + 7 * 864e5));
     }
-    await enable();
+    await plugin.unregister();
+    await plugin.removeAllDeliveredNotifications();
+    change("off", "", actor);
+  });
+  function shouldPrompt() {
+    return available && !!getUser() && snapshot().state !== "ready" && snapshot().state !== "connecting" && Number(storage.getItem("wc-push-snooze:" + getUser().id) || 0) <= now();
   }
-  return { available, preferred, initialize, enable, disable, restore };
+  function snooze() {
+    if (getUser()) storage.setItem("wc-push-snooze:" + getUser().id, String(now() + 7 * 864e5));
+    onChange(snapshot());
+  }
+  const openSettings = () => settings.open();
+  const test = () => serial(async () => {
+    if (snapshot().state !== "ready") throw Error("Connect notifications before sending a test.");
+    await api2({ action: "push_test", deviceId: device() });
+    return true;
+  });
+  return { available, preferred, snapshot, initialize, enable, disable, restore, shouldPrompt, snooze, openSettings, test };
+}
+
+// online/push.js
+var NotificationSettings = registerPlugin("NotificationSettings");
+function createPushControls(options) {
+  return pushController({ ...options, available: Capacitor.getPlatform() === "android", plugin: PushNotifications, settings: NotificationSettings, storage: localStorage });
 }
 
 // server/versions/engine-v1.mjs
@@ -9079,7 +9155,7 @@ var status = (message, error = false) => notify(message, error);
 var push = createPushControls({ api, getUser: () => user, onStatus: (message) => {
   status(message);
   renderPush();
-}, onUpdate: () => void poll(), onOpen: (id) => {
+}, onChange: () => renderPush(), onUpdate: () => void poll(), onOpen: (id) => {
   notificationGame = id;
   if (user && authReady && !recovering) void run(openNotification);
 } });
@@ -9153,9 +9229,13 @@ function avatar(name, className = "") {
   return node("span", (name || "?").trim().slice(0, 1).toUpperCase(), "avatar " + className);
 }
 function renderPush() {
-  const preferred = push.preferred();
+  const info = push.snapshot(), labels = { off: "Off", connecting: "Connecting...", ready: "Connected on this phone", blocked: "Blocked in Android settings", error: "Needs attention" };
   $("push-settings").hidden = !push.available;
-  $("push-state").textContent = preferred ? "On for this phone" : "Off";
+  $("push-state").textContent = labels[info.state];
+  $("push-prompt").hidden = !push.shouldPrompt();
+  $("push-prompt-copy").textContent = info.state === "error" ? "Notifications could not connect. Let us fix that." : info.state === "blocked" ? "Allow notifications in Android settings to hear about your turn." : "A quiet nudge when it is your turn.";
+  $("push-prompt-enable").textContent = info.state === "blocked" ? "Open settings" : info.state === "error" ? "Connect notifications" : "Enable notifications";
+  if ($("sheet").open && $("sheet-title").textContent === "Game notifications.") showPush();
 }
 async function connectLiveUpdates(session) {
   if (session?.access_token) await db.realtime.setAuth(session.access_token);
@@ -9224,6 +9304,7 @@ function renderHome() {
     list.append(blank);
   }
   renderActivity();
+  renderPush();
 }
 function renderActivity() {
   if (!homeData) return;
@@ -9779,22 +9860,36 @@ function editProfile() {
   };
   showSheet("What should we call you?", form);
 }
+async function connectPush() {
+  try {
+    await push.enable();
+  } catch {
+    showPush();
+  }
+}
 function showPush() {
-  const enabled = push.preferred();
-  showSheet("Game notifications.", [node("p", enabled ? "This phone will let you know when a game needs you." : "A quiet nudge when it is your turn. You can change this anytime."), act(enabled ? "Turn off notifications" : "Enable notifications", async () => {
-    const b = $("sheet-content").querySelector("button");
-    b.disabled = true;
-    try {
-      if (enabled) {
-        await push.disable();
-        status("Notifications are off on this phone.");
-      } else await push.enable();
-      closeSheet();
-      renderPush();
-    } finally {
-      b.disabled = false;
-    }
-  }, "primary full", enabled ? "bell" : "check")]);
+  const info = push.snapshot(), content = [];
+  content.push(node("p", info.state === "ready" ? "Connected on this phone. Turn updates will appear even when the app is in the background." : info.state === "connecting" ? "Connecting this phone to game notifications..." : info.problem || "Get a quiet nudge when it is your turn. You can turn this off anytime."));
+  if (info.state === "ready") {
+    content.push(act("Send a test notification", async () => {
+      await push.test();
+      showSheet("Test sent.", [node("p", "Firebase accepted the test. Look for a Word Conquest notification on this phone."), act("Back to notifications", showPush, "primary full")]);
+    }, "primary full", "bell"));
+    content.push(act("Android notification settings", () => push.openSettings(), "secondary full", "bell"));
+    content.push(act("Turn off notifications", async () => {
+      await push.disable();
+      showPush();
+    }, "text-button full"));
+  } else if (info.state === "connecting") {
+    const waiting = act("Connecting...", () => {
+    }, "primary full");
+    waiting.disabled = true;
+    content.push(waiting);
+  } else {
+    content.push(act(info.state === "blocked" ? "Open Android settings" : info.state === "error" ? "Retry connection" : "Enable notifications", () => info.state === "blocked" ? push.openSettings() : connectPush(), "primary full", "bell"));
+    if (info.state === "error") content.push(act("Android notification settings", () => push.openSettings(), "text-button full"));
+  }
+  showSheet("Game notifications.", content);
 }
 function showPrivacy() {
   const list = node("div", void 0, "settings-list");
@@ -9950,6 +10045,11 @@ $("finished-games").onclick = () => {
   filter = "finished";
   renderHome();
 };
+$("push-prompt-enable").onclick = () => run(async () => {
+  if (push.snapshot().state === "blocked") await push.openSettings();
+  else await connectPush();
+});
+$("push-prompt-dismiss").onclick = () => push.snooze();
 $("new-game").onclick = showNewGame;
 $("edit-profile").onclick = editProfile;
 $("push-settings").onclick = showPush;
@@ -10090,7 +10190,11 @@ window.addEventListener("popstate", () => run(async () => {
   else if (route.get("view") === "activity") await showActivity({ route: false });
   else await showHome(false, { route: false });
 }));
-window.addEventListener("online", () => run(poll));
+window.addEventListener("online", () => {
+  void run(poll);
+  void push.restore().catch(() => {
+  });
+});
 window.addEventListener("offline", () => offlineNotice());
 window.addEventListener("focus", () => run(poll));
 document.addEventListener("visibilitychange", () => {
@@ -10111,6 +10215,7 @@ else db.auth.onAuthStateChange((event, session) => {
   if (!user) {
     authReady = false;
     homeData = null;
+    renderPush();
     ++navigation;
     ++gameLoad;
     ++homeLoad;
