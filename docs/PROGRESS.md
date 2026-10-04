@@ -313,3 +313,35 @@ replacement letters, no-territory reentry, dictionary/adjacency/jokers, immutabl
 v1 behavior, version compatibility and a real local Postgres save/retry with
 exactly one receipt and notification. Browser verification and publication
 evidence follow below. Playtesting is still needed to judge balance.
+
+Published unlimited-capture experiment evidence:
+
+- Source: 828a8ad9369b25f2be92995cbdfcef633d35e8d2.
+- Server: deployed game-api to aumiyyjsdqdazzmdmprl, no migration. Real
+  isolated v2 turn captured five enemy tiles plus one neutral, earned 19 word
+  and 8 territory points (27 total), and removed 7 from the opponent. Saved
+  ownership/replacement letters matched for the opponent on reload. Retry
+  returned the same receipt; a different stale operation was rejected.
+- Hosted v1 test preserved the cap and remained playable without a client
+  capability header. Old clients could preview v2 invites but could not join,
+  open or submit. Test games used existing example.invalid identities with
+  no registered phones, were resigned afterward, and were retained. No owner
+  games were edited. One earlier harness run left an unused test invitation;
+  it expires normally.
+- Browser: on a phone-sized board, GARDENS accepted five enemy captures,
+  previewed 27 and saved scores 69:38 from 42:45. Classic selection stopped
+  before the fourth enemy tile. Help correctly explained each stored ruleset.
+- Web: gh-pages a6b497ad4aec73c1ebf43c35443293fd2cf98fc6; all nine checked
+  public assets match the build, including the unchanged root prototype.
+  API preflight 204, unauthenticated request 401.
+- CI: https://github.com/xNorbertx/word-conquest/actions/runs/37197997411
+- APK: 0.4.0-828a8ad, version code 23886825, 4,939,981 bytes. Original
+  pilot certificate, notification permission and absence of private keys
+  and local fixtures verified. Local copy: dist/word-conquest-0.4.0.apk.
+- Release: https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-23886825
+- Anonymous APK download: HTTP 200; SHA-256
+  d13e6e6cb97e0f858e96af0c4be859146bf027a698ba7b3f3dc6dd178a9dad7b.
+
+No new costs or services. Physical Seeker upgrade and capture-balance playtesting
+remain owner acceptance tasks. Existing multi-day/backup/monitoring backlog is
+unchanged. Both rule bundles must remain available during future rollback.
