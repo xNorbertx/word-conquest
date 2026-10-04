@@ -14,6 +14,7 @@ saved games and authoritative server turns. Capacitor packages the built web cli
 - [Run/deploy/backup/maintenance instructions](docs/OPERATIONS.md).
 - [Privacy and dictionary policy](docs/PRIVACY.md).
 - [Offline balance study: 33 setups, ratings and replays](docs/research/BALANCE-2026-10-04.md).
+- [Castle income study: 3,248 games and score composition](docs/research/CASTLE-INCOME-2026-10-04.md).
 
 Use Node 22+, `npm ci --ignore-scripts`, `npm test`, `npm run build`, then `npm run dev`.
 Open `http://127.0.0.1:4173/online/`. Copy `online/config.example.js` to the ignored

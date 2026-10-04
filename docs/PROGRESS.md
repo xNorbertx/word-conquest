@@ -379,3 +379,36 @@ and a phone-sized browser. The exact SONG/PEACE endgame wins by 2 versus losing
 by 2. Bot results and subjective /5 ratings do not establish human enjoyment.
 
 No new costs, infrastructure, online rules, APK or store publication.
+
+## Castle income follow-up - 4 October
+
+Completed a separate 3,248-game / 87,456-turn study in response to the owner's
+request to revisit recurring castle points. Twelve point configurations and four
+full-round-hold timing variants preserve the current board, word scoring, jokers,
+dictionary, replacement letters and unlimited captures. Production sources and
+the previous research harness remain unchanged.
+
+Main experiment: after both players move, each owned side castle earns its rate,
+and the centre earns its separate rate, including the final round. Banked income
+survives later loss. Final castle values replace normal tile values. Side 1 /
+centre 2 income and final 3 / 5 produced 36.1% combined territory score (16.4%
+recurring income); side 2 / centre 4 produced 45.7% (28.9% recurring income).
+The current control produced 22.8% territory. A full round of uninterrupted
+ownership reduced the owner's example to 33.9% territory.
+
+The model matters: exhaustive familiar-word search reduced the example to 17.8%
+territory because longer words score more and shorten the game. Stronger income
+also showed more second-player advantage. The next human comparison is 1 / 2
+versus 2 / 4 income, holding final values 3 / 5 and other rules constant, alternating
+starters and reviewing payout timing. Simulation fractions are not human-fun
+ratings or calibrated predictions.
+
+Saved the report, standalone PNG/SVG chart, all per-player component scores,
+seed parameters, source/input/raw hashes and reproduction instructions under
+docs/research/. Full turn logs and plotting dependencies are ignored local work.
+Nine new research tests and nine prior research tests pass. Every simulation
+finished without a search cutoff; all selected words use engine validation.
+Audit checks all game score components, dictionary membership and payout timing,
+plus exact reproduction of six complete games.
+
+No app/backend deployment, player-data change, new ongoing cost or APK build.

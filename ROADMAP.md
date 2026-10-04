@@ -141,3 +141,16 @@ Gameplay balance research (4 October):
 - [ ] Separately playtest 45 tiles / four jokers; then consider mature territory if holding still feels missing.
 
 Research changes no live rules or saved games. See [balance findings](docs/research/BALANCE-2026-10-04.md).
+
+Castle income follow-up (4 October):
+
+- [x] Simulate differentiated side/centre recurring income and final values: 3,248 new games across 12 point settings plus four full-hold timing variants.
+- [x] Report words, ordinary land, final castles and banked castle income separately, including score shares, uncertainty and sensitivity to word length/opponent style.
+- [ ] Human comparison: side 1 / centre 2 income versus side 2 / centre 4, with final values 3 / 5 and unchanged board/jokers.
+- [ ] Review payout timing and starting-order fairness before promoting a recurring-income rules version.
+
+Your proposed 1 / 2 income produced 36.1% territory points in the main simulation;
+2 / 4 produced 45.7%. Longer-word search sharply reduces these proportions.
+These focused results make recurring castle income a valid next comparison
+alongside the earlier land-value proposal. No live rules changed.
+See [castle income findings](docs/research/CASTLE-INCOME-2026-10-04.md).
