@@ -139,3 +139,25 @@ Never delete receipts or reset games as a rollback tactic.
 ## Live updates
 
 Migration 202610030001_live_games.sql adds only public.games to supabase_realtime. Existing participant SELECT RLS controls delivery. Client supplies the current Auth token, removes the channel on sign-out/account change, and reloads through game-api instead of applying event payloads. Polling remains a fallback. Uses existing Supabase Realtime allowance; monitor usage in the project dashboard before expanding the pilot. No paid plan enabled.
+
+## Multiple capture rulesets (0.4.0)
+
+The rules registry in server/rules.mjs resolves each game's stored rules_version.
+autumn-v1 retains a maximum of three opponent tiles per word. autumn-v2 reuses
+the immutable v1 engine with rules-v2.mjs, whose sole change is an unlimited
+capture cap. Infinity stays inside JS modules; only the version string is stored
+in Postgres. Normalized-LF SHA-256 hashes in rules-integrity.json pin both rules
+snapshots and the shared engine. Build validates these and the dictionary hash.
+
+No database migration or existing-game rewrite is required. Deploy the game-api
+bundle before the updated static client. New clients advertise supportedRules
+and explicitly request autumn-v2 on create. Older clients with no rulesVersion
+keep creating v1; the server rejects v2 open/join/turn requests unless the client
+advertises v2 support. Retried game creation returns its original stored version.
+Stats stay separated by rules/dictionary version.
+
+Rollback must retain v2 support once any v2 game exists. To stop the experiment,
+change only the default for future games and ship a new client/API deployment;
+never revert the server to a v1-only bundle or rewrite existing games/receipts.
+The original root prototype stays available and unchanged. No additional service
+or recurring cost is introduced.

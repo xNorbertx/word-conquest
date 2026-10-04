@@ -1,4 +1,4 @@
-import {applyCommand,checkCommand,commandKey,config,Engine,Fault,RULES_VERSION,statistics,uuid} from './domain.mjs';
+import {applyCommand,checkCommand,commandKey,configFor,Engine,Fault,LEGACY_RULES_VERSION,statistics,uuid} from './domain.mjs';
 import words from './versions/dictionary-v1.json' with {type:'json'};
 import metadata from './versions/dictionary-v1.meta.json' with {type:'json'};
 const dictionary = new Set(words);
@@ -41,6 +41,12 @@ export function createHandler(db, settings={}) {
       if(authError || !auth?.user)throw new Fault('unauthorized','Sign in again to continue.',401);
       const actor=auth.user.id;
       const input=await readBody(req);
+      // Older APKs only understand v1. Never let them silently play a different ruleset.
+      const supported=Array.isArray(input.supportedRules)?input.supportedRules:[LEGACY_RULES_VERSION];
+      const requireRules=game=>{
+        if(!configFor(game.rules_version))throw new Fault('version_unavailable','This game needs its original rules and dictionary.',503);
+        if(!supported.includes(game.rules_version))throw new Fault('client_update_required','Update Word Conquest or open the latest web app to play this game.',409);
+      };
       const wakePush=()=>{try{settings.wakePush?.();}catch{/* Cron retries the durable queue. */}};
       if(!unwrap(await db.rpc('wc_rate_limit',{p_actor:actor}))) throw new Fault('rate_limit','Please wait a minute before trying again.',429);
       unwrap(await db.from('profiles').upsert({id:actor},{onConflict:'id',ignoreDuplicates:true}));
@@ -63,7 +69,7 @@ export function createHandler(db, settings={}) {
           return reply({profile,games:await Promise.all(games.map(decorate)),notifications});
         }
         case 'game': {
-          const game=await gameForActor(input.gameId);
+          const game=await gameForActor(input.gameId);requireRules(game);
           const history=unwrap(await db.from('operations').select('revision,recap').eq('game_id',game.id).order('revision',{ascending:false}).limit(100));
           const invitation=game.status==='invited' && game.players[0]===actor
             ? unwrap(await db.from('invitations').select('token,expires_at').eq('game_id',game.id).maybeSingle()) : null;
@@ -71,21 +77,30 @@ export function createHandler(db, settings={}) {
         }
         case 'create': {
           if(!uuid(input.gameId))throw new Fault('invalid_id','A saved game ID is required.');
+          const version=input.rulesVersion??LEGACY_RULES_VERSION,config=configFor(version);
+          if(!config)throw new Fault('invalid_rules','Choose a supported game ruleset.');
+          requireRules({rules_version:version});
           // New board is computed here; a retried create returns its original stored board.
           const game=unwrap(await db.rpc('wc_create',{p_actor:actor,p_id:input.gameId,p_token:crypto.randomUUID(),
-            p_state:Engine.newGame(config,serverRandom),p_rules:RULES_VERSION,p_dictionary:metadata.version}));
-          return reply({game:await decorate(game)});
+            p_state:Engine.newGame(config,serverRandom),p_rules:version,p_dictionary:metadata.version}));
+          requireRules(game);return reply({game:await decorate(game)});
         }
         case 'invitation': {
           if(!uuid(input.token))throw new Fault('invalid_invite','Invalid invitation code.');
           if(!['preview','accept','decline','cancel'].includes(input.choice))throw new Fault('invalid_action','Choose an invitation action.');
+          if(input.choice==='preview'||input.choice==='accept'){
+            const invitation=unwrap(await db.rpc('wc_invitation',{p_actor:actor,p_token:input.token,p_action:'preview'}));
+            const invited=unwrap(await db.from('games').select('rules_version').eq('id',invitation.id).single());
+            if(input.choice==='preview')return reply({invitation:{...invitation,rulesVersion:invited.rules_version}});
+            requireRules(invited);
+          }
           const result=unwrap(await db.rpc('wc_invitation',{p_actor:actor,p_token:input.token,p_action:input.choice}));
           if(input.choice!=='preview')wakePush();
           return reply(input.choice==='preview'?{invitation:result}:{game:result});
         }
         case 'turn': {
           checkCommand(input.command);
-          const game=await gameForActor(input.gameId), fingerprint=commandKey(input.command);
+          const game=await gameForActor(input.gameId), fingerprint=commandKey(input.command);requireRules(game);
           const receipt=unwrap(await db.from('operations').select('*').eq('game_id',game.id).eq('operation_id',input.command.operationId).maybeSingle());
           if(receipt) {
             if(receipt.actor!==actor || receipt.fingerprint!==fingerprint)throw new Fault('idempotency_conflict','This retry ID belongs to a different action.',409);

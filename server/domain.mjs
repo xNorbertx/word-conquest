@@ -1,8 +1,6 @@
 import Engine from './versions/engine-v1.mjs';
-import baseConfig from './versions/rules-v1.mjs';
-
-export const RULES_VERSION = 'autumn-v1';
-export const config = Object.freeze({...baseConfig, dictionaryEnabled: true});
+import {configFor} from './rules.mjs';
+export {config,configFor,RULES_VERSION,LEGACY_RULES_VERSION,SUPPORTED_RULES,rulesLabel,captureRule} from './rules.mjs';
 export { Engine };
 export class Fault extends Error {
   constructor(code, message, status = 400) { super(message); this.code = code; this.status = status; }
@@ -34,7 +32,8 @@ export function applyCommand(game, actor, input, dictionary, dictionaryVersion, 
   if (!seat) fail('forbidden', 'This game belongs to its players.', 403);
   if (game.revision !== input.revision) fail('stale', 'A newer turn is available. Reload the board before choosing a move.', 409);
   if (game.status !== 'active' || game.state.over) fail('ended', 'This game is not active.', 409);
-  if (game.rules_version !== RULES_VERSION || game.dictionary_version !== dictionaryVersion)
+  const config=configFor(game.rules_version);
+  if (!config || game.dictionary_version !== dictionaryVersion)
     fail('version_unavailable', 'This game needs its original rules and dictionary. Contact support.', 503);
   const next = {...game, state: structuredClone(game.state), draw_by: game.draw_by || null};
   const before = game.state;
@@ -84,6 +83,8 @@ export function statistics(games, actor) {
   for (const game of games) {
     const seat = game.players.indexOf(actor) + 1;
     if (!seat || game.status !== 'completed') continue;
+    const config=configFor(game.rules_version);
+    if(!config)fail('version_unavailable','This game needs its original rules and dictionary. Contact support.',503);
     const key = `${game.rules_version}/${game.dictionary_version}`;
     const s = groups[key] ||= {games:0,wins:0,losses:0,draws:0,highestFinalScore:0,bestTurn:0,bestWord:''};
     s.games++;

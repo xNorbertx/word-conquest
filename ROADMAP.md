@@ -123,3 +123,10 @@ delivery, notification taps and upgrade acceptance remain open.
 Turn alert copy now includes the opponent display name and total points gained
 from the saved turn (word points plus territory), including final scoring turns.
 See docs/ANDROID.md for builds and tests.
+
+Capture-limit experiment (4 October):
+
+- [x] Version new games with unlimited opponent captures along a legal word path.
+- [x] Preserve existing three-capture games and separate records by rules version.
+- [x] Validate ownership/scoring/replacements and exactly-once turn persistence.
+- [ ] Playtest whether unlimited captures improve conquest and comeback balance.

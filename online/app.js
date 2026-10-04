@@ -3,7 +3,8 @@ import {Capacitor} from '@capacitor/core';
 import {App} from '@capacitor/app';
 import {createClient} from '@supabase/supabase-js';
 import {createPushControls} from './push.js';
-import {Engine,config} from '../server/domain.mjs';
+import {Engine,config as defaultConfig,configFor,RULES_VERSION,SUPPORTED_RULES,rulesLabel,captureRule} from '../server/domain.mjs';
+let config=defaultConfig;
 import {$,svg,icon,node,button,setting,notify,showSheet,closeSheet,ask,initUI,closeTopDialog,emptyState} from './ui.js';
 import {seatOf,isFinished,opponentName,gameStatus,visibleGames,timeAgo,invitationToken,activityText,friendlyError} from './presentation.mjs';
 
@@ -39,7 +40,7 @@ function apiError(message,code,statusCode,requestId){const e=new Error(message);
 async function api(body){
   if(!db)throw new Error('Online play is not connected yet.');
   const {data:{session},error}=await db.auth.getSession();if(error||!session)throw apiError('Sign in to continue.','unauthorized',401);
-  const response=await fetch(`${cfg.supabaseUrl}/functions/v1/game-api`,{method:'POST',signal:AbortSignal.timeout(20000),headers:{'Content-Type':'application/json',apikey:cfg.supabaseAnonKey,Authorization:`Bearer ${session.access_token}`},body:JSON.stringify(body)});
+  const response=await fetch(`${cfg.supabaseUrl}/functions/v1/game-api`,{method:'POST',signal:AbortSignal.timeout(20000),headers:{'Content-Type':'application/json',apikey:cfg.supabaseAnonKey,Authorization:`Bearer ${session.access_token}`},body:JSON.stringify({...body,supportedRules:SUPPORTED_RULES})});
   const result=await response.json();if(!response.ok)throw apiError(result.error||'Request failed.',result.code,response.status,result.requestId);return result;
 }
 async function run(fn){try{return await fn();}catch(e){lastProblem=friendlyError(e);lastRequestId=e.requestId||null;status(lastProblem,true);if(currentView==='loading'){$('loading-message').textContent='Your table could not load.';$('retry-load').hidden=false;$('loading').querySelector('.spinner').hidden=true;}}}
@@ -74,7 +75,7 @@ function renderHome(){
     const chevron=node('span',undefined,'card-chevron');chevron.append(icon('chevron'));top.append(avatar(g.status==='invited'?'+':name,seatOf(g,user.id)===2?'sage':'walnut'),copy,chevron);
     const bottom=node('div',undefined,'game-card-bottom');
     if(g.status==='invited')bottom.append(node('span','Your invitation is ready to share','small-note'));
-    else {const scores=Engine.scores(g.state,config),seat=seatOf(g,user.id)-1,score=node('span',undefined,'card-score');score.append(node('strong',scores[seat]),node('span','  :  '),node('strong',scores[1-seat]));bottom.append(score);}
+    else {const scores=Engine.scores(g.state,configFor(g.rules_version)||defaultConfig),seat=seatOf(g,user.id)-1,score=node('span',undefined,'card-score');score.append(node('strong',scores[seat]),node('span','  :  '),node('strong',scores[1-seat]));bottom.append(score);}
     bottom.append(node('span',gameStatus(g,user.id),'card-status'+(gameStatus(g,user.id)==='Your turn'?'':' waiting')));card.append(top,bottom);list.append(card);
   }
   if(!list.childElementCount){const blank=emptyState(filter==='finished'?'Your story starts here.':'A little friendly competition?',filter==='finished'?'Finished games will find a home here.':'Invite someone. Take your time. Find a great word.',filter==='finished'?'award':'leaf');if(filter==='active')blank.append(act('Invite a friend',createGame,'primary','plus'));list.append(blank);}
@@ -100,14 +101,15 @@ async function showInvite(){
   const available=i.status==='invited'&&Date.parse(i.expires_at)>Date.now();
   if(!available){localStorage.removeItem('wc-invitation');showSheet('This seat is no longer available.',[node('p','Ask your friend for a new invitation.'),act('Back to games',closeSheet,'primary full')]);return true;}
   const heading=node('div',undefined,'invitation-summary');heading.append(avatar(i.host,'avatar-large'),node('h3',`${i.host} saved you a seat.`));
-  showSheet('You are invited.',[heading,node('p','A game of words, in your own time.'),act('Join game',()=>decideInvite('accept'),'primary full','arrow'),act('Not this time',()=>decideInvite('decline'),'text-button full')]);return true;
+  showSheet('You are invited.',[heading,node('p',captureRule(configFor(i.rulesVersion)||configFor('autumn-v1'))),act('Join game',()=>decideInvite('accept'),'primary full','arrow'),act('Not this time',()=>decideInvite('decline'),'text-button full')]);return true;
 }
 async function decideInvite(choice){const token=invitationToken(localStorage.getItem('wc-invitation')||'');const result=await api({action:'invitation',choice,token});localStorage.removeItem('wc-invitation');closeSheet();if(choice==='accept'&&result.game.status==='active')await openGame(result.game.id);else {await showHome();status('Invitation declined.');}}
 async function openGame(id,quiet=false,{route=true}={}){
   const ticket=quiet?navigation:++navigation,request=quiet?gameLoad:++gameLoad,actor=user?.id;const result=await api({action:'game',gameId:id});
   if(ticket!==navigation||request!==gameLoad||actor!==user?.id)return;if(quiet&&(currentView!=='game'||game?.id!==id))return;if(game?.id===id&&game.revision>result.game.revision)return;
   const changed=!game||game.id!==id||game.revision!==result.game.revision;
-  preview=false;game=result.game;history=result.history;invite=result.invitation;
+  const gameConfig=configFor(result.game.rules_version);if(!gameConfig)throw apiError('Update Word Conquest to play this game.','client_update_required',409);
+  preview=false;config=gameConfig;game=result.game;history=result.history;invite=result.invitation;
   if(changed){selection=[];jokers={};highlightLast=false;focusTile=null;}
   if(!quiet){$('board').classList.remove('enlarged');$('zoom').setAttribute('aria-pressed','false');screen('game',{route});}
   if(changed||!quiet)renderGame();
@@ -200,7 +202,8 @@ function scoreLines(rows){const container=node('div',undefined,'score-lines');fo
 function showScore(player){const s=Engine.scoreBreakdown(game.state,config)[player-1];showSheet(player===seatOf(game,user?.id)?'Your score':`${game.names[player-1]}'s score`,[scoreLines([['Word points',s.words],['Current territory',s.territory],['Total',s.total,true]]),node('p','Word points stay yours. Territory points change when tiles are captured.')]);}
 function showWordScore(){if(!selection.length)return;const s=Engine.scoreMove(game.state,selection,config);const content=[scoreLines([['Letter points',s.letters],['Length bonus',s.lengthBonus],['New territory',s.territoryGain],['Added to your score',s.totalGain,true]])];if(s.enemyLoss)content.push(node('p',`Your opponent also loses ${s.enemyLoss} territory points.`));showSheet('A good word adds up.',content);}
 function showRules(){
-  const steps=[['Find a word',`Start on a tile you own. Connect at least ${config.minimumWordLength} letters in any of the eight directions. Use each tile once. No territory left? Start anywhere.`],['Make it yours',`Claim the tiles in your word, including up to ${config.maxEnemyTilesPerWord} enemy tiles. Ordinary tiles score ${config.normalTerritoryPoints} for territory; castles are worth ${config.castlePoints}.`],['Every letter counts','Small numbers are letter points. Longer words earn a bonus. Jokers can be any letter. Ordinary letters in a played word are replaced; jokers stay wild.'],['Take your time',`Both players share ${config.letterBudget} letters. When they run out, Player 2 gets a final reply if needed. The highest final score wins. Refreshing your letters uses your turn.`]];
+  const config=currentView==='game'&&game?(configFor(game.rules_version)||defaultConfig):defaultConfig;
+  const steps=[['Find a word',`Start on a tile you own. Connect at least ${config.minimumWordLength} letters in any of the eight directions. Use each tile once. No territory left? Start anywhere.`],['Make it yours',`${captureRule(config)} Neutral tiles in your word become yours too. Ordinary tiles score ${config.normalTerritoryPoints} for territory; castles are worth ${config.castlePoints}.`],['Every letter counts','Small numbers are letter points. Longer words earn a bonus. Jokers can be any letter. Ordinary letters in a played word are replaced; jokers stay wild.'],['Take your time',`Both players share ${config.letterBudget} letters. When they run out, Player 2 gets a final reply if needed. The highest final score wins. Refreshing your letters uses your turn.`]];
   const content=steps.map(([title,copy],i)=>{const row=node('div',undefined,'rule-step'),text=node('div');text.append(node('h3',title),node('p',copy));row.append(node('span',i+1,'step-number'),text);return row;});
   const legend=node('div',undefined,'rule-legend');for(const [className,label]of [['owner-dot','Sage player'],['owner-ring','Walnut player']]){const item=node('span');item.append(node('span',undefined,className),node('span',label));legend.append(item);}content.push(legend,act('About the dictionary',showDictionary,'text-button'));showSheet('A little word. A little world.',content);
 }
@@ -213,11 +216,11 @@ function showRecap(){
   if(r.path?.length)content.push(act('Show word on the board',()=>{highlightLast=true;closeSheet();renderGame();$('board').scrollIntoView({block:'center',behavior:'smooth'});},'secondary full','eye'));
   content.push(act('All moves',showHistory,'text-button full'));showSheet('The last move.',content);
 }
-function showNewGame(){showSheet('Pull up a chair.',[node('p','Start a game with someone you know.'),act('Invite a friend',createGame,'primary full','user-plus'),act('I have an invitation',showJoin,'secondary full','mail')]);}
+function showNewGame(){showSheet('Pull up a chair.',[node('p',captureRule(defaultConfig)),act('Invite a friend',createGame,'primary full','user-plus'),act('I have an invitation',showJoin,'secondary full','mail')]);}
 function showJoin(){const form=node('form',undefined,'stack-form'),label=node('label','Invitation link or code'),input=node('input');input.id='invite-code';input.autocomplete='off';input.required=true;input.placeholder='Paste your invitation here';label.htmlFor=input.id;const submit=button('Open invitation',null,'primary full','arrow');submit.type='submit';form.append(label,input,submit);form.onsubmit=e=>{e.preventDefault();void run(async()=>{const token=invitationToken(input.value);if(!token)throw Error('Paste a complete invitation link or code.');submit.disabled=true;try{localStorage.setItem('wc-invitation',token);await showInvite();}finally{submit.disabled=false;}});};showSheet('Join a friend.',form);}
 async function createGame(){
   if(creating||!user)return;creating=true;$('new-game').disabled=true;closeSheet();
-  try{const key=`wc-create:${user.id}`,id=localStorage.getItem(key)||crypto.randomUUID();localStorage.setItem(key,id);const {game:g}=await api({action:'create',gameId:id});localStorage.removeItem(key);await openGame(g.id);}finally{creating=false;$('new-game').disabled=false;}
+  try{const key=`wc-create:${user.id}`,id=localStorage.getItem(key)||crypto.randomUUID();localStorage.setItem(key,id);const {game:g}=await api({action:'create',gameId:id,rulesVersion:RULES_VERSION});localStorage.removeItem(key);await openGame(g.id);}finally{creating=false;$('new-game').disabled=false;}
 }
 async function copyInvite(){try{await navigator.clipboard.writeText($('share-link').value);status('Invitation copied. Send it to a friend.');}catch{$('share-link').focus();$('share-link').select();status('Select and copy the invitation link.',true);}}
 async function shareInvite(){if(navigator.share){try{await navigator.share({title:'A game of Word Conquest',text:'Join me for a game of words.',url:$('share-link').value});}catch(e){if(e.name!=='AbortError')await copyInvite();}}else await copyInvite();}
@@ -234,7 +237,7 @@ async function confirmAction(kind){
   if(await ask(options[kind]))await action(kind);
 }
 function showGameMenu(){
-  const list=node('div',undefined,'settings-list');list.append(row('Move history','history',showHistory),row('How to play','book',showRules));
+  const list=node('div',undefined,'settings-list');list.append(row('Move history','history',showHistory),row('How to play','book',showRules,{note:rulesLabel(game.rules_version)}));
   if(game.status==='active'&&!preview){
     const refresh=row('Refresh letters','refresh',()=>confirmAction('refresh'),{note:'Replace your letters instead of playing a word'});refresh.disabled=!canPlay();list.append(refresh);
     if(game.draw_by===user?.id){const offered=row('Draw offered','handshake',()=>{}, {note:'Waiting for your friend'});offered.disabled=true;list.append(offered);}else list.append(row(game.draw_by?'Accept draw':'Offer a draw','handshake',()=>confirmAction(game.draw_by?'accept_draw':'offer_draw')));
@@ -248,7 +251,7 @@ async function account({route=true}={}){
   const profile=homeData.profile;$('profile-name').textContent=profile.display_name;$('profile-email').textContent=user.email||'';$('profile-avatar').textContent=profile.display_name.slice(0,1).toUpperCase();renderPush();$('statistics').replaceChildren(node('p','Loading your record...','record-note'));
   const {statistics}=await api({action:'stats'});if(user?.id!==actor||currentView!=='account')return;$('statistics').replaceChildren();
   const entries=Object.entries(statistics);if(!entries.length)entries.push(['',{wins:0,losses:0,draws:0,highestFinalScore:0,bestTurn:0,bestWord:''}]);
-  for(const [version,s]of entries){if(entries.length>1)$('statistics').append(node('p',version.startsWith('autumn-v1')?'Standard English':'Earlier rules','record-note'));const grid=node('div',undefined,'stats-grid');for(const [label,count]of [['Wins',s.wins],['Draws',s.draws],['Losses',s.losses]]){const item=node('div',undefined,'stat');item.append(node('strong',count),node('span',label));grid.append(item);}$('statistics').append(grid);if(s.bestWord){const best=node('div',undefined,'best-word');best.append(icon('award'),node('span','Best word'),node('strong',`${s.bestWord} · ${s.bestTurn}`));$('statistics').append(best,node('p',`Highest final score: ${s.highestFinalScore}`,'record-note'));}else $('statistics').append(node('p','Your first finished game starts your record.','record-note'));}
+  for(const [version,s]of entries){if(version)$('statistics').append(node('p',rulesLabel(version.split('/')[0])+' · English','record-note'));const grid=node('div',undefined,'stats-grid');for(const [label,count]of [['Wins',s.wins],['Draws',s.draws],['Losses',s.losses]]){const item=node('div',undefined,'stat');item.append(node('strong',count),node('span',label));grid.append(item);}$('statistics').append(grid);if(s.bestWord){const best=node('div',undefined,'best-word');best.append(icon('award'),node('span','Best word'),node('strong',`${s.bestWord} · ${s.bestTurn}`));$('statistics').append(best,node('p',`Highest final score: ${s.highestFinalScore}`,'record-note'));}else $('statistics').append(node('p','Your first finished game starts your record.','record-note'));}
 }
 function editProfile(){const form=node('form',undefined,'stack-form'),label=node('label','Display name'),input=node('input');input.id='display-name';label.htmlFor=input.id;input.maxLength=40;input.required=true;input.autocomplete='nickname';input.value=homeData.profile.display_name;const save=button('Save name',null,'primary full','check');save.type='submit';form.append(label,input,save);form.onsubmit=e=>{e.preventDefault();void run(async()=>{save.disabled=true;try{const name=input.value.trim();if(!name)throw Error('Add a name for your friends to see.');await api({action:'profile',name,emailNotifications:homeData.profile.email_notifications});homeData.profile.display_name=name;closeSheet();await account({route:false});status('Your name is updated.');}finally{save.disabled=false;}});};showSheet('What should we call you?',form);}
 async function connectPush(){try{await push.enable();}catch{showPush();}}
@@ -326,7 +329,7 @@ $('board').onkeydown=e=>{
   else if(e.key==='Backspace'){e.preventDefault();if(canPlay()||preview){delete jokers[selection.pop()];drawBoard();renderJokers();renderSelection();$('board').querySelector(`[data-id="${id}"]`)?.focus();}}
   else if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();const tile=game.state.tiles.find(t=>t.id===id),[dq,dr]={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0]}[e.key];const next=game.state.tiles.find(t=>t.q===tile.q+dq&&t.r===tile.r+dr);if(next){focusTile=next.id;drawBoard();$('board').querySelector(`[data-id="${next.id}"]`)?.focus();}}
 };
-$('preview-button').onclick=()=>{preview=true;game={id:'preview',state:Engine.newGame(config),status:'active',players:[],names:['You','Alex'],revision:0};history=[];invite=null;selection=[];jokers={};screen('game',{route:false});renderGame();};
+$('preview-button').onclick=()=>{preview=true;config=defaultConfig;game={id:'preview',rules_version:RULES_VERSION,state:Engine.newGame(config),status:'active',players:[],names:['You','Alex'],revision:0};history=[];invite=null;selection=[];jokers={};screen('game',{route:false});renderGame();};
 async function poll(){
   if(polling||busy||!user||document.hidden||recovering)return;polling=true;refreshQueued=false;
   try{if(currentView==='game'&&!preview)await openGame(game.id,true);else if(currentView==='home')await showHome(true);else if(currentView==='activity'){await fetchHome();renderActivity();}offlineNotice(!navigator.onLine);}

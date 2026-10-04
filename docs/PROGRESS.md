@@ -294,3 +294,22 @@ Published player-identity update evidence:
 Install over the existing pilot to preserve the session. Physical Seeker touch
 and upgrade acceptance remain with the owner. The owner also confirmed the
 previously deployed opponent-name/points notification wording works.
+
+## Unlimited opponent captures experiment - 4 October
+
+Version 0.4.0 introduces autumn-v2 for games created by updated clients. Legal
+words can cross and capture any number of opponent tiles. Existing v1 games
+retain the three-tile cap. Engine, dictionary, scoring, letter supply and all
+other rules are preserved. Both versions are pinned and selected by the server
+and client from the stored game version; client rule overrides are ignored.
+
+Old clients can still play/create v1 but must update before joining or opening
+v2. New-game/invitation help and in-game rules identify the experiment. Stats
+keep classic and unlimited-capture records separate. No data migration needed.
+
+Three original rule suites and 42 integration/service/controller tests pass.
+Coverage includes five-opponent captures for either seat, castle/total points,
+replacement letters, no-territory reentry, dictionary/adjacency/jokers, immutable
+v1 behavior, version compatibility and a real local Postgres save/retry with
+exactly one receipt and notification. Browser verification and publication
+evidence follow below. Playtesting is still needed to judge balance.

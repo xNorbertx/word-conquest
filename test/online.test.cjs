@@ -78,6 +78,19 @@ test('lost-response retries and concurrent stale submissions cannot duplicate a 
   assert.equal((await db.query('select count(*)::int n from operations where game_id=$1',[g.id])).rows[0].n,1);
   assert.equal((await db.query('select count(*)::int n from notifications where game_id=$1 and revision=$2',[g.id,first.game.revision])).rows[0].n,1);
 });
+test('five-opponent capture persists atomically and a retry cannot award it twice',async()=>{
+  const {token}=await newGame(),g=await rpc('wc_invitation',[B,token,'accept']);
+  const path=[...'GARDENS'].map((letter,i)=>{const id=`${i-3},0`;Object.assign(g.state.tiles.find(t=>t.id===id),{letter,owner:i===0?1:i<6?2:0,castle:i===3});return id;});
+  await db.query('update games set state=$1 where id=$2',[JSON.stringify(g.state),g.id]);
+  const c=command(g,'word',{path}),first=await commit(g,A,c),retry=await commit(g,A,c);
+  assert.equal(first.recap.score.totalGain,27);assert.equal(retry.replayed,true);assert.equal(retry.game.revision,g.revision+1);
+  const saved=(await db.query('select * from games where id=$1',[g.id])).rows[0];
+  assert.equal(saved.rules_version,'autumn-v2');assert.equal(saved.state.wordPoints[0],19);assert.equal(saved.state.lettersUsed,7);
+  for(const id of path)assert.equal(saved.state.tiles.find(t=>t.id===id).owner,1);
+  assert.equal((await db.query('select count(*)::int n from operations where game_id=$1',[g.id])).rows[0].n,1);
+  assert.equal((await db.query('select count(*)::int n from notifications where game_id=$1 and revision=$2',[g.id,saved.revision])).rows[0].n,1);
+});
+
 test('RLS and grants prohibit nonparticipant reads and direct client writes',async()=>{
   const {g}=await newGame();await db.exec(`set role authenticated;set request.jwt.claim.sub='${C}';`);
   try{

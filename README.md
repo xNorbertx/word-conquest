@@ -128,3 +128,12 @@ Development source currently lives on `codex/async-friend-play`.
 
 See [Android builds and push notifications](docs/ANDROID.md) for the verified APK,
 automatic GitHub Actions builds, installation, local builds and device checks.
+
+### Unlimited captures experiment (0.4.0)
+
+New games created by the updated online/Android client use autumn-v2: a legal word
+can capture every opponent tile in its path, with no three-tile cap. Existing
+autumn-v1 games keep their original rules. Both players should update the APK or
+reload the web app before starting this experiment. The in-game How to play menu
+shows the game's rules; records remain separate. Scoring, dictionary, letter
+distribution, adjacency and the root prototype are unchanged.

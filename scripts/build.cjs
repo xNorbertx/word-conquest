@@ -1,6 +1,10 @@
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),esbuild=require('esbuild');
 const root=path.resolve(__dirname,'..');process.chdir(root);
 const meta=require('../server/versions/dictionary-v1.meta.json');
+for(const [file,hash] of Object.entries(require('../server/versions/rules-integrity.json'))){
+  const source=fs.readFileSync(path.join(root,'server/versions',file),'utf8').replace(/\r\n/g,'\n');
+  if(crypto.createHash('sha256').update(source).digest('hex')!==hash)throw Error('Pinned rules integrity mismatch: '+file);
+}
 if(crypto.createHash('sha256').update(fs.readFileSync('server/versions/dictionary-v1.json')).digest('hex')!==meta.sha256)throw new Error('Pinned dictionary hash mismatch');
 fs.mkdirSync('dist/online',{recursive:true});fs.mkdirSync('supabase/functions/_shared',{recursive:true});
 for(const file of ['index.html','style.css','app.js','config.js','engine.js'])fs.copyFileSync(file,path.join('dist',file));
