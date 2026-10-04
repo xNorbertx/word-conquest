@@ -130,3 +130,14 @@ Capture-limit experiment (4 October):
 - [x] Preserve existing three-capture games and separate records by rules version.
 - [x] Validate ownership/scoring/replacements and exactly-once turn persistence.
 - [ ] Playtest whether unlimited captures improve conquest and comeback balance.
+
+Gameplay balance research (4 October):
+
+- [x] Run reproducible offline self-play against the actual pinned engine/dictionary: 8,736 games, 33 setups, 640 alternative continuations.
+- [x] Compare word-first, territory-first, balanced, limited-attention and sampled-reply opponents; document model limits and failed ideas.
+- [x] Evaluate territory values, recurring/bounded holding rewards, maturity, joker counts/placement/consumption, smaller maps, endings, letter balance and refresh rules.
+- [x] Save ratings, uncertainty estimates, full methodology and selected interactive replays in docs/research/.
+- [ ] Human comparison: current rules versus land 2 / castles 5, with alternating starters; inspect final-reply advantage.
+- [ ] Separately playtest 45 tiles / four jokers; then consider mature territory if holding still feels missing.
+
+Research changes no live rules or saved games. See [balance findings](docs/research/BALANCE-2026-10-04.md).

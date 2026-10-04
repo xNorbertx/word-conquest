@@ -345,3 +345,37 @@ Published unlimited-capture experiment evidence:
 No new costs or services. Physical Seeker upgrade and capture-balance playtesting
 remain owner acceptance tasks. Existing multi-day/backup/monitoring backlog is
 unchanged. Both rule bundles must remain available during future rollback.
+
+## Offline gameplay balance study - 4 October
+
+Completed 8,736 complete self-play games across 33 configurations (215,748 turns),
+plus 640 sampled continuations from five predetermined midgame decisions. Tiny
+smoke/verification reruns are excluded from the published study count. The actual
+pinned engine validates/scores/replaces letters; isolated research adapters add
+experimental income, maturity, joker and objective mechanics. No live backend,
+accounts or player data were accessed. Production sources and pinned versions
+are unchanged; this documentation-only work does not trigger an APK build.
+
+Saved the source harness, pinned research dependencies, exact stage/seed/model
+parameters, source/cache hashes, summarized results, eight full replays, ratings
+and recommendations under docs/research/. Raw per-game logs and the frequency
+cache stay in ignored work/balance/. The report is a self-contained HTML file;
+node docs/research/balance/serve-report.mjs also serves it locally on 4176.
+
+Most promising human tests: land 2 / castles 5; separately 45 tiles / four jokers;
+then mature territory as a defense incentive without recurring income. Higher
+land values increased modeled territorial word sacrifices from 12.2% to 20.1%,
+but first-player and final-reply concerns remain. All-tile holding income supplied
+about 64% of points in the larger limited-attention comparison. The report also
+retains negative counterfactuals: four of five early/midgame territorial choices
+had a lower estimated final margin, so aggression alone is not the target.
+
+Nine research tests pass: legal/complete trie search on a small reference board,
+engine score/result agreement, deterministic mirroring, holding timing/caps,
+new-capture delay, one-time rewards, maturity and joker enforcement. There were
+no recorded search-node-limit cutoffs. Verified comparison selection, whole-game
+replay navigation, alternate word values and contained table scrolling on desktop
+and a phone-sized browser. The exact SONG/PEACE endgame wins by 2 versus losing
+by 2. Bot results and subjective /5 ratings do not establish human enjoyment.
+
+No new costs, infrastructure, online rules, APK or store publication.
