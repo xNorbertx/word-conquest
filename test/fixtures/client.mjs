@@ -8,7 +8,7 @@ let randomSeed=981;function random(){randomSeed=(Math.imul(randomSeed,1664525)+1
 const date=minutes=>new Date(now-minutes*60000).toISOString();
 const scenario=new URLSearchParams(location.search).get('fixture')||'home';
 const secondSeat=['walnut','walnut_waiting'].includes(scenario);
-const self={id:secondSeat?B:A,email:'demo@example.invalid'},profile={display_name:secondSeat?'Mara':'Norbert',email_notifications:false};
+const self={id:secondSeat?B:A,email:'demo@example.invalid'},profile={display_name:secondSeat?'Mara':'Norbert',email_notifications:false,friend_code:'A1B2C3D4E5F6'};
 let user=scenario==='auth'?null:self,authListener=null,channelListener=null,failNext=false,staleNext=false,commits=0;
 function newGame(id,other='Mara'){return {id,players:[A,B],names:['Norbert',other],state:{...Engine.newGame(config,random),player:1,startingPlayer:1},status:'active',revision:10,updated_at:date(24),last_play_at:date(24),rules_version:RULES_VERSION,dictionary_version:'english-letterpress-v1',draw_by:null};}
 const games=[newGame(ids[0]),newGame(ids[1],'Jules'),newGame(ids[2],'Alex'),newGame(ids[3])];
@@ -42,6 +42,8 @@ const initialGames=scenario==='empty'?[]:games;
 const sceneGame={game:ids[0],income:ids[0],capture:ids[0],legacy_capture:ids[0],walnut:ids[0],walnut_waiting:ids[0],reentry:ids[0],joker:ids[0],waiting:ids[1],finished:ids[2],invitation:ids[3],longnames:ids[0],draw:ids[0]};
 if(scenario==='draw')games[0].draw_by=B;
 if(sceneGame[scenario]){const url=new URL(location.href);url.searchParams.set('game',sceneGame[scenario]);window.history.replaceState(null,'',url);}
+const social={people:scenario==='empty'?[]:[{id:B,display_name:'Mara',friend_code:'ABCDEF123456',status:'accepted',request_id:ids[1],requested_by:A},{id:C,display_name:'Jules',friend_code:'ABCDEF234567',status:'pending',request_id:ids[2],requested_by:C}],invitations:[],outgoing:[],blocked:[]};
+if(scenario==='friends'){const url=new URL(location.href);url.searchParams.set('view','friends');window.history.replaceState(null,'',url);}
 const originalFetch=window.fetch.bind(window);
 window.fetch=async(url,options)=>{
   if(!String(url).includes('fixture.invalid/functions/v1/game-api'))return originalFetch(url,options);
@@ -49,9 +51,9 @@ window.fetch=async(url,options)=>{
   const error=(message,code,status=400)=>new Response(JSON.stringify({error:message,code,requestId:'test-reference'}),{status,headers:{'Content-Type':'application/json'}});
   if(!user)return error('Sign in to continue.','unauthorized',401);
   switch(input.action){
-    case 'home':result={profile,games:initialGames,notifications:scenario==='empty'?[]:notifications};break;
+    case 'home':result={profile,games:initialGames,notifications:scenario==='empty'?[]:notifications,social};break;
     case 'game':if(!game)return error('Game not found','not_found',404);result={game,history:history[game.id]||[],invitation:game.status==='invited'?{token,expires_at:date(-7*1440)}:null};break;
-    case 'create':{let g=games.find(g=>g.id===input.gameId);if(!g){g=newGame(input.gameId);g.status='invited';g.players=[A,null];g.revision=0;g.names=['Norbert',''];games.unshift(g);}result={game:g};break;}
+    case 'create':{let g=games.find(g=>g.id===input.gameId);if(!g){g=newGame(input.gameId);g.status='invited';g.players=[A,null];g.revision=0;g.names=['Norbert',''];games.unshift(g);}if(input.friendId)social.outgoing.push({id:g.id,recipient:input.friendId});result={game:g};break;}
     case 'invitation':if(input.choice==='preview'){result={invitation:{id:'ffffffff-ffff-4fff-8fff-ffffffffffff',status:'invited',host:'Olivia',expires_at:date(-1440),rulesVersion:RULES_VERSION}};}else if(input.choice==='cancel'){games[3].status='cancelled';result={game:games[3]};}else if(input.choice==='accept'){const g=newGame('ffffffff-ffff-4fff-8fff-ffffffffffff','Olivia');games.push(g);result={game:g};}else result={game:{status:'declined'}};break;
     case 'turn':{
       const existing=receipts.get(input.command.operationId);if(existing){result={game,replayed:true};break;}
@@ -59,6 +61,9 @@ window.fetch=async(url,options)=>{
       try{const update=applyCommand(game,user.id,input.command,dictionary,'english-letterpress-v1',random);Object.assign(game,update.next);game.updated_at=new Date().toISOString();history[game.id]??=[];history[game.id].unshift({recap:update.recap});receipts.set(input.command.operationId,true);commits++;result={game,replayed:false};updateMarker();if(failNext){failNext=false;throw new TypeError('Simulated response lost after commit');}}
       catch(e){if(e instanceof TypeError)throw e;return error(e.message,e.code||'invalid_word',e.status||400);}break;
     }
+    case 'friends':result={social,profile};break;
+    case 'friend_search':result={people:[{id:'44444444-4444-4444-8444-444444444444',display_name:input.query.toLowerCase().includes('long')?'Alexandra with a rather long surname':'Alex',friend_code:'AB12CD34EF56',status:null}]};break;
+    case 'friend_action':{let p=social.people.find(p=>p.id===input.friendId);if(!p){p={id:input.friendId,display_name:'Alex',friend_code:'AB12CD34EF56'};social.people.push(p);}if(input.choice==='request')Object.assign(p,{status:'pending',requested_by:A,request_id:input.operationId});else if(input.choice==='accept')p.status='accepted';else social.people=social.people.filter(p=>p.id!==input.friendId);result={social};break;}
     case 'stats':result={statistics:scenario==='empty'?{}:{'autumn-v1/english-letterpress-v1':{wins:3,losses:1,draws:1,highestFinalScore:142,bestWord:'GARDENS',bestTurn:19}}};break;
     case 'profile':profile.display_name=input.name;result={profile};break;
     case 'read_notifications':notifications.forEach(n=>n.read_at=new Date().toISOString());break;
@@ -69,9 +74,9 @@ window.fetch=async(url,options)=>{
   return new Response(JSON.stringify(result),{status:200,headers:{'Content-Type':'application/json'}});
 };
 function session(){return user?{user,access_token:'local-design-fixture'}:null;}
-export function createClient(){return {auth:{getSession:async()=>({data:{session:session()}}),onAuthStateChange:fn=>{authListener=fn;setTimeout(()=>fn('INITIAL_SESSION',session()),0);},signInWithPassword:async()=>{user=self;authListener?.('SIGNED_IN',session());return {data:{session:session()}};},signUp:async()=>({data:{session:null}}),resetPasswordForEmail:async()=>({}),updateUser:async()=>({}),signOut:async()=>{user=null;authListener?.('SIGNED_OUT',null);return {};},},realtime:{setAuth:async()=>{}},channel:()=>({on:(_a,_b,fn)=>{channelListener=fn;return {subscribe:fn=>{setTimeout(()=>fn('SUBSCRIBED'),0);return {};}};}}),removeChannel:async()=>{}};}
+export function createClient(){return {auth:{getSession:async()=>({data:{session:session()}}),onAuthStateChange:fn=>{authListener=fn;setTimeout(()=>fn('INITIAL_SESSION',session()),0);},signInWithPassword:async()=>{user=self;authListener?.('SIGNED_IN',session());return {data:{session:session()}};},signUp:async()=>({data:{session:null}}),resetPasswordForEmail:async()=>({}),updateUser:async()=>({}),signOut:async()=>{user=null;authListener?.('SIGNED_OUT',null);return {};},},realtime:{setAuth:async()=>{}},channel:()=>{const channel={on:(_a,_b,fn)=>{channelListener=fn;return channel;},subscribe:fn=>{setTimeout(()=>fn('SUBSCRIBED'),0);return {};}};return channel;},removeChannel:async()=>{}};}
 const controls=document.createElement('div');controls.id='fixture-controls';controls.style.cssText='position:fixed;right:8px;top:0;z-index:70;font:10px system-ui;background:#eee7c9;color:#504f3c;padding:2px 6px;border-radius:0 0 6px 6px;';
 const select=document.createElement('select');select.setAttribute('aria-label','Design test scenario');select.style.cssText='font:10px system-ui;background:transparent;border:0;width:80px';
-for(const value of ['home','game','income','capture','legacy_capture','walnut','walnut_waiting','reentry','waiting','finished','invitation','empty','auth','joker','draw','longnames','push_off','push_blocked','push_error']){const option=document.createElement('option');option.value=value;option.textContent=value;select.append(option);}select.value=scenario;select.onchange=()=>{location.href=location.pathname+'?fixture='+select.value;};
+for(const value of ['home','friends','game','income','capture','legacy_capture','walnut','walnut_waiting','reentry','waiting','finished','invitation','empty','auth','joker','draw','longnames','push_off','push_blocked','push_error']){const option=document.createElement('option');option.value=value;option.textContent=value;select.append(option);}select.value=scenario;select.onchange=()=>{location.href=location.pathname+'?fixture='+select.value;};
 const marker=document.createElement('span');function updateMarker(){marker.textContent=`Test data · ${commits} saved `;}updateMarker();controls.append(marker,select);
 for(const [label,handler]of [['Lose reply',()=>{failNext=true;}],['Stale',()=>{staleNext=true;}],['Other turn',()=>{games[0].state.player=2;games[0].revision++;channelListener?.();}]]){const b=document.createElement('button');b.textContent=label;b.style.cssText='font:9px system-ui;background:none;border:0;padding:3px;color:#504f3c';b.onclick=handler;controls.append(b);}document.body.append(controls);document.querySelector('.app-shell').style.paddingTop='24px';

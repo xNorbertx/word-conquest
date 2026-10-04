@@ -55,7 +55,7 @@ async function apiFixture(version='autumn-v2'){
     if(name==='wc_create')return {data:{...g,id:args.p_id,state:args.p_state,rules_version:args.p_rules}};
     if(name==='wc_invitation')return {data:args.p_action==='preview'?{id:G,status:'invited',host:'Mara'}:g};
     throw Error('Unexpected mutation '+name);
-  },from:table=>{const q={upsert:async()=>({}),select:()=>q,eq:()=>q,contains:()=>q,order:()=>q,in:async()=>({data:[{id:A,display_name:'Norbert'},{id:B,display_name:'Mara'}]}),limit:async()=>({data:[]}),single:async()=>({data:table==='profiles'?{id:A,deleting:false}:g}),maybeSingle:async()=>({data:g})};return q;}};
+  },from:table=>{const q={upsert:async()=>({}),select:()=>q,eq:()=>q,contains:()=>q,order:()=>q,in:async()=>({data:[{id:A,display_name:'Norbert'},{id:B,display_name:'Mara'}]}),limit:async()=>({data:[]}),single:async()=>({data:table==='profiles'?{id:A,deleting:false}:g}),maybeSingle:async()=>({data:table==='invitations'?null:g})};return q;}};
   const handler=createHandler(storage);
   return {calls,g,send:body=>handler(new Request('https://example.invalid',{method:'POST',headers:{Authorization:'Bearer test','Content-Type':'application/json'},body:JSON.stringify(body)}))};
 }

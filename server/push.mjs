@@ -14,6 +14,7 @@ export async function turnDetails(db,event){
 
 export function notificationBody(event){
   if(event.kind==='test')return 'Notifications are working on this phone.';
+  if(event.kind==='invitation received')return 'A friend invited you to play. Tap to take your seat.';
   const turn=event.turn,ending=event.kind==='game complete'?'Game finished.':'Your turn.';
   if(turn?.action==='word'){
     const points=Number.isSafeInteger(turn.points)&&turn.points>=0?` for ${turn.points} ${turn.points===1?'point':'points'}`:'';

@@ -38,7 +38,13 @@
   <div class="page-heading"><div><p id="greeting" class="eyebrow">YOUR LITTLE WORD WORLD</p><h1>Your games<span class="heading-dot">.</span></h1></div><button id="new-game" class="primary"><span data-icon="plus"></span><span>New game</span></button></div>
   <aside id="push-prompt" class="push-prompt" aria-label="Game notifications" hidden><span class="push-prompt-icon" data-icon="bell"></span><div><h2>Don't miss your turn.</h2><p id="push-prompt-copy">A quiet nudge when it is your turn.</p><button id="push-prompt-enable" class="text-button">Enable notifications</button></div><button id="push-prompt-dismiss" class="icon-button" aria-label="Remind me about notifications next week" data-icon="close"></button></aside>
   <div class="list-toolbar"><div class="segmented" role="group" aria-label="Games to show"><button id="active-games" aria-pressed="true">Playing <span id="active-count"></span></button><button id="finished-games" aria-pressed="false">Finished</button></div><span id="turn-count" class="small-note"></span></div>
-  <div id="game-list" class="game-list"></div>
+  <div id="game-invitations" class="game-invitations"></div><div id="game-list" class="game-list"></div>
+</section>
+<section id="friends" class="page" hidden>
+  <div class="page-heading"><h1>Friends<span class="heading-dot">.</span></h1><button id="friend-code-button" class="secondary"><span data-icon="share"></span>My code</button></div>
+  <form id="friend-search" class="friend-search" role="search"><label class="sr-only" for="friend-search-input">Find friends by name or friend code</label><span data-icon="search"></span><input id="friend-search-input" type="search" placeholder="Name or friend code" autocomplete="off" minlength="3" maxlength="64" required><button id="friend-search-submit" class="icon-button" aria-label="Search friends" data-icon="arrow"></button></form>
+  <div class="friend-search-meta"><span id="friend-search-status" class="small-note" role="status"></span><button id="clear-friend-search" class="text-button" hidden>Clear search</button></div>
+  <div id="friend-search-results" aria-live="polite"></div><div id="friend-list"></div>
 </section>
 <section id="activity" class="page" hidden><div class="page-heading"><div><p class="eyebrow">AROUND THE TABLE</p><h1>Activity<span class="heading-dot">.</span></h1></div><button id="read-inbox" class="icon-button" aria-label="Mark all updates as read" data-icon="check-all"></button></div><div id="inbox" class="activity-list"></div></section>
 <section id="account" class="page" hidden>
@@ -46,6 +52,7 @@
   <div class="profile-card"><span id="profile-avatar" class="avatar avatar-large"></span><div><h2 id="profile-name"></h2><p id="profile-email" class="muted"></p></div><button id="edit-profile" class="icon-button" aria-label="Edit display name" data-icon="edit"></button></div>
   <div class="section-label"><h2>Your record</h2></div><div id="statistics"></div>
   <div class="settings-list">
+    <button id="activity-button" class="settings-row"><span data-icon="history"></span><span>Activity<small id="activity-state"></small></span><span id="activity-badge" class="badge" hidden></span><span data-icon="chevron"></span></button>
     <button id="push-settings" class="settings-row" hidden><span data-icon="bell"></span><span>Notifications<small id="push-state"></small></span><span data-icon="chevron"></span></button>
     <button class="settings-row" data-sheet="rules"><span data-icon="book"></span><span>How to play</span><span data-icon="chevron"></span></button>
     <button class="settings-row" data-sheet="privacy"><span data-icon="shield"></span><span>Privacy &amp; account</span><span data-icon="chevron"></span></button>
@@ -68,7 +75,7 @@
   </div>
 </section>
 </main>
-<nav id="main-nav" class="main-nav" aria-label="Main navigation" hidden><button id="home-button" aria-current="page"><span data-icon="grid"></span><span>Games</span></button><button id="activity-button"><span class="nav-icon"><span data-icon="bell"></span><span id="activity-badge" class="badge" hidden></span></span><span>Activity</span></button><button id="account-button"><span data-icon="user"></span><span>You</span></button></nav>
+<nav id="main-nav" class="main-nav" aria-label="Main navigation" hidden><button id="home-button" aria-current="page"><span data-icon="grid"></span><span>Games</span></button><button id="friends-button"><span class="nav-icon"><span data-icon="friends"></span><span id="friends-badge" class="badge" hidden></span></span><span>Friends</span></button><button id="account-button"><span data-icon="user"></span><span>You</span></button></nav>
 </div>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden><span data-icon="check"></span><span id="toast-text"></span><button id="dismiss-toast" class="icon-button" aria-label="Dismiss message" data-icon="close"></button></div>
 <dialog id="sheet" class="sheet" aria-labelledby="sheet-title"><div class="sheet-header"><h2 id="sheet-title"></h2><button id="close-sheet" class="icon-button" aria-label="Close" data-icon="close"></button></div><div id="sheet-content" class="sheet-content"></div></dialog>

@@ -61,6 +61,31 @@ GitHub Pages publishes built files from `gh-pages` at `/`. For updates: run test
 
 ## Authentication mail and deferred turn-email worker
 
+### Friends (0.6.0)
+
+Migration `202610040001_friends.sql` adds friendship/request receipts, blocks,
+friend codes and addressed invitations, plus service-only RPCs. It preserves
+existing profiles, game states and public-link invitations. Publish the migration
+before deploying the new game-api, then publish the client. Push uses the existing
+queue and sender; no new service or scheduled job is required.
+
+Realtime publishes friendships and notifications with participant/recipient RLS.
+Friend requests update the in-app badge; direct game invitations also enqueue
+Android push for registered devices. Friends refresh on resume and via the existing
+20-second fallback. Rolling back the frontend/API does not require dropping tables;
+retain the migration and stored relationships. Older clients are asked to update
+when opening an addressed invitation through its notification.
+
+Friendship exports and deletion are included in account controls. Search exposes
+only names and friend codes to signed-in users, as explicitly approved by the owner.
+Unique names and operator reporting/moderation remain backlog items before a wider
+public launch. Private pilot users can block a player and contact their inviter.
+
+Authentication recovery investigation, 4 October: the missing reset email was
+found in Hotmail Junk by the owner. No password or delivery configuration was changed.
+
+### Authentication mail
+
 Owner decision, 3 October: do not enable turn-alert emails or their scheduler.
 The worker instructions below are retained only for a future explicit scope change.
 Authentication SMTP is configured and recovery email receipt is verified.

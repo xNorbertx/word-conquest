@@ -26,10 +26,13 @@ export function invitationToken(value){
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(token)?token:null;
 }
 export function activityText(kind,name){
+  if(kind==='invitation received')return `${name} invited you to play`;
   const labels={word:`${name} played a word`,refresh:`${name} refreshed their letters`,resign:`${name} left the game`,offer_draw:`${name} offered a draw`,accept_draw:'Your game ended in a draw',abandon:'Your game was abandoned','game complete':'Your game has finished','invitation accepted':`Your game with ${name} is ready`,'invitation accept':`Your game with ${name} is ready`,'invitation decline':'Your invitation was declined','invitation cancel':'Your invitation was cancelled','invitation declined':'Your invitation was declined','invitation cancelled':'Your invitation was cancelled'};
   return labels[kind]||'Your game has an update';
 }
 export function friendlyError(error){
+  const social={friend_stale:'This friend request has changed. Refresh Friends and try again.',friend_unavailable:'This player is not available for a new invitation.',friend_cooldown:'Give them a little time. You can send another request tomorrow.',friend_limit:'Your friend request limit has been reached. Try again later.',invitation_pending:'An invitation is already waiting for this friend. Open it from Games.'};
+  if(social[error.code])return social[error.code];
   const messages={client_update_required:'Update Word Conquest or open the latest web app to play this game.',stale:'A new turn came in. Your board has been updated.',not_your_turn:'It is your friend\'s turn.',invitation_unavailable:'This invitation is no longer available.',cannot_accept_own_invitation:'This is your invitation. Share it with a friend.',rate_limit:'A little too quick. Try again in a moment.',unauthorized:'Please sign in again to continue.',not_found:'This game is no longer available.',dictionary_unavailable:'Word checking is unavailable. Your turn has not been used.',version_unavailable:'This game needs an update. Please contact your inviter.',ended:'This game has already ended.'};
   if(messages[error.code])return messages[error.code];
   if(['TimeoutError','AbortError','TypeError'].includes(error.name))return 'Could not connect. Please try again.';

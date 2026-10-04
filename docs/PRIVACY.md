@@ -5,17 +5,30 @@ region, backup destination and retention have been confirmed in SETUP.md.
 
 The app stores an email address for confirmed login and recovery in Supabase Auth,
 a player-chosen display name, game boards and moves,
-invitation capabilities, and an inbox. No contacts upload, public directory,
+invitation capabilities, friendships, blocks, and an inbox. No contacts upload, anonymous public directory,
 advertising, chat or analytics scripts are included. Optional Android push stores
 a random installation ID and FCM registration token, linked to the signed-in account.
 Firebase messaging auto-initialization is off until the user enables notifications.
 
-Only participants can read their game records. The game API exposes names only to
-participants and a minimal inviter name to an authenticated invitation-link holder.
-Links are bearer invitations: share privately, cancel if exposed, and expect them
+Only participants can read their game records. Owner decision, 4 October: signed-in
+players can search display names without an opt-in step. Results contain a name,
+friend code, opaque ID and the caller's own friendship state; no email, game record,
+statistics or device information. Codes distinguish duplicate names and can be
+shared as an exact lookup. Search requires at least three characters, returns at
+most 20 matches, and is covered by authenticated API rate limiting.
+
+Friend requests require acceptance. Users can decline, cancel, remove or block;
+blocks hide both players from each other's search and stop new requests/invitations.
+Existing active games remain available to leave explicitly. Requests are limited
+to 20 per day and 100 accepted/pending relationships, with a one-day resend cooldown.
+Action receipts preserve retries; they are private and removed on account deletion.
+
+Shared links are bearer invitations: share privately, cancel if exposed, and expect them
 to expire in seven days. Logs contain request IDs and error categories, never tokens,
 email addresses, board contents or request bodies. Supabase's own platform logs may
-contain connection metadata under its platform policy.
+contain connection metadata under its platform policy. Invitations sent from Friends
+are restricted to the addressed account even if someone obtains the link. Account
+deletion also removes friendships, blocks and pending invitations to the account.
 
 Resend sends signup confirmation and recovery mail. Turn-alert emails are out of
 scope. Google Firebase Cloud Messaging delivers opted-in Android game alerts;

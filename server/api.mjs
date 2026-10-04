@@ -5,7 +5,7 @@ const dictionary = new Set(words);
 const serverRandom=()=>crypto.getRandomValues(new Uint32Array(1))[0]/4294967296;
 function unwrap(result) {
   if (result.error) {
-    const code = ['stale','idempotency_conflict','ended','forbidden','invitation_unavailable','cannot_accept_own_invitation','game_limit','account_deleting']
+    const code = ['friend_stale','friend_unavailable','friend_cooldown','friend_limit','invitation_pending','stale','idempotency_conflict','ended','forbidden','invitation_unavailable','cannot_accept_own_invitation','game_limit','account_deleting']
       .find(c => result.error.message.includes(c));
     if (code) throw new Fault(code, code.replaceAll('_',' '), code==='forbidden'?403:409);
     throw new Fault('service_unavailable','The service could not complete this request. Retry with the same operation.',503);
@@ -66,13 +66,25 @@ export function createHandler(db, settings={}) {
         case 'home': {
           const games=unwrap(await db.from('games').select('*').contains('players',[actor]).order('updated_at',{ascending:false}).limit(200));
           const notifications=unwrap(await db.from('notifications').select('id,game_id,kind,read_at,created_at').eq('user_id',actor).order('created_at',{ascending:false}).limit(50));
-          return reply({profile,games:await Promise.all(games.map(decorate)),notifications});
+          const social=unwrap(await db.rpc('wc_friends',{p_actor:actor}));
+          return reply({profile,games:await Promise.all(games.map(decorate)),notifications,social});
         }
         case 'game': {
+          if(uuid(input.gameId)){
+            const addressed=unwrap(await db.from('invitations').select('token').eq('game_id',input.gameId).eq('recipient',actor).maybeSingle());
+            if(addressed){
+              const invitation=unwrap(await db.rpc('wc_invitation',{p_actor:actor,p_token:addressed.token,p_action:'preview'}));
+              if(invitation.status==='invited'){
+                if(input.supportsFriends!==true)throw new Fault('client_update_required','Update Word Conquest to open this friend invitation.',409);
+                return reply({invitation:{...invitation,token:addressed.token}});
+              }
+            }
+          }
           const game=await gameForActor(input.gameId);requireRules(game);
           const history=unwrap(await db.from('operations').select('revision,recap').eq('game_id',game.id).order('revision',{ascending:false}).limit(100));
           const invitation=game.status==='invited' && game.players[0]===actor
-            ? unwrap(await db.from('invitations').select('token,expires_at').eq('game_id',game.id).maybeSingle()) : null;
+            ? unwrap(await db.from('invitations').select('token,expires_at,recipient').eq('game_id',game.id).maybeSingle()) : null;
+          if(invitation?.recipient){const p=unwrap(await db.from('profiles').select('display_name').eq('id',invitation.recipient).maybeSingle());invitation.recipient_name=p?.display_name||'Your friend';}
           return reply({game:await decorate(game),history,invitation});
         }
         case 'create': {
@@ -81,9 +93,10 @@ export function createHandler(db, settings={}) {
           if(!config)throw new Fault('invalid_rules','Choose a supported game ruleset.');
           requireRules({rules_version:version});
           // New board is computed here; a retried create returns its original stored board.
-          const game=unwrap(await db.rpc('wc_create',{p_actor:actor,p_id:input.gameId,p_token:crypto.randomUUID(),
+          if(input.friendId!==undefined&&!uuid(input.friendId))throw new Fault('invalid_friend','Choose a friend.');
+          const game=unwrap(await db.rpc(input.friendId?'wc_create_friend':'wc_create',{p_actor:actor,...(input.friendId?{p_friend:input.friendId}:{}),p_id:input.gameId,p_token:crypto.randomUUID(),
             p_state:Engine.newGame(config,serverRandom),p_rules:version,p_dictionary:metadata.version}));
-          requireRules(game);return reply({game:await decorate(game)});
+          requireRules(game);if(input.friendId)wakePush();return reply({game:await decorate(game)});
         }
         case 'invitation': {
           if(!uuid(input.token))throw new Fault('invalid_invite','Invalid invitation code.');
@@ -127,6 +140,17 @@ export function createHandler(db, settings={}) {
           if(outcome!=='sent')throw new Fault('push_unavailable','The notification service could not send the test. Please retry.',503);
           return reply({accepted:true});
         }
+        case 'friends': return reply({social:unwrap(await db.rpc('wc_friends',{p_actor:actor})),profile});
+        case 'friend_search': {
+          const query=typeof input.query==='string'?input.query.trim():'';
+          if(query.length<3||query.length>64)throw new Fault('invalid_search','Enter at least 3 letters or a friend code.');
+          return reply({people:unwrap(await db.rpc('wc_friend_search',{p_actor:actor,p_query:query}))});
+        }
+        case 'friend_action': {
+          if(!uuid(input.friendId)||!uuid(input.operationId)||!['request','accept','decline','cancel','remove','block','unblock'].includes(input.choice)||input.requestId!=null&&!uuid(input.requestId))throw new Fault('invalid_friend','Invalid friend action.');
+          unwrap(await db.rpc('wc_friend_action',{p_actor:actor,p_target:input.friendId,p_action:input.choice,p_operation:input.operationId,p_request:input.requestId||null}));
+          return reply({social:unwrap(await db.rpc('wc_friends',{p_actor:actor}))});
+        }
         case 'profile': {
           const name=typeof input.name==='string'?input.name.trim():'';
           if(!name || name.length>40 || /[\p{C}<>]/u.test(name))throw new Fault('invalid_name','Use a name of 1–40 ordinary characters.');
@@ -142,7 +166,7 @@ export function createHandler(db, settings={}) {
             const page=unwrap(await db.from('games').select('*').contains('players',[actor]).order('id').range(from,from+99));
             all.push(...page);if(page.length<100)break;
           }
-          return reply(input.action==='stats'?{statistics:statistics(all,actor)}:{profile,games:all,email:auth.user.email});
+          return reply(input.action==='stats'?{statistics:statistics(all,actor)}:{profile,games:all,social:unwrap(await db.rpc('wc_friends',{p_actor:actor})),email:auth.user.email});
         }
         case 'delete_account': {
           if(input.confirmation!=='DELETE')throw new Fault('confirmation','Type DELETE to confirm account deletion.');

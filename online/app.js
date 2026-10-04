@@ -3,6 +3,7 @@ import {Capacitor} from '@capacitor/core';
 import {App} from '@capacitor/app';
 import {createClient} from '@supabase/supabase-js';
 import {createPushControls} from './push.js';
+import {createFriends} from './friends.js';
 import {Engine,config as defaultConfig,configFor,RULES_VERSION,SUPPORTED_RULES,rulesLabel,captureRule,castleRule} from '../server/domain.mjs';
 let config=defaultConfig;
 import {$,svg,icon,node,button,setting,notify,showSheet,closeSheet,ask,initUI,closeTopDialog,emptyState} from './ui.js';
@@ -22,13 +23,14 @@ const publicApp='https://xnorbertx.github.io/word-conquest/online/';
 const authRedirect=()=>native?publicApp:location.origin+location.pathname;
 const status=(message,error=false)=>notify(message,error);
 const push=createPushControls({api,getUser:()=>user,onStatus:message=>{status(message);renderPush();},onChange:()=>renderPush(),onUpdate:()=>void poll(),onOpen:id=>{notificationGame=id;if(user&&authReady&&!recovering)void run(openNotification);}});
-const screens=['loading','setup','auth','recovery','home','activity','account','game'];
+const friends=createFriends({api,getUser:()=>user,getData:()=>homeData,setData:partial=>{if(homeData)Object.assign(homeData,partial);},run,status,invite:person=>createGame(person),openGame,editProfile});
+const screens=['loading','setup','auth','recovery','home','friends','activity','account','game'];
 function screen(name,{route=true,replace=false}={}){
   closeSheet();currentView=name;for(const id of screens)$(id).hidden=id!==name;
   const inGame=name==='game';document.body.classList.toggle('game-view',inGame);
   $('back').hidden=!inGame;$('game-heading').hidden=!inGame;$('game-menu').hidden=!inGame;$('help-button').hidden=inGame;
-  $('main-nav').hidden=!user||!['home','activity','account'].includes(name);
-  for(const [id,view]of [['home-button','home'],['activity-button','activity'],['account-button','account']]){if(view===name)$(id).setAttribute('aria-current','page');else $(id).removeAttribute('aria-current');}
+  $('main-nav').hidden=!user||!['home','friends','activity','account'].includes(name);
+  for(const [id,view]of [['home-button','home'],['friends-button','friends'],['account-button','account']]){if(view===name||view==='account'&&name==='activity')$(id).setAttribute('aria-current','page');else $(id).removeAttribute('aria-current');}
   if(route&&user){const url=name==='game'?`?game=${game.id}`:name==='home'?location.pathname:`?view=${name}`;window.history[replace?'replaceState':'pushState']({view:name},'',url);}
   document.title=inGame?`${opponentName(game,user?.id)} - Word Conquest`:'Word Conquest';
   window.scrollTo({top:0,behavior:'instant'});
@@ -40,7 +42,7 @@ function apiError(message,code,statusCode,requestId){const e=new Error(message);
 async function api(body){
   if(!db)throw new Error('Online play is not connected yet.');
   const {data:{session},error}=await db.auth.getSession();if(error||!session)throw apiError('Sign in to continue.','unauthorized',401);
-  const response=await fetch(`${cfg.supabaseUrl}/functions/v1/game-api`,{method:'POST',signal:AbortSignal.timeout(20000),headers:{'Content-Type':'application/json',apikey:cfg.supabaseAnonKey,Authorization:`Bearer ${session.access_token}`},body:JSON.stringify({...body,supportedRules:SUPPORTED_RULES})});
+  const response=await fetch(`${cfg.supabaseUrl}/functions/v1/game-api`,{method:'POST',signal:AbortSignal.timeout(20000),headers:{'Content-Type':'application/json',apikey:cfg.supabaseAnonKey,Authorization:`Bearer ${session.access_token}`},body:JSON.stringify({...body,supportedRules:SUPPORTED_RULES,supportsFriends:true})});
   const result=await response.json();if(!response.ok)throw apiError(result.error||'Request failed.',result.code,response.status,result.requestId);return result;
 }
 async function run(fn){try{return await fn();}catch(e){lastProblem=friendlyError(e);lastRequestId=e.requestId||null;status(lastProblem,true);if(currentView==='loading'){$('loading-message').textContent='Your table could not load.';$('retry-load').hidden=false;$('loading').querySelector('.spinner').hidden=true;}}}
@@ -58,7 +60,8 @@ function renderPush(){
 async function connectLiveUpdates(session){
   if(session?.access_token)await db.realtime.setAuth(session.access_token);if(session?.user?.id!==user?.id)return;if(liveUser===user?.id)return;
   if(liveChannel){void db.removeChannel(liveChannel);liveChannel=null;}liveUser=user?.id||null;if(!liveUser)return;
-  liveChannel=db.channel(`games:${liveUser}`).on('postgres_changes',{event:'UPDATE',schema:'public',table:'games'},()=>{refreshQueued=true;void poll();}).subscribe(state=>{if(state==='SUBSCRIBED'){refreshQueued=true;void poll();}});
+  const refresh=()=>{refreshQueued=true;void poll();};
+  liveChannel=db.channel(`games:${liveUser}`).on('postgres_changes',{event:'UPDATE',schema:'public',table:'games'},refresh).on('postgres_changes',{event:'*',schema:'public',table:'friendships'},refresh).on('postgres_changes',{event:'INSERT',schema:'public',table:'notifications'},refresh).subscribe(state=>{if(state==='SUBSCRIBED'){refreshQueued=true;void poll();}});
 }
 async function openNotification(){if(notificationGame&&user&&!recovering){const id=notificationGame;notificationGame=null;await openGame(id);}}
 function renderHome(){
@@ -67,6 +70,8 @@ function renderHome(){
   const active=games.filter(g=>!isFinished(g)).length,turns=games.filter(g=>gameStatus(g,user.id)==='Your turn').length;
   $('active-count').textContent=active||'';$('turn-count').textContent=turns?`${turns} ${turns===1?'turn':'turns'} waiting`:'';
   $('active-games').setAttribute('aria-pressed',filter==='active');$('finished-games').setAttribute('aria-pressed',filter==='finished');
+  const invitations=$('game-invitations');invitations.replaceChildren();
+  if(filter==='active')for(const i of homeData.social?.invitations||[]){const card=act('',()=>openGame(i.id),'friend-game-invite');card.replaceChildren(avatar(i.host,'sage'),node('span'),icon('arrow'));card.children[1].append(node('strong',`${i.host} invited you`),node('small','A seat is waiting · View invitation'));invitations.append(card);}
   const list=$('game-list');list.replaceChildren();
   for(const g of visibleGames(games,user.id,filter)){
     const name=opponentName(g,user.id),card=act('',()=>openGame(g.id),'game-card'+(gameStatus(g,user.id)==='Your turn'?' has-turn':''));card.replaceChildren();card.setAttribute('aria-label',`${name}. ${gameStatus(g,user.id)}. Open game`);
@@ -79,10 +84,10 @@ function renderHome(){
     bottom.append(node('span',gameStatus(g,user.id),'card-status'+(gameStatus(g,user.id)==='Your turn'?'':' waiting')));card.append(top,bottom);list.append(card);
   }
   if(!list.childElementCount){const blank=emptyState(filter==='finished'?'Your story starts here.':'A little friendly competition?',filter==='finished'?'Finished games will find a home here.':'Invite someone. Take your time. Find a great word.',filter==='finished'?'award':'leaf');if(filter==='active')blank.append(act('Invite a friend',createGame,'primary','plus'));list.append(blank);}
-  renderActivity();renderPush();
+  renderActivity();renderPush();friends.render();
 }
 function renderActivity(){
-  if(!homeData)return;const unread=homeData.notifications.filter(n=>!n.read_at).length;$('activity-badge').hidden=!unread;$('activity-badge').textContent=unread>9?'9+':String(unread);$('read-inbox').disabled=!unread;
+  if(!homeData)return;const unread=homeData.notifications.filter(n=>!n.read_at).length;$('activity-badge').hidden=!unread;$('activity-badge').textContent=unread>9?'9+':String(unread);$('activity-state').textContent=unread?`${unread} unread updates`:'';$('read-inbox').disabled=!unread;
   $('inbox').replaceChildren();for(const n of homeData.notifications){const g=homeData.games.find(g=>g.id===n.game_id),name=g?opponentName(g,user.id):'Your friend';const item=act('',()=>openGame(n.game_id),'activity-item'+(n.read_at?'':' unread'));item.replaceChildren(avatar(name),node('span'),icon('chevron'));item.children[1].append(node('strong',activityText(n.kind,name)),node('small',timeAgo(n.created_at)));$('inbox').append(item);}
   if(!homeData.notifications.length)$('inbox').append(emptyState('All quiet at the table.','Game updates will appear here.','bell'));
 }
@@ -93,6 +98,7 @@ async function showHome(quiet=false,{route=true,replace=false}={}){
   if(!quiet||before!==JSON.stringify(result))renderHome();
 }
 async function showActivity({route=true}={}){if(!user)return;const ticket=++navigation,actor=user.id;if(!homeData)await fetchHome();if(ticket!==navigation||actor!==user?.id||!homeData)return;++gameLoad;screen('activity',{route});renderActivity();}
+async function showFriends({route=true}={}){if(!user)return;const ticket=++navigation,actor=user.id;if(!homeData)await fetchHome();if(ticket!==navigation||actor!==user?.id||!homeData)return;++gameLoad;screen('friends',{route});friends.render();await friends.refresh();}
 async function showInvite(){
   const raw=localStorage.getItem('wc-invitation');if(!raw||!user)return false;const token=invitationToken(raw);if(!token){localStorage.removeItem('wc-invitation');throw Error('That invitation code does not look right.');}
   const {invitation:i}=await api({action:'invitation',choice:'preview',token});
@@ -107,6 +113,7 @@ async function decideInvite(choice){const token=invitationToken(localStorage.get
 async function openGame(id,quiet=false,{route=true}={}){
   const ticket=quiet?navigation:++navigation,request=quiet?gameLoad:++gameLoad,actor=user?.id;const result=await api({action:'game',gameId:id});
   if(ticket!==navigation||request!==gameLoad||actor!==user?.id)return;if(quiet&&(currentView!=='game'||game?.id!==id))return;if(game?.id===id&&game.revision>result.game.revision)return;
+  if(result.invitation&&!result.game){if(!quiet){localStorage.setItem('wc-invitation',result.invitation.token);await showInvite();}return;}
   const changed=!game||game.id!==id||game.revision!==result.game.revision;
   const gameConfig=configFor(result.game.rules_version);if(!gameConfig)throw apiError('Update Word Conquest to play this game.','client_update_required',409);
   preview=false;config=gameConfig;game=result.game;history=result.history;invite=result.invitation;
@@ -171,6 +178,7 @@ function renderGame(){
   const left=Engine.lettersRemaining(game.state,config);$('supply').textContent=isFinished(game)?'Final score':left===0?'Final reply':`${left} letters left`;$('supply-fill').style.width=`${Math.max(0,Math.min(100,left/config.letterBudget*100))}%`;
   $('share').hidden=!invite;$('game-table').hidden=!!invite;
   if(invite){$('share-link').value=`${authRedirect()}?invite=${invite.token}`;$('invite-expiry').textContent=`Available until ${new Date(invite.expires_at).toLocaleDateString(undefined,{month:'short',day:'numeric'})}`;}
+  const addressed=!!invite?.recipient;$('share').querySelector('h1').textContent=addressed?`A seat for ${invite.recipient_name}.`:'A seat at your table.';$('share').querySelector('.muted').textContent=addressed?'Your invitation is waiting in their Games tab.':'Share your invitation to get the game going.';$('share-invite').hidden=addressed;$('share').querySelector('.copy-field').hidden=addressed;
   $('composer').hidden=(!myTurn()&&!preview)||isFinished(game)||!!pending()&&!busy;$('waiting-turn').hidden=myTurn()||preview||isFinished(game)||!!pending();$('game-result').hidden=!isFinished(game);
   $('draw-offer').hidden=!game.draw_by||game.draw_by===user?.id||game.status!=='active';
   const colour=seat===1?'green':'brown',context=highlightLast?'Last word highlighted':preview?'Explore the board':isFinished(game)?'Your final territory':ownTurn?(Engine.canReenter(game.state,config)?'No territory left. Start anywhere.':`Start on your ${colour} tiles`):`Your tiles · ${colour}`;
@@ -218,11 +226,11 @@ function showRecap(){
   if(r.path?.length)content.push(act('Show word on the board',()=>{highlightLast=true;closeSheet();renderGame();$('board').scrollIntoView({block:'center',behavior:'smooth'});},'secondary full','eye'));
   content.push(act('All moves',showHistory,'text-button full'));showSheet('The last move.',content);
 }
-function showNewGame(){showSheet('Pull up a chair.',[node('p',castleRule(defaultConfig)),node('p','Starting player is chosen at random.','field-hint'),act('Invite a friend',createGame,'primary full','user-plus'),act('I have an invitation',showJoin,'secondary full','mail')]);}
+function showNewGame(){showSheet('Pull up a chair.',[node('p',castleRule(defaultConfig)),node('p','Starting player is chosen at random.','field-hint'),act('Choose a friend',()=>showFriends(),'primary full','friends'),act('Share an invitation link',()=>createGame(),'secondary full','share'),act('I have an invitation',showJoin,'text-button full','mail')]);}
 function showJoin(){const form=node('form',undefined,'stack-form'),label=node('label','Invitation link or code'),input=node('input');input.id='invite-code';input.autocomplete='off';input.required=true;input.placeholder='Paste your invitation here';label.htmlFor=input.id;const submit=button('Open invitation',null,'primary full','arrow');submit.type='submit';form.append(label,input,submit);form.onsubmit=e=>{e.preventDefault();void run(async()=>{const token=invitationToken(input.value);if(!token)throw Error('Paste a complete invitation link or code.');submit.disabled=true;try{localStorage.setItem('wc-invitation',token);await showInvite();}finally{submit.disabled=false;}});};showSheet('Join a friend.',form);}
-async function createGame(){
+async function createGame(person){
   if(creating||!user)return;creating=true;$('new-game').disabled=true;closeSheet();
-  try{const key=`wc-create:${user.id}`,id=localStorage.getItem(key)||crypto.randomUUID();localStorage.setItem(key,id);const {game:g}=await api({action:'create',gameId:id,rulesVersion:RULES_VERSION});localStorage.removeItem(key);await openGame(g.id);}finally{creating=false;$('new-game').disabled=false;}
+  try{const key=`wc-create:${user.id}${person?':'+person.id:''}`,id=localStorage.getItem(key)||crypto.randomUUID();localStorage.setItem(key,id);const {game:g}=await api({action:'create',gameId:id,rulesVersion:RULES_VERSION,...(person?{friendId:person.id}:{})});localStorage.removeItem(key);if(person){await fetchHome();friends.render();status(`Invitation sent to ${person.display_name}.`);}else await openGame(g.id);}finally{creating=false;$('new-game').disabled=false;}
 }
 async function copyInvite(){try{await navigator.clipboard.writeText($('share-link').value);status('Invitation copied. Send it to a friend.');}catch{$('share-link').focus();$('share-link').select();status('Select and copy the invitation link.',true);}}
 async function shareInvite(){if(navigator.share){try{await navigator.share({title:'A game of Word Conquest',text:'Join me for a game of words.',url:$('share-link').value});}catch(e){if(e.name!=='AbortError')await copyInvite();}}else await copyInvite();}
@@ -279,7 +287,7 @@ function showPrivacy(){
   if(lastProblem){content.push(node('p',`Last issue: ${lastProblem}`,'menu-note'));if(lastRequestId)content.push(act('Copy support reference',async()=>{await navigator.clipboard.writeText(lastRequestId);status('Support reference copied.');},'text-button'));}
   showSheet('Privacy & your account.',content);
 }
-function showDataInfo(){showSheet('A private little table.',[node('p','Only your opponents can see your shared games and display name. Your email is used for signing in and recovering your account.'),node('p','Supabase stores games and accounts. Resend sends account emails. Optional Android notifications use Google Firebase Cloud Messaging with a device token and game reference.'),node('p','There are no ads, public profile search or analytics trackers. Account deletion removes your login, profile and private inbox. Shared history stays anonymized for your opponents; backups expire under the hosting provider\'s retention policy.')]);}
+function showDataInfo(){showSheet('A private little table.',[node('p','Signed-in players can search display names and see friend codes. Your email stays private. Friend requests must be accepted. Only players in a game can see its board and moves.'),node('p','Supabase stores games and accounts. Resend sends account emails. Optional Android notifications use Google Firebase Cloud Messaging with a device token and game reference.'),node('p','There are no ads, contacts uploads or analytics trackers. Account deletion removes your login, profile, friendships, blocks and private inbox. Shared history stays anonymized for your opponents; backups expire under the hosting provider\'s retention policy.')]);}
 async function exportData(){const data=await api({action:'export'}),url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'})),link=node('a');link.href=url;link.download='word-conquest-data.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);closeSheet();status('Your data export is ready.');}
 function showDelete(){
   const form=node('form',undefined,'stack-form'),label=node('label','Type DELETE to confirm'),input=node('input');input.id='delete-confirmation';input.autocomplete='off';input.required=true;input.pattern='DELETE';label.htmlFor=input.id;const remove=button('Permanently delete account',null,'primary danger full','trash');remove.type='submit';form.append(label,input,remove);
@@ -309,6 +317,7 @@ $('retry-load').onclick=()=>run(async()=>{await showHome(false,{route:false});au
 $('home-button').onclick=$('back').onclick=$('result-home').onclick=()=>run(()=>user?showHome():screen(configured?'auth':'setup',{route:false}));
 $('brand').onclick=e=>{e.preventDefault();void run(()=>user?showHome():screen(configured?'auth':'setup',{route:false}));};
 $('activity-button').onclick=()=>run(()=>showActivity());$('account-button').onclick=()=>run(()=>account());
+$('friends-button').onclick=()=>run(()=>showFriends());
 $('active-games').onclick=()=>{filter='active';renderHome();};$('finished-games').onclick=()=>{filter='finished';renderHome();};
 $('push-prompt-enable').onclick=()=>run(async()=>{if(push.snapshot().state==='blocked')await push.openSettings();else await connectPush();});$('push-prompt-dismiss').onclick=()=>push.snooze();
 $('new-game').onclick=showNewGame;$('edit-profile').onclick=editProfile;$('push-settings').onclick=showPush;
@@ -334,17 +343,17 @@ $('board').onkeydown=e=>{
 $('preview-button').onclick=()=>{preview=true;config=defaultConfig;game={id:'preview',rules_version:RULES_VERSION,state:{...Engine.newGame(config),player:1,startingPlayer:1},status:'active',players:[],names:['You','Alex'],revision:0};history=[];invite=null;selection=[];jokers={};screen('game',{route:false});renderGame();};
 async function poll(){
   if(polling||busy||!user||document.hidden||recovering)return;polling=true;refreshQueued=false;
-  try{if(currentView==='game'&&!preview)await openGame(game.id,true);else if(currentView==='home')await showHome(true);else if(currentView==='activity'){await fetchHome();renderActivity();}offlineNotice(!navigator.onLine);}
+  try{if(currentView==='game'&&!preview)await openGame(game.id,true);else if(currentView==='home')await showHome(true);else if(currentView==='friends')await friends.refresh();else if(currentView==='activity'){await fetchHome();renderActivity();}offlineNotice(!navigator.onLine);}
   catch{offlineNotice(true,'Could not refresh. Reconnect to get the latest turn.');}
   finally{polling=false;if(refreshQueued)void poll();}
 }
 if(native){void push.initialize().catch(()=>{});void App.addListener('appStateChange',({isActive})=>{if(isActive){void poll();void push.restore().catch(()=>{});}});void App.addListener('backButton',()=>{if(closeTopDialog())return;if(currentView!=='home'&&user)void run(()=>showHome());else void App.minimizeApp();});}
-window.addEventListener('popstate',()=>run(async()=>{if(!user)return;closeSheet();const route=new URLSearchParams(location.search);if(route.get('game'))await openGame(route.get('game'),false,{route:false});else if(route.get('view')==='account')await account({route:false});else if(route.get('view')==='activity')await showActivity({route:false});else await showHome(false,{route:false});}));
+window.addEventListener('popstate',()=>run(async()=>{if(!user)return;closeSheet();const route=new URLSearchParams(location.search);if(route.get('game'))await openGame(route.get('game'),false,{route:false});else if(route.get('view')==='friends')await showFriends({route:false});else if(route.get('view')==='account')await account({route:false});else if(route.get('view')==='activity')await showActivity({route:false});else await showHome(false,{route:false});}));
 window.addEventListener('online',()=>{void run(poll);void push.restore().catch(()=>{});});window.addEventListener('offline',()=>offlineNotice());window.addEventListener('focus',()=>run(poll));document.addEventListener('visibilitychange',()=>{if(!document.hidden)void run(poll);});setInterval(poll,20000);
 if(!db)screen('setup',{route:false});else db.auth.onAuthStateChange((event,session)=>{
   const previousUser=user?.id;user=session?.user||null;setTimeout(()=>run(()=>connectLiveUpdates(session)),0);
   if(event==='PASSWORD_RECOVERY'){authReady=false;recovering=true;screen('recovery',{route:false});return;}
-  if(!user){authReady=false;homeData=null;renderPush();++navigation;++gameLoad;++homeLoad;screen('auth',{route:false});return;}
+  if(!user){authReady=false;homeData=null;friends.reset();renderPush();++navigation;++gameLoad;++homeLoad;screen('auth',{route:false});return;}
   if(recovering||!['SIGNED_IN','INITIAL_SESSION'].includes(event)||(previousUser===user.id&&currentView!=='auth'))return;
-  setTimeout(()=>run(async()=>{if(recovering)return;await showHome(false,{route:false});const invited=await showInvite();authReady=true;if(notificationGame)await openNotification();else if(launchGame&&!invited)await openGame(launchGame,false,{route:false});else if(!invited&&params.get('view')==='account')await account({route:false});else if(!invited&&params.get('view')==='activity')await showActivity({route:false});void push.restore().catch(()=>{});}),0);
+  setTimeout(()=>run(async()=>{if(recovering)return;await showHome(false,{route:false});const invited=await showInvite();authReady=true;if(notificationGame)await openNotification();else if(launchGame&&!invited)await openGame(launchGame,false,{route:false});else if(!invited&&params.get('view')==='friends')await showFriends({route:false});else if(!invited&&params.get('view')==='account')await account({route:false});else if(!invited&&params.get('view')==='activity')await showActivity({route:false});void push.restore().catch(()=>{});}),0);
 });

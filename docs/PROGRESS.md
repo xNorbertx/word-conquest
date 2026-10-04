@@ -468,3 +468,36 @@ Released and verified:
 
 Physical Seeker installation/gameplay remains owner acceptance. No new costs,
 services, database changes or app-store submission.
+
+
+## Friends first-iteration feature - 4 October
+
+Version 0.6.0 replaces the central Activity tab with Friends, with search at the
+top, friend requests and an accepted friends list with direct Invite buttons.
+Activity remains under You. Owner explicitly chose signed-in display-name search
+without opt-in; emails remain private. Duplicate display names are disambiguated
+by unique friend codes. Unique names and their migration are added to ROADMAP.
+
+The additive Friends migration is deployed to the existing Supabase project.
+Friendships need mutual acceptance; friend invitations reserve a seat for one
+account. Actions retain retry IDs, request generations reject stale acceptance,
+and game creation/notification enqueue are atomic. One pending addressed invitation
+per direction is allowed. Blocks hide both players, stop new contact and cancel
+pending addressed invitations; active games are preserved. Request limits,
+row-level access, account export and deletion cover the new records.
+
+Verification: three engine suites and 59 integration/service/controller tests
+passed. Eight new database tests exercise duplicate-name search, limited response
+fields, requests/acceptance, retries/cross-requests, stale generations, targeted
+invitations, blocking, push cancellation, deletion, RLS and daily request limits.
+Hosted test game 8734d471-771c-42e3-9089-d5db997dab60 completed using existing
+example.invalid accounts without push devices. Search, two-account acceptance,
+one game/notification on retry, recipient preview, old-client update feedback,
+normal v3 play, social export and Realtime events all passed. No owner game or
+account was modified and no email or physical-phone alert was sent by the test.
+
+Phone browser verification: 390x844 and 320x640, including request acceptance,
+name search, adding a friend, direct invitation, long names, friend-code sheet and
+Activity under You. Physical Seeker upgrade, friend flow and invitation push tap
+remain user acceptance. Game rules/dictionary and the original prototype are unchanged.
+No new service, ongoing cost or app-store submission.

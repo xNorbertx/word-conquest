@@ -8,7 +8,11 @@ unchanged. No new service, paid asset, tracker or font dependency was added.
 
 - Games is the home screen. Your turns sort first; Playing and Finished separate
   current games from history. New game offers inviting a friend or opening a code.
-- Games, Activity and You are the three persistent destinations. A game gets a
+- Games, Friends and You are the three persistent destinations in 0.6.0. Activity
+  moves into You. Friends starts with display-name/code search and shows requests,
+  accepted friends with Invite buttons, and sent requests. Duplicate names have
+  unique codes in search results. Name search has no opt-in step (owner decision).
+  A game gets a
   focused screen with Back and one overflow menu. Browser Back follows navigation;
   delayed responses cannot override a newer destination.
 - Rules, detailed scores, move history and account controls open in accessible

@@ -30,6 +30,18 @@ See [Android installation](docs/ANDROID.md) and [0.3.0 UX review](docs/UX.md). H
 36-turn and owner playtests passed; multi-day/device acceptance, backup restoration
 and operational monitoring remain open. The local prototype below is unchanged.
 
+### Friends (0.6.0)
+
+Friends replaces Activity in the bottom navigation. Search by display name, send
+a request, accept it, then use Invite beside a friend. Their game invitation
+appears in Games and can trigger their enabled Android notifications. Only the
+addressed friend can accept. Activity remains available under You.
+
+Display names are searchable to signed-in players; emails are never searched or
+returned. Duplicate names remain supported, with a distinct friend code in
+search results. My code also offers sharing and blocked-player management.
+Unique names are tracked in the backlog. Existing games and rules are unchanged.
+
 ### Castle income experiment (0.5.0)
 
 New games use autumn-v3: side castles earn 2 points per complete round and the

@@ -46,6 +46,7 @@ First milestone: invite a friend and reliably finish a game over several days.
 - [ ] Reliable turn submission: retries cannot submit the same move twice; reconnecting restores the accepted state; stale boards cannot overwrite newer turns. Clearly distinguish pending and accepted moves.
 - [ ] Invitations: share a link or code, accept or decline, and cancel unaccepted invitations. Opening an invitation should lead to the right game after sign-in.
 - [ ] Game list: show invitations, active games, whose turn it is, and completed games.
+- [ ] Friends (promoted to first iteration on 4 October): search display names, mutually accept requests, keep a friends list, and invite a specific friend directly. Version 0.6.0 has implementation, automated and hosted verification; Seeker acceptance remains open.
 - [x] Web pilot notifications: in-app inbox and live game updates, with participant-only access. Turn-alert email is out of scope by owner decision.
 - [ ] Mobile notifications: native push for turns/invitations, preferences, and links to the relevant game; verify permissions, background delivery and logout/token cleanup on devices.
 - [ ] Opponent-move recap: show the word, traced path, captures, score changes, and replaced letters when returning to a game.
@@ -66,7 +67,7 @@ First milestone: invite a friend and reliably finish a game over several days.
 ## Nice-to-have — later iterations
 
 - [ ] Matchmaking with similarly skilled opponents; ratings once the player population supports useful matching.
-- [ ] Friends list and convenient repeat invitations.
+- [ ] Unique player names: define case/Unicode normalization, name changes and migration for existing duplicates before enforcing uniqueness. Until then, friend codes distinguish matching display names in search.
 - [ ] One-tap rematches with alternating starting players.
 - [ ] Simple messaging; preset reactions can be an initial smaller version of this feature.
 - [ ] Multiple languages, each with its own dictionary, letter distribution, scoring balance, and records. Interface translation is a separate task.
