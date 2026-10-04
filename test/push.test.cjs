@@ -37,7 +37,7 @@ test('browser roles cannot read device tokens or invoke the internal delivery fu
   try{await assert.rejects(()=>db.query('select * from push_devices'),/permission denied/);await assert.rejects(()=>db.query('select wc_push_claim()'),/permission denied/);}
   finally{await db.exec('reset role');}
 });
-test('FCM uses generic notification+data, token caching, and only disables unregistered tokens',async()=>{
+test('FCM delivers opponent name and authoritative points while keeping routing and token handling',async()=>{
   const {firebaseSender}=await import('../server/push.mjs');
   const {privateKey}=crypto.generateKeyPairSync('rsa',{modulusLength:2048});
   const credentials={type:'service_account',project_id:'word-conquest-test',client_email:'test@example.invalid',private_key:privateKey.export({type:'pkcs8',format:'pem'})};
@@ -47,8 +47,8 @@ test('FCM uses generic notification+data, token caching, and only disables unreg
     payload=JSON.parse(options.body);
     return code?Response.json({error:{details:[{'@type':'type.googleapis.com/google.firebase.fcm.v1.FcmError',errorCode:code}]}},{status:400}):Response.json({name:'accepted'});
   });
-  const event={token,game_id:G,notification_id:2,kind:'word'};
-  assert.equal(await send(event),'sent');assert.equal(payload.message.data.gameId,G);assert.ok(payload.message.notification.body);assert.equal(payload.message.android.notification.tag,`game-${G}`);
+  const event={token,game_id:G,notification_id:2,kind:'word',turn:{name:'Norbert',action:'word',points:18}};
+  assert.equal(await send(event),'sent');assert.equal(payload.message.data.gameId,G);assert.equal(payload.message.notification.body,'Norbert played a turn for 18 points. Your turn.');assert.deepEqual(payload.message.data,{gameId:G,eventId:'2'});assert.equal(payload.message.android.notification.tag,`game-${G}`);
   code='INVALID_ARGUMENT';assert.equal(await send(event),'retry');code='UNREGISTERED';assert.equal(await send(event),'invalid_token');assert.equal(authCalls,1);
 });
 test('push function rejects calls without its private trigger secret',async()=>{

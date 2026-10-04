@@ -27,8 +27,14 @@ it for seven days. **Send a test notification** targets only this phone and acco
 Firebase acceptance is reported separately from an actual receipt. Preferences are per account and phone. Turning notifications
 off disables server delivery; signing out disables registration and removes
 delivered notifications. Signing in again restores a previously enabled preference.
-Native notifications contain a generic message and game reference, not email,
-board contents or played words. Tapping one opens the saved game after sign-in.
+Turn notifications include the opponent display name and total points gained
+(word points plus territory gained), matching the Play word total. The worker
+reads the saved receipt at the notification revision, so delayed delivery cannot
+accidentally quote a newer move. Refreshes say the opponent refreshed their letters;
+final turns retain their score and say the game finished. Other alerts stay generic.
+Payloads include the game reference, but not email, board contents or played words.
+Tapping one opens the saved game after sign-in. This wording is server-controlled;
+the existing pilot APK receives it without an upgrade.
 Invitations are share links: push reports acceptance/decline to known players;
 there is no way to push an initial link to an unidentified recipient.
 

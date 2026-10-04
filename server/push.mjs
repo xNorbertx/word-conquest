@@ -1,3 +1,30 @@
+// Resolve the immutable receipt for this event, never the game's latest move.
+export async function turnDetails(db,event){
+  if(!['word','refresh','game complete'].includes(event.kind))return null;
+  const read=async query=>{const {data,error}=await query;if(error)throw Error('Turn notification lookup failed');return data;};
+  const notification=await read(db.from('notifications').select('revision').eq('id',event.notification_id).eq('game_id',event.game_id).eq('user_id',event.recipient).maybeSingle());
+  if(!notification)return null;
+  const operation=await read(db.from('operations').select('actor,recap').eq('game_id',event.game_id).eq('revision',notification.revision).maybeSingle());
+  const recap=operation?.recap;
+  if(!operation || operation.actor===event.recipient || !['word','refresh'].includes(recap?.action) || (event.kind!=='game complete' && recap.action!==event.kind))return null;
+  const profile=await read(db.from('profiles').select('display_name,deleting').eq('id',operation.actor).maybeSingle());
+  const name=!profile||profile.deleting?'Your opponent':profile.display_name.replace(/[\p{C}\s]+/gu,' ').trim().slice(0,40)||'Your opponent';
+  return {name,action:recap.action,points:recap.score?.totalGain};
+}
+
+export function notificationBody(event){
+  if(event.kind==='test')return 'Notifications are working on this phone.';
+  const turn=event.turn,ending=event.kind==='game complete'?'Game finished.':'Your turn.';
+  if(turn?.action==='word'){
+    const points=Number.isSafeInteger(turn.points)&&turn.points>=0?` for ${turn.points} ${turn.points===1?'point':'points'}`:'';
+    return `${turn.name} played a turn${points}. ${ending}`;
+  }
+  if(turn?.action==='refresh')return `${turn.name} refreshed their letters. ${ending}`;
+  if(event.kind==='game complete')return 'Your game has finished.';
+  if(event.kind.startsWith('invitation'))return 'Your game invitation has an update.';
+  return 'Your game has an update. It may be your turn.';
+}
+
 const encode=value=>btoa(typeof value==='string'?value:String.fromCharCode(...new Uint8Array(value))).replaceAll('+','-').replaceAll('/','_').replace(/=+$/,'');
 export function firebaseSender(credentials, fetcher=fetch) {
   let cached=null;
@@ -22,7 +49,7 @@ export function firebaseSender(credentials, fetcher=fetch) {
     const response=await fetcher(`https://fcm.googleapis.com/v1/projects/${credentials.project_id}/messages:send`,{
       method:'POST',signal:AbortSignal.timeout(10000),headers:{Authorization:`Bearer ${bearer}`,'Content-Type':'application/json'},
       body:JSON.stringify({validate_only:validateOnly,message:{token:event.token,
-        notification:{title:'Word Conquest',body:event.kind==='test'?'Notifications are working on this phone.':event.kind==='game complete'?'Your game has finished.':event.kind.startsWith('invitation')?'Your game invitation has an update.':'Your game has an update. It may be your turn.'},
+        notification:{title:'Word Conquest',body:notificationBody(event)},
         data:event.kind==='test'?{test:'true'}:{gameId:event.game_id,eventId:String(event.notification_id)},
         android:{priority:'high',ttl:'86400s',collapse_key:event.kind==='test'?'notification-test':event.game_id,
           notification:{channel_id:'game_updates',tag:event.kind==='test'?'notification-test':`game-${event.game_id}`,icon:'ic_stat_word_conquest',color:'#75866B',visibility:'PRIVATE'}}}})});
@@ -46,10 +73,11 @@ export function pushHandler(db,{secret,credentials},send=firebaseSender(credenti
     await Promise.all(events.map(async event=>{
       let outcome='retry';
       try{
-        // Check again after claim, in case the device signed out or switched accounts.
+        const turn=await turnDetails(db,event);
+        // Check immediately before sending, in case the device signed out or switched accounts.
         const {data:device,error}=await db.from('push_devices').select('enabled,user_id,token').eq('id',event.device_id).maybeSingle();
         if(error)throw Error('Device lookup failed');
-        outcome=!device?.enabled || device.user_id!==event.recipient || device.token!==event.token?'skipped':await send(event);
+        outcome=!device?.enabled || device.user_id!==event.recipient || device.token!==event.token?'skipped':await send({...event,turn});
       }catch{/* Generic counters only; never log registration tokens or provider credentials. */}
       const {error:finishError}=await db.rpc('wc_push_finish',{p_id:event.delivery_id,p_lease:event.lease_id,p_outcome:outcome,p_token:event.token});
       if(outcome==='sent' && !finishError)sent++;else if(outcome==='retry'||finishError)retried++;

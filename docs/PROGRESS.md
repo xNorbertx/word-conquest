@@ -245,3 +245,20 @@ Published notification fix evidence:
 Install over the existing pilot. No added recurring costs or store publication.
 Device acceptance still covers normal turn/background/cold-start routing, the
 new foreground presentation, settings handoff and the APK upgrade.
+
+## Opponent name and points in turn alerts - 4 October
+
+Deployed the owner-requested server notification wording: "Norbert played a turn
+for 18 points. Your turn." Points are the authoritative total gain (word points
+plus territory), matching the Play word value. The worker resolves the exact
+notification revision's stored operation and its actor's profile, never the latest
+move. Refresh and game-ending turns have appropriate copy; deleted names fall
+back to Your opponent. Lookup outages retry rather than sending a guessed score.
+
+All three original rule suites and 35 integration/service/controller tests pass,
+including delayed-revision correctness and queue-to-message integration. A real
+saved turn was resolved read-only and its points matched the recorded total-score
+change. Firebase accepted that payload in validation-only mode: no test alert sent.
+Deployed worker returns 401 without its secret, 200 with it; queue was empty.
+Updated notification/privacy docs and roadmap. No migration, client upgrade,
+new cost or game-data change. The existing APK receives the new copy automatically.

@@ -115,4 +115,6 @@ The owner confirmed a real test notification on the Seeker after enabling in-app
 registration on 4 October. Version 0.3.1 adds a home opt-in prompt, connection
 status, retry/settings, a per-phone test and foreground alerts. Normal turn
 delivery, notification taps and upgrade acceptance remain open.
+Turn alert copy now includes the opponent display name and total points gained
+from the saved turn (word points plus territory), including final scoring turns.
 See docs/ANDROID.md for builds and tests.

@@ -19,7 +19,9 @@ contain connection metadata under its platform policy.
 
 Resend sends signup confirmation and recovery mail. Turn-alert emails are out of
 scope. Google Firebase Cloud Messaging delivers opted-in Android game alerts;
-payloads contain a generic message, event ID and game reference, not emails or words.
+turn alerts include the opponent display name and points gained, as requested by
+the owner on 4 October. Payloads also contain an event ID and game reference;
+they do not include email addresses, board contents or played words.
 Google handles installation identifiers and delivery metadata. Disable alerts in
 Account or Android Settings. Sign-out disables the device registration; deletion
 removes its registration and queued deliveries. Pilot support is through the inviter;
