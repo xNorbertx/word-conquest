@@ -1796,7 +1796,7 @@ var require_cjs = __commonJS({
 });
 
 // package.json
-var version = "0.5.0";
+var version = "0.6.0";
 
 // online/app.js
 init_dist();
@@ -8613,6 +8613,343 @@ function createPushControls(options) {
   return pushController({ ...options, available: Capacitor.getPlatform() === "android", plugin: PushNotifications, settings: NotificationSettings, storage: localStorage });
 }
 
+// online/ui.js
+var $ = (id) => document.getElementById(id);
+var paths = {
+  friends: ["M15 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0", "M2 21v-2a7 6 0 0 1 14 0v2", "M18 3a4 4 0 0 1 0 8", "M19 14a6 5 0 0 1 3 5v2"],
+  search: ["M17 10a7 7 0 1 1-14 0 7 7 0 0 1 14 0", "m15 15 6 6"],
+  back: ["m14 6-6 6 6 6"],
+  arrow: ["M4 12h15", "m13 6 6 6-6 6"],
+  chevron: ["m9 6 6 6-6 6"],
+  close: ["m6 6 12 12", "m18 6-12 12"],
+  plus: ["M12 5v14", "M5 12h14"],
+  more: ["M5 12h.01", "M12 12h.01", "M19 12h.01"],
+  grid: ["M4 4h6v6H4z", "M14 4h6v6h-6z", "M4 14h6v6H4z", "M14 14h6v6h-6z"],
+  bell: ["M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9", "M10 21h4"],
+  user: ["M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0", "M4 21v-2a8 6 0 0 1 16 0v2"],
+  help: ["M9 8a3 3 0 0 1 6 0c0 2-3 2-3 5", "M12 17h.01", "M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0"],
+  book: ["M12 5C9 3 5 3 2 4v15c4-1 7-1 10 1 3-2 6-2 10-1V4c-3-1-7-1-10 1v15"],
+  shield: ["m12 2 8 4v6c0 5-8 10-8 10S4 17 4 12V6z", "m8 12 3 3 5-6"],
+  logout: ["M10 4H4v16h6", "M10 12h12", "m17 7 5 5-5 5"],
+  edit: ["m15 4 5 5", "m3 21 5-1L21 7a2.8 2.8 0 0 0-4-4L4 16z"],
+  check: ["m5 12 4 4L19 6"],
+  "check-all": ["m3 12 4 4L17 6", "m12 16 9-10"],
+  share: ["M12 16V3", "m7 8 5-5 5 5", "M5 12v8h14v-8"],
+  copy: ["M9 9h11v12H9z", "M5 15H3V3h11v2"],
+  eye: ["M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12", "M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0"],
+  lock: ["M5 10h14v12H5z", "M8 10V6a4 4 0 0 1 8 0v4"],
+  expand: ["M8 3H3v5", "M16 3h5v5", "M21 16v5h-5", "M8 21H3v-5"],
+  shrink: ["M3 8h5V3", "M16 3v5h5", "M21 16h-5v5", "M8 21v-5H3"],
+  undo: ["M3 10h10a7 7 0 0 1 0 14", "m8 5-5 5 5 5"],
+  refresh: ["M20 7a8 8 0 0 0-14-2L3 8", "M3 3v5h5", "M4 17a8 8 0 0 0 14 2l3-3", "M21 21v-5h-5"],
+  hourglass: ["M6 3h12", "M6 21h12", "M7 3v4l5 5-5 5v4", "M17 3v4l-5 5 5 5v4"],
+  award: ["M16 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0", "m8 11-2 10 6-3 6 3-2-10"],
+  flag: ["M4 22V3", "M4 3c5-5 10 5 16 0v11c-6 5-11-5-16 0"],
+  handshake: ["m3 6 4-3 5 3 5-3 4 3-4 10-4 4-4-1-6-9", "m12 6-5 5 2 2 4-3 5 5"],
+  history: ["M3 10a9 9 0 1 1 1 7", "M3 3v7h7", "M12 7v5l3 2"],
+  info: ["M12 11v6", "M12 7h.01", "M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0"],
+  download: ["M12 3v12", "m7 10 5 5 5-5", "M4 17v4h16v-4"],
+  trash: ["M3 6h18", "M9 6V3h6v3", "m5 6 1 15h12l1-15", "M10 10v7", "M14 10v7"],
+  "user-plus": ["M11 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0", "M1 21v-2a7 6 0 0 1 14 0v2", "M19 6v8", "M15 10h8"],
+  mail: ["M3 5h18v14H3z", "m3 5 9 8 9-8"],
+  leaf: ["M20 3C9 0 2 7 5 15c8 6 16-1 15-12Z", "M3 21 15 9"]
+};
+function svg(tag, attrs = {}, text) {
+  const n = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  for (const [key, value] of Object.entries(attrs)) n.setAttribute(key, value);
+  if (text !== void 0) n.textContent = text;
+  return n;
+}
+function icon(name) {
+  const n = svg("svg", { viewBox: "0 0 24 24", class: "icon", "aria-hidden": "true", focusable: "false" });
+  for (const d of paths[name] || paths.info) n.append(svg("path", { d }));
+  return n;
+}
+function hydrateIcons(root = document) {
+  for (const el of root.querySelectorAll("[data-icon]")) el.replaceChildren(icon(el.dataset.icon));
+}
+function node(tag, text, className) {
+  const n = document.createElement(tag);
+  if (text !== void 0) n.textContent = text;
+  if (className) n.className = className;
+  return n;
+}
+function button(label, handler, className = "secondary", symbol) {
+  const n = node("button", void 0, className);
+  n.type = "button";
+  if (symbol) n.append(icon(symbol));
+  n.append(node("span", label));
+  n.onclick = handler;
+  return n;
+}
+function setting(label, symbol, handler, { note, danger = false } = {}) {
+  const n = button("", handler, "settings-row" + (danger ? " danger" : ""));
+  n.replaceChildren(icon(symbol));
+  const copy = node("span", label);
+  if (note) copy.append(node("small", note));
+  n.append(copy, icon("chevron"));
+  return n;
+}
+var toastTimer;
+function notify(message, error = false) {
+  clearTimeout(toastTimer);
+  if (error && $("sheet").open) {
+    let alert = $("sheet-content").querySelector(".form-alert");
+    if (!alert) {
+      alert = node("p", void 0, "form-alert");
+      alert.setAttribute("role", "alert");
+      $("sheet-content").prepend(alert);
+    }
+    alert.textContent = message;
+    alert.scrollIntoView({ block: "nearest" });
+    return;
+  }
+  $("toast-text").textContent = message;
+  $("toast").classList.toggle("error", error);
+  $("toast").firstElementChild.replaceWith(icon(error ? "info" : "check"));
+  $("toast").hidden = false;
+  if (!error) toastTimer = setTimeout(() => $("toast").hidden = true, 4e3);
+}
+function closeSheet() {
+  if ($("sheet").open) $("sheet").close();
+}
+function showSheet(title, content) {
+  $("sheet-title").textContent = title;
+  $("sheet-content").replaceChildren(...Array.isArray(content) ? content : [content]);
+  hydrateIcons($("sheet-content"));
+  if (!$("sheet").open) $("sheet").showModal();
+  $("sheet-content").scrollTop = 0;
+}
+var confirmResolve = null;
+function ask({ title, message, label = "Confirm", cancel = "Keep playing", danger = false, symbol = "help" }) {
+  closeSheet();
+  $("confirm-title").textContent = title;
+  $("confirm-message").textContent = message;
+  $("confirm-ok").textContent = label;
+  $("confirm-ok").classList.toggle("danger", danger);
+  $("confirm-cancel").textContent = cancel;
+  $("confirm-icon").replaceChildren(icon(symbol));
+  $("confirm-dialog").showModal();
+  return new Promise((resolve) => confirmResolve = resolve);
+}
+function finishConfirm(answer) {
+  $("confirm-dialog").close();
+  const resolve = confirmResolve;
+  confirmResolve = null;
+  resolve?.(answer);
+}
+function initUI() {
+  hydrateIcons();
+  $("close-sheet").onclick = closeSheet;
+  $("dismiss-toast").onclick = () => $("toast").hidden = true;
+  $("confirm-cancel").onclick = () => finishConfirm(false);
+  $("confirm-ok").onclick = () => finishConfirm(true);
+  $("confirm-dialog").addEventListener("cancel", (e) => {
+    e.preventDefault();
+    finishConfirm(false);
+  });
+  for (const d of [$("sheet"), $("confirm-dialog")]) d.addEventListener("click", (e) => {
+    if (e.target !== d) return;
+    const r = d.getBoundingClientRect();
+    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) {
+      if (d === $("sheet")) closeSheet();
+      else finishConfirm(false);
+    }
+  });
+}
+function closeTopDialog() {
+  if ($("confirm-dialog").open) {
+    finishConfirm(false);
+    return true;
+  }
+  if ($("sheet").open) {
+    closeSheet();
+    return true;
+  }
+  return false;
+}
+function emptyState(title, copy, symbol = "leaf") {
+  const box = node("div", void 0, "empty-state"), art = node("div", void 0, "empty-art");
+  art.append(icon(symbol));
+  box.append(art, node("h2", title), node("p", copy));
+  return box;
+}
+
+// online/friends.js
+var formatFriendCode = (code) => (code || "").match(/.{1,4}/g)?.join("-") || "";
+function createFriends({ api: api2, getUser, getData, setData, run: run2, status: status2, invite: invite2, openGame: openGame2, editProfile: editProfile2 }) {
+  let searchVersion = 0, loadVersion = 0, searchResults = null, searchQuery = "", mutating = false;
+  const act2 = (label, fn, style = "secondary", symbol) => button(label, () => run2(fn), style, symbol);
+  const data = () => getData()?.social || { people: [], invitations: [], outgoing: [], blocked: [] };
+  const avatar2 = (name) => node("span", (name || "?").slice(0, 1).toUpperCase(), "avatar sage");
+  const group = (title, items) => {
+    if (!items.length) return;
+    const heading = node("div", void 0, "section-label");
+    heading.append(node("h2", title), node("span", items.length, "small-note"));
+    $("friend-list").append(heading, ...items);
+  };
+  async function action2(person, choice) {
+    if (mutating) return;
+    mutating = true;
+    ++loadVersion;
+    ++searchVersion;
+    const actor = getUser()?.id;
+    const key = `wc-friend:${actor}:${person.id}:${choice}:${person.request_id || ""}`;
+    const operationId = localStorage.getItem(key) || crypto.randomUUID();
+    localStorage.setItem(key, operationId);
+    render();
+    try {
+      const { social } = await api2({ action: "friend_action", friendId: person.id, choice, requestId: person.request_id, operationId });
+      localStorage.removeItem(key);
+      if (getUser()?.id !== actor) return;
+      ++loadVersion;
+      setData({ social });
+      searchResults = null;
+      searchQuery = "";
+      $("friend-search-input").value = "";
+      $("friend-search-submit").disabled = false;
+      $("friend-search-status").textContent = "";
+      closeSheet();
+      status2({ request: "Friend request sent.", accept: "You are now friends.", decline: "Request declined.", cancel: "Request cancelled.", remove: "Friend removed.", block: "Player blocked.", unblock: "Player unblocked." }[choice]);
+    } finally {
+      mutating = false;
+      render();
+    }
+  }
+  function options(person) {
+    const content = [node("p", formatFriendCode(person.friend_code), "friend-code")];
+    if (person.status === "accepted") content.push(act2("Remove friend", async () => {
+      if (await ask({ title: `Remove ${person.display_name}?`, message: "Your games will stay. You can add each other again later.", label: "Remove friend", cancel: "Keep friend" })) await action2(person, "remove");
+    }, "secondary full", "user"));
+    if (person.status === "pending" && person.requested_by === getUser()?.id) content.push(act2("Cancel request", () => action2(person, "cancel"), "secondary full", "close"));
+    content.push(act2("Block player", async () => {
+      if (await ask({ title: `Block ${person.display_name}?`, message: "They cannot find you or send you new friend or game invitations. Existing active games stay available; you can leave them from Game options.", label: "Block player", cancel: "Go back", danger: true, symbol: "shield" })) await action2(person, "block");
+    }, "text-button danger full", "shield"));
+    showSheet(person.display_name, content);
+  }
+  function personRow(person, search2 = false) {
+    const box = node("div", void 0, "friend-row"), copy = node("div", void 0, "friend-copy");
+    copy.append(node("strong", person.display_name));
+    const incoming = person.status === "pending" && person.requested_by !== getUser()?.id;
+    if (search2 || person.status !== "accepted") copy.append(node("small", search2 ? formatFriendCode(person.friend_code) : incoming ? "Wants to be your friend" : "Request sent"));
+    box.append(avatar2(person.display_name), copy);
+    let primary;
+    if (person.status === "accepted") {
+      const waiting = data().outgoing?.find((i) => i.recipient === person.id);
+      primary = act2(waiting ? "Invited" : "Invite", async () => {
+        if (waiting) await openGame2(waiting.id);
+        else {
+          await invite2(person);
+          await refresh();
+        }
+      }, waiting ? "secondary friend-action" : "primary friend-action", waiting ? "check" : "plus");
+    } else if (incoming) {
+      primary = act2("Accept", () => action2(person, "accept"), "primary friend-action", "check");
+      const decline = act2("", () => action2(person, "decline"), "icon-button", "close");
+      decline.setAttribute("aria-label", `Decline ${person.display_name}'s friend request`);
+      decline.disabled = mutating;
+      box.append(decline);
+    } else if (person.status === "pending") primary = act2("Sent", () => options(person), "secondary friend-action", "check");
+    else primary = act2("Add", () => action2(person, "request"), "primary friend-action", "user-plus");
+    primary.disabled = mutating;
+    box.append(primary);
+    const more = act2("", () => options(person), "icon-button friend-more", "more");
+    more.setAttribute("aria-label", `Options for ${person.display_name}`);
+    more.disabled = mutating;
+    box.append(more);
+    return box;
+  }
+  function render() {
+    const { people } = data(), incoming = people.filter((p) => p.status === "pending" && p.requested_by !== getUser()?.id);
+    const badge = $("friends-badge"), count = incoming.length;
+    badge.hidden = !count;
+    badge.textContent = count > 9 ? "9+" : String(count);
+    $("friend-list").replaceChildren();
+    if (searchResults !== null) {
+      $("friend-search-results").replaceChildren(node("p", `Results for \u201C${searchQuery}\u201D`, "small-note"), ...searchResults.map((p) => personRow(p, true)));
+      if (!searchResults.length) $("friend-search-results").append(node("p", "No players found. Check their display name or try their friend code.", "friend-empty-note"));
+      $("clear-friend-search").hidden = false;
+    } else {
+      $("friend-search-results").replaceChildren();
+      $("clear-friend-search").hidden = true;
+    }
+    group("Requests", incoming.map((p) => personRow(p)));
+    const friends2 = people.filter((p) => p.status === "accepted");
+    group("Your friends", friends2.map((p) => personRow(p)));
+    if (!friends2.length && !incoming.length) $("friend-list").append(emptyState("Good words. Better company.", "Find a friend above or share your friend code.", "friends"));
+    group("Sent requests", people.filter((p) => p.status === "pending" && p.requested_by === getUser()?.id).map((p) => personRow(p)));
+  }
+  async function refresh() {
+    if (mutating) return;
+    const ticket = ++loadVersion, actor = getUser()?.id, { social, profile } = await api2({ action: "friends" });
+    if (getUser()?.id !== actor || ticket !== loadVersion) return;
+    setData({ social, profile });
+    render();
+  }
+  async function search() {
+    const query = $("friend-search-input").value.trim(), ticket = ++searchVersion, actor = getUser()?.id;
+    if (query.length < 3) {
+      searchResults = null;
+      render();
+      status2("Enter at least 3 letters or a friend code.", true);
+      return;
+    }
+    $("friend-search-submit").disabled = true;
+    $("friend-search-status").textContent = "Searching\u2026";
+    try {
+      const { people } = await api2({ action: "friend_search", query });
+      if (ticket !== searchVersion || getUser()?.id !== actor) return;
+      searchResults = people;
+      searchQuery = query;
+      render();
+    } finally {
+      if (ticket === searchVersion) {
+        $("friend-search-submit").disabled = false;
+        $("friend-search-status").textContent = "";
+      }
+    }
+  }
+  function showCode() {
+    const profile = getData().profile, code = formatFriendCode(profile.friend_code), content = [node("p", "Share this code so a friend can find you."), node("p", code, "friend-code friend-code-large"), act2("Copy friend code", async () => {
+      await navigator.clipboard.writeText(code);
+      status2("Friend code copied.");
+    }, "primary full", "copy")];
+    content.push(node("p", `Friends can search for \u201C${profile.display_name}\u201D. Your code helps them pick the right person when names match.`, "field-hint"));
+    content.push(act2("Edit display name", editProfile2, "text-button full", "edit"));
+    if (data().blocked.length) content.push(act2("Blocked players", () => showSheet("Blocked players.", data().blocked.map((p) => {
+      const b = node("div", void 0, "friend-row");
+      b.append(node("strong", p.display_name), act2("Unblock", () => action2(p, "unblock"), "secondary friend-action"));
+      return b;
+    })), "text-button full", "shield"));
+    showSheet("Your friend code.", content);
+  }
+  $("friend-search").onsubmit = (e) => {
+    e.preventDefault();
+    void run2(search);
+  };
+  $("clear-friend-search").onclick = () => {
+    ++searchVersion;
+    searchResults = null;
+    searchQuery = "";
+    $("friend-search-input").value = "";
+    $("friend-search-status").textContent = "";
+    $("friend-search-submit").disabled = false;
+    render();
+    $("friend-search-input").focus();
+  };
+  $("friend-code-button").onclick = showCode;
+  function reset() {
+    ++searchVersion;
+    ++loadVersion;
+    searchResults = null;
+    searchQuery = "";
+    $("friend-search-input").value = "";
+    $("friend-search-submit").disabled = false;
+    $("friend-search-status").textContent = "";
+  }
+  return { render, refresh, reset };
+}
+
 // server/versions/engine-v1.mjs
 var WordConquest = /* @__PURE__ */ (() => {
   const distance = (a, b) => Math.max(Math.abs(a.q - b.q), Math.abs(a.r - b.r));
@@ -8981,166 +9318,6 @@ var rulesLabel = (version6) => ({ "autumn-v1": "Classic \xB7 3 captures", "autum
 var captureRule = (rules2) => Number.isFinite(rules2.maxEnemyTilesPerWord) ? `Capture up to ${rules2.maxEnemyTilesPerWord} opponent tiles per word.` : "No capture limit: every opponent tile in your word becomes yours.";
 var castleRule = (rules2) => rules2.castleIncome ? `Side castles earn ${rules2.castleIncome.side} each round; the centre earns ${rules2.castleIncome.center}. Final castle values are ${rules2.castlePoints} and ${rules2.centerCastlePoints}.` : `Castles are worth ${rules2.castlePoints} territory points.`;
 
-// online/ui.js
-var $ = (id) => document.getElementById(id);
-var paths = {
-  back: ["m14 6-6 6 6 6"],
-  arrow: ["M4 12h15", "m13 6 6 6-6 6"],
-  chevron: ["m9 6 6 6-6 6"],
-  close: ["m6 6 12 12", "m18 6-12 12"],
-  plus: ["M12 5v14", "M5 12h14"],
-  more: ["M5 12h.01", "M12 12h.01", "M19 12h.01"],
-  grid: ["M4 4h6v6H4z", "M14 4h6v6h-6z", "M4 14h6v6H4z", "M14 14h6v6h-6z"],
-  bell: ["M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9", "M10 21h4"],
-  user: ["M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0", "M4 21v-2a8 6 0 0 1 16 0v2"],
-  help: ["M9 8a3 3 0 0 1 6 0c0 2-3 2-3 5", "M12 17h.01", "M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0"],
-  book: ["M12 5C9 3 5 3 2 4v15c4-1 7-1 10 1 3-2 6-2 10-1V4c-3-1-7-1-10 1v15"],
-  shield: ["m12 2 8 4v6c0 5-8 10-8 10S4 17 4 12V6z", "m8 12 3 3 5-6"],
-  logout: ["M10 4H4v16h6", "M10 12h12", "m17 7 5 5-5 5"],
-  edit: ["m15 4 5 5", "m3 21 5-1L21 7a2.8 2.8 0 0 0-4-4L4 16z"],
-  check: ["m5 12 4 4L19 6"],
-  "check-all": ["m3 12 4 4L17 6", "m12 16 9-10"],
-  share: ["M12 16V3", "m7 8 5-5 5 5", "M5 12v8h14v-8"],
-  copy: ["M9 9h11v12H9z", "M5 15H3V3h11v2"],
-  eye: ["M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12", "M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0"],
-  lock: ["M5 10h14v12H5z", "M8 10V6a4 4 0 0 1 8 0v4"],
-  expand: ["M8 3H3v5", "M16 3h5v5", "M21 16v5h-5", "M8 21H3v-5"],
-  shrink: ["M3 8h5V3", "M16 3v5h5", "M21 16h-5v5", "M8 21v-5H3"],
-  undo: ["M3 10h10a7 7 0 0 1 0 14", "m8 5-5 5 5 5"],
-  refresh: ["M20 7a8 8 0 0 0-14-2L3 8", "M3 3v5h5", "M4 17a8 8 0 0 0 14 2l3-3", "M21 21v-5h-5"],
-  hourglass: ["M6 3h12", "M6 21h12", "M7 3v4l5 5-5 5v4", "M17 3v4l-5 5 5 5v4"],
-  award: ["M16 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0", "m8 11-2 10 6-3 6 3-2-10"],
-  flag: ["M4 22V3", "M4 3c5-5 10 5 16 0v11c-6 5-11-5-16 0"],
-  handshake: ["m3 6 4-3 5 3 5-3 4 3-4 10-4 4-4-1-6-9", "m12 6-5 5 2 2 4-3 5 5"],
-  history: ["M3 10a9 9 0 1 1 1 7", "M3 3v7h7", "M12 7v5l3 2"],
-  info: ["M12 11v6", "M12 7h.01", "M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0"],
-  download: ["M12 3v12", "m7 10 5 5 5-5", "M4 17v4h16v-4"],
-  trash: ["M3 6h18", "M9 6V3h6v3", "m5 6 1 15h12l1-15", "M10 10v7", "M14 10v7"],
-  "user-plus": ["M11 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0", "M1 21v-2a7 6 0 0 1 14 0v2", "M19 6v8", "M15 10h8"],
-  mail: ["M3 5h18v14H3z", "m3 5 9 8 9-8"],
-  leaf: ["M20 3C9 0 2 7 5 15c8 6 16-1 15-12Z", "M3 21 15 9"]
-};
-function svg(tag, attrs = {}, text) {
-  const n = document.createElementNS("http://www.w3.org/2000/svg", tag);
-  for (const [key, value] of Object.entries(attrs)) n.setAttribute(key, value);
-  if (text !== void 0) n.textContent = text;
-  return n;
-}
-function icon(name) {
-  const n = svg("svg", { viewBox: "0 0 24 24", class: "icon", "aria-hidden": "true", focusable: "false" });
-  for (const d of paths[name] || paths.info) n.append(svg("path", { d }));
-  return n;
-}
-function hydrateIcons(root = document) {
-  for (const el of root.querySelectorAll("[data-icon]")) el.replaceChildren(icon(el.dataset.icon));
-}
-function node(tag, text, className) {
-  const n = document.createElement(tag);
-  if (text !== void 0) n.textContent = text;
-  if (className) n.className = className;
-  return n;
-}
-function button(label, handler, className = "secondary", symbol) {
-  const n = node("button", void 0, className);
-  n.type = "button";
-  if (symbol) n.append(icon(symbol));
-  n.append(node("span", label));
-  n.onclick = handler;
-  return n;
-}
-function setting(label, symbol, handler, { note, danger = false } = {}) {
-  const n = button("", handler, "settings-row" + (danger ? " danger" : ""));
-  n.replaceChildren(icon(symbol));
-  const copy = node("span", label);
-  if (note) copy.append(node("small", note));
-  n.append(copy, icon("chevron"));
-  return n;
-}
-var toastTimer;
-function notify(message, error = false) {
-  clearTimeout(toastTimer);
-  if (error && $("sheet").open) {
-    let alert = $("sheet-content").querySelector(".form-alert");
-    if (!alert) {
-      alert = node("p", void 0, "form-alert");
-      alert.setAttribute("role", "alert");
-      $("sheet-content").prepend(alert);
-    }
-    alert.textContent = message;
-    alert.scrollIntoView({ block: "nearest" });
-    return;
-  }
-  $("toast-text").textContent = message;
-  $("toast").classList.toggle("error", error);
-  $("toast").firstElementChild.replaceWith(icon(error ? "info" : "check"));
-  $("toast").hidden = false;
-  if (!error) toastTimer = setTimeout(() => $("toast").hidden = true, 4e3);
-}
-function closeSheet() {
-  if ($("sheet").open) $("sheet").close();
-}
-function showSheet(title, content) {
-  $("sheet-title").textContent = title;
-  $("sheet-content").replaceChildren(...Array.isArray(content) ? content : [content]);
-  hydrateIcons($("sheet-content"));
-  if (!$("sheet").open) $("sheet").showModal();
-  $("sheet-content").scrollTop = 0;
-}
-var confirmResolve = null;
-function ask({ title, message, label = "Confirm", cancel = "Keep playing", danger = false, symbol = "help" }) {
-  closeSheet();
-  $("confirm-title").textContent = title;
-  $("confirm-message").textContent = message;
-  $("confirm-ok").textContent = label;
-  $("confirm-ok").classList.toggle("danger", danger);
-  $("confirm-cancel").textContent = cancel;
-  $("confirm-icon").replaceChildren(icon(symbol));
-  $("confirm-dialog").showModal();
-  return new Promise((resolve) => confirmResolve = resolve);
-}
-function finishConfirm(answer) {
-  $("confirm-dialog").close();
-  const resolve = confirmResolve;
-  confirmResolve = null;
-  resolve?.(answer);
-}
-function initUI() {
-  hydrateIcons();
-  $("close-sheet").onclick = closeSheet;
-  $("dismiss-toast").onclick = () => $("toast").hidden = true;
-  $("confirm-cancel").onclick = () => finishConfirm(false);
-  $("confirm-ok").onclick = () => finishConfirm(true);
-  $("confirm-dialog").addEventListener("cancel", (e) => {
-    e.preventDefault();
-    finishConfirm(false);
-  });
-  for (const d of [$("sheet"), $("confirm-dialog")]) d.addEventListener("click", (e) => {
-    if (e.target !== d) return;
-    const r = d.getBoundingClientRect();
-    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) {
-      if (d === $("sheet")) closeSheet();
-      else finishConfirm(false);
-    }
-  });
-}
-function closeTopDialog() {
-  if ($("confirm-dialog").open) {
-    finishConfirm(false);
-    return true;
-  }
-  if ($("sheet").open) {
-    closeSheet();
-    return true;
-  }
-  return false;
-}
-function emptyState(title, copy, symbol = "leaf") {
-  const box = node("div", void 0, "empty-state"), art = node("div", void 0, "empty-art");
-  art.append(icon(symbol));
-  box.append(art, node("h2", title), node("p", copy));
-  return box;
-}
-
 // online/presentation.mjs
 var seatOf = (game2, userId) => game2.players.indexOf(userId) + 1;
 var isFinished = (game2) => !["active", "invited"].includes(game2.status);
@@ -9183,10 +9360,13 @@ function invitationToken(value) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(token) ? token : null;
 }
 function activityText(kind, name) {
+  if (kind === "invitation received") return `${name} invited you to play`;
   const labels = { word: `${name} played a word`, refresh: `${name} refreshed their letters`, resign: `${name} left the game`, offer_draw: `${name} offered a draw`, accept_draw: "Your game ended in a draw", abandon: "Your game was abandoned", "game complete": "Your game has finished", "invitation accepted": `Your game with ${name} is ready`, "invitation accept": `Your game with ${name} is ready`, "invitation decline": "Your invitation was declined", "invitation cancel": "Your invitation was cancelled", "invitation declined": "Your invitation was declined", "invitation cancelled": "Your invitation was cancelled" };
   return labels[kind] || "Your game has an update";
 }
 function friendlyError(error) {
+  const social = { friend_stale: "This friend request has changed. Refresh Friends and try again.", friend_unavailable: "This player is not available for a new invitation.", friend_cooldown: "Give them a little time. You can send another request tomorrow.", friend_limit: "Your friend request limit has been reached. Try again later.", invitation_pending: "An invitation is already waiting for this friend. Open it from Games." };
+  if (social[error.code]) return social[error.code];
   const messages = { client_update_required: "Update Word Conquest or open the latest web app to play this game.", stale: "A new turn came in. Your board has been updated.", not_your_turn: "It is your friend's turn.", invitation_unavailable: "This invitation is no longer available.", cannot_accept_own_invitation: "This is your invitation. Share it with a friend.", rate_limit: "A little too quick. Try again in a moment.", unauthorized: "Please sign in again to continue.", not_found: "This game is no longer available.", dictionary_unavailable: "Word checking is unavailable. Your turn has not been used.", version_unavailable: "This game needs an update. Please contact your inviter.", ended: "This game has already ended." };
   if (messages[error.code]) return messages[error.code];
   if (["TimeoutError", "AbortError", "TypeError"].includes(error.name)) return "Could not connect. Please try again.";
@@ -9243,7 +9423,10 @@ var push = createPushControls({ api, getUser: () => user, onStatus: (message) =>
   notificationGame = id;
   if (user && authReady && !recovering) void run(openNotification);
 } });
-var screens = ["loading", "setup", "auth", "recovery", "home", "activity", "account", "game"];
+var friends = createFriends({ api, getUser: () => user, getData: () => homeData, setData: (partial) => {
+  if (homeData) Object.assign(homeData, partial);
+}, run, status, invite: (person) => createGame(person), openGame, editProfile });
+var screens = ["loading", "setup", "auth", "recovery", "home", "friends", "activity", "account", "game"];
 function screen(name, { route = true, replace = false } = {}) {
   closeSheet();
   currentView = name;
@@ -9254,9 +9437,9 @@ function screen(name, { route = true, replace = false } = {}) {
   $("game-heading").hidden = !inGame;
   $("game-menu").hidden = !inGame;
   $("help-button").hidden = inGame;
-  $("main-nav").hidden = !user || !["home", "activity", "account"].includes(name);
-  for (const [id, view] of [["home-button", "home"], ["activity-button", "activity"], ["account-button", "account"]]) {
-    if (view === name) $(id).setAttribute("aria-current", "page");
+  $("main-nav").hidden = !user || !["home", "friends", "activity", "account"].includes(name);
+  for (const [id, view] of [["home-button", "home"], ["friends-button", "friends"], ["account-button", "account"]]) {
+    if (view === name || view === "account" && name === "activity") $(id).setAttribute("aria-current", "page");
     else $(id).removeAttribute("aria-current");
   }
   if (route && user) {
@@ -9288,7 +9471,7 @@ async function api(body) {
   if (!db) throw new Error("Online play is not connected yet.");
   const { data: { session }, error } = await db.auth.getSession();
   if (error || !session) throw apiError("Sign in to continue.", "unauthorized", 401);
-  const response = await fetch(`${cfg.supabaseUrl}/functions/v1/game-api`, { method: "POST", signal: AbortSignal.timeout(2e4), headers: { "Content-Type": "application/json", apikey: cfg.supabaseAnonKey, Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ ...body, supportedRules: SUPPORTED_RULES }) });
+  const response = await fetch(`${cfg.supabaseUrl}/functions/v1/game-api`, { method: "POST", signal: AbortSignal.timeout(2e4), headers: { "Content-Type": "application/json", apikey: cfg.supabaseAnonKey, Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ ...body, supportedRules: SUPPORTED_RULES, supportsFriends: true }) });
   const result = await response.json();
   if (!response.ok) throw apiError(result.error || "Request failed.", result.code, response.status, result.requestId);
   return result;
@@ -9331,10 +9514,11 @@ async function connectLiveUpdates(session) {
   }
   liveUser = user?.id || null;
   if (!liveUser) return;
-  liveChannel = db.channel(`games:${liveUser}`).on("postgres_changes", { event: "UPDATE", schema: "public", table: "games" }, () => {
+  const refresh = () => {
     refreshQueued = true;
     void poll();
-  }).subscribe((state) => {
+  };
+  liveChannel = db.channel(`games:${liveUser}`).on("postgres_changes", { event: "UPDATE", schema: "public", table: "games" }, refresh).on("postgres_changes", { event: "*", schema: "public", table: "friendships" }, refresh).on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications" }, refresh).subscribe((state) => {
     if (state === "SUBSCRIBED") {
       refreshQueued = true;
       void poll();
@@ -9357,6 +9541,14 @@ function renderHome() {
   $("turn-count").textContent = turns ? `${turns} ${turns === 1 ? "turn" : "turns"} waiting` : "";
   $("active-games").setAttribute("aria-pressed", filter === "active");
   $("finished-games").setAttribute("aria-pressed", filter === "finished");
+  const invitations = $("game-invitations");
+  invitations.replaceChildren();
+  if (filter === "active") for (const i of homeData.social?.invitations || []) {
+    const card = act("", () => openGame(i.id), "friend-game-invite");
+    card.replaceChildren(avatar(i.host, "sage"), node("span"), icon("arrow"));
+    card.children[1].append(node("strong", `${i.host} invited you`), node("small", "A seat is waiting \xB7 View invitation"));
+    invitations.append(card);
+  }
   const list = $("game-list");
   list.replaceChildren();
   for (const g of visibleGames(games, user.id, filter)) {
@@ -9389,12 +9581,14 @@ function renderHome() {
   }
   renderActivity();
   renderPush();
+  friends.render();
 }
 function renderActivity() {
   if (!homeData) return;
   const unread = homeData.notifications.filter((n) => !n.read_at).length;
   $("activity-badge").hidden = !unread;
   $("activity-badge").textContent = unread > 9 ? "9+" : String(unread);
+  $("activity-state").textContent = unread ? `${unread} unread updates` : "";
   $("read-inbox").disabled = !unread;
   $("inbox").replaceChildren();
   for (const n of homeData.notifications) {
@@ -9431,6 +9625,16 @@ async function showActivity({ route = true } = {}) {
   ++gameLoad;
   screen("activity", { route });
   renderActivity();
+}
+async function showFriends({ route = true } = {}) {
+  if (!user) return;
+  const ticket = ++navigation, actor = user.id;
+  if (!homeData) await fetchHome();
+  if (ticket !== navigation || actor !== user?.id || !homeData) return;
+  ++gameLoad;
+  screen("friends", { route });
+  friends.render();
+  await friends.refresh();
 }
 async function showInvite() {
   const raw = localStorage.getItem("wc-invitation");
@@ -9475,6 +9679,13 @@ async function openGame(id, quiet = false, { route = true } = {}) {
   if (ticket !== navigation || request !== gameLoad || actor !== user?.id) return;
   if (quiet && (currentView !== "game" || game?.id !== id)) return;
   if (game?.id === id && game.revision > result.game.revision) return;
+  if (result.invitation && !result.game) {
+    if (!quiet) {
+      localStorage.setItem("wc-invitation", result.invitation.token);
+      await showInvite();
+    }
+    return;
+  }
   const changed = !game || game.id !== id || game.revision !== result.game.revision;
   const gameConfig = configFor(result.game.rules_version);
   if (!gameConfig) throw apiError("Update Word Conquest to play this game.", "client_update_required", 409);
@@ -9631,6 +9842,11 @@ function renderGame() {
     $("share-link").value = `${authRedirect()}?invite=${invite.token}`;
     $("invite-expiry").textContent = `Available until ${new Date(invite.expires_at).toLocaleDateString(void 0, { month: "short", day: "numeric" })}`;
   }
+  const addressed = !!invite?.recipient;
+  $("share").querySelector("h1").textContent = addressed ? `A seat for ${invite.recipient_name}.` : "A seat at your table.";
+  $("share").querySelector(".muted").textContent = addressed ? "Your invitation is waiting in their Games tab." : "Share your invitation to get the game going.";
+  $("share-invite").hidden = addressed;
+  $("share").querySelector(".copy-field").hidden = addressed;
   $("composer").hidden = !myTurn() && !preview || isFinished(game) || !!pending() && !busy;
   $("waiting-turn").hidden = myTurn() || preview || isFinished(game) || !!pending();
   $("game-result").hidden = !isFinished(game);
@@ -9813,7 +10029,7 @@ function showRecap() {
   showSheet("The last move.", content);
 }
 function showNewGame() {
-  showSheet("Pull up a chair.", [node("p", castleRule(config)), node("p", "Starting player is chosen at random.", "field-hint"), act("Invite a friend", createGame, "primary full", "user-plus"), act("I have an invitation", showJoin, "secondary full", "mail")]);
+  showSheet("Pull up a chair.", [node("p", castleRule(config)), node("p", "Starting player is chosen at random.", "field-hint"), act("Choose a friend", () => showFriends(), "primary full", "friends"), act("Share an invitation link", () => createGame(), "secondary full", "share"), act("I have an invitation", showJoin, "text-button full", "mail")]);
 }
 function showJoin() {
   const form = node("form", void 0, "stack-form"), label = node("label", "Invitation link or code"), input = node("input");
@@ -9841,17 +10057,21 @@ function showJoin() {
   };
   showSheet("Join a friend.", form);
 }
-async function createGame() {
+async function createGame(person) {
   if (creating || !user) return;
   creating = true;
   $("new-game").disabled = true;
   closeSheet();
   try {
-    const key = `wc-create:${user.id}`, id = localStorage.getItem(key) || crypto.randomUUID();
+    const key = `wc-create:${user.id}${person ? ":" + person.id : ""}`, id = localStorage.getItem(key) || crypto.randomUUID();
     localStorage.setItem(key, id);
-    const { game: g } = await api({ action: "create", gameId: id, rulesVersion: RULES_VERSION });
+    const { game: g } = await api({ action: "create", gameId: id, rulesVersion: RULES_VERSION, ...person ? { friendId: person.id } : {} });
     localStorage.removeItem(key);
-    await openGame(g.id);
+    if (person) {
+      await fetchHome();
+      friends.render();
+      status(`Invitation sent to ${person.display_name}.`);
+    } else await openGame(g.id);
   } finally {
     creating = false;
     $("new-game").disabled = false;
@@ -10025,7 +10245,7 @@ function showPrivacy() {
   showSheet("Privacy & your account.", content);
 }
 function showDataInfo() {
-  showSheet("A private little table.", [node("p", "Only your opponents can see your shared games and display name. Your email is used for signing in and recovering your account."), node("p", "Supabase stores games and accounts. Resend sends account emails. Optional Android notifications use Google Firebase Cloud Messaging with a device token and game reference."), node("p", "There are no ads, public profile search or analytics trackers. Account deletion removes your login, profile and private inbox. Shared history stays anonymized for your opponents; backups expire under the hosting provider's retention policy.")]);
+  showSheet("A private little table.", [node("p", "Signed-in players can search display names and see friend codes. Your email stays private. Friend requests must be accepted. Only players in a game can see its board and moves."), node("p", "Supabase stores games and accounts. Resend sends account emails. Optional Android notifications use Google Firebase Cloud Messaging with a device token and game reference."), node("p", "There are no ads, contacts uploads or analytics trackers. Account deletion removes your login, profile, friendships, blocks and private inbox. Shared history stays anonymized for your opponents; backups expire under the hosting provider's retention policy.")]);
 }
 async function exportData() {
   const data = await api({ action: "export" }), url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" })), link = node("a");
@@ -10155,6 +10375,7 @@ $("brand").onclick = (e) => {
 };
 $("activity-button").onclick = () => run(() => showActivity());
 $("account-button").onclick = () => run(() => account());
+$("friends-button").onclick = () => run(() => showFriends());
 $("active-games").onclick = () => {
   filter = "active";
   renderHome();
@@ -10272,6 +10493,7 @@ async function poll() {
   try {
     if (currentView === "game" && !preview) await openGame(game.id, true);
     else if (currentView === "home") await showHome(true);
+    else if (currentView === "friends") await friends.refresh();
     else if (currentView === "activity") {
       await fetchHome();
       renderActivity();
@@ -10305,6 +10527,7 @@ window.addEventListener("popstate", () => run(async () => {
   closeSheet();
   const route = new URLSearchParams(location.search);
   if (route.get("game")) await openGame(route.get("game"), false, { route: false });
+  else if (route.get("view") === "friends") await showFriends({ route: false });
   else if (route.get("view") === "account") await account({ route: false });
   else if (route.get("view") === "activity") await showActivity({ route: false });
   else await showHome(false, { route: false });
@@ -10334,6 +10557,7 @@ else db.auth.onAuthStateChange((event, session) => {
   if (!user) {
     authReady = false;
     homeData = null;
+    friends.reset();
     renderPush();
     ++navigation;
     ++gameLoad;
@@ -10349,6 +10573,7 @@ else db.auth.onAuthStateChange((event, session) => {
     authReady = true;
     if (notificationGame) await openNotification();
     else if (launchGame && !invited) await openGame(launchGame, false, { route: false });
+    else if (!invited && params.get("view") === "friends") await showFriends({ route: false });
     else if (!invited && params.get("view") === "account") await account({ route: false });
     else if (!invited && params.get("view") === "activity") await showActivity({ route: false });
     void push.restore().catch(() => {
