@@ -501,3 +501,18 @@ name search, adding a friend, direct invitation, long names, friend-code sheet a
 Activity under You. Physical Seeker upgrade, friend flow and invitation push tap
 remain user acceptance. Game rules/dictionary and the original prototype are unchanged.
 No new service, ongoing cost or app-store submission.
+
+
+Friends release verification:
+- Source: 634371ffa318d9c22a140066270dbf3a4bc952ab.
+- Supabase migration 202610040001_friends plus game-api/push deployed successfully.
+- Pages commit 82a6c8f8505881f9e627b24342336a3118e5e8e4 built; all nine public
+  assets match the local build. Original root assets remain unchanged. Auth rejects
+  unauthenticated API calls (401); allowed-origin preflight succeeds (204).
+- Android CI 37225809567 passed, including all 59 tests. Build 0.6.0-634371f,
+  version code 23914106, 4,947,128 bytes. Package and notification permission match;
+  stable original pilot certificate verified; no private keys or fixtures bundled.
+- APK SHA-256: 85ca02741ce1196d946312937500aa77a3f27bb96c59727c5b2e15c6c2a8f879.
+- Release: https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-23914106
+- Anonymous APK download verified HTTP 200 and matching checksum.
+- Local APK: dist/word-conquest-0.6.0.apk. Install over the existing pilot.
