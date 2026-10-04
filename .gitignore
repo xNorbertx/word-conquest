@@ -11,6 +11,6 @@ work/
 *.jks
 *.p12
 *.mobileprovision
-android/
-ios/
+/android/
+/ios/
 supabase/functions/_shared/

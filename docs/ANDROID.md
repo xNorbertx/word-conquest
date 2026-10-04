@@ -18,8 +18,13 @@ Open the downloaded APK and allow installation from your browser if Android asks
 Updates install over the existing pilot app; do not uninstall it, because that
 removes locally saved sessions and pending actions.
 
-In Word Conquest, open **You > Notifications > Enable notifications** and accept Android's
-permission prompt. Preferences are per account and phone. Turning notifications
+In Word Conquest, use the Games notification prompt or open
+**You > Notifications > Enable notifications** and accept Android's permission prompt.
+The status becomes **Connected on this phone** only after server registration.
+If setup fails, use Retry connection; if Android blocks the app or Game updates
+channel, use Open Android settings and return. Dismiss the home prompt to snooze
+it for seven days. **Send a test notification** targets only this phone and account;
+Firebase acceptance is reported separately from an actual receipt. Preferences are per account and phone. Turning notifications
 off disables server delivery; signing out disables registration and removes
 delivered notifications. Signing in again restores a previously enabled preference.
 Native notifications contain a generic message and game reference, not email,
@@ -73,7 +78,8 @@ The script uses the dedicated JDK/SDK under `%LOCALAPPDATA%/WordConquestBuild`.
 version metadata and backup exclusion, including on a fresh CI checkout.
 Output: `android/app/build/outputs/apk/debug/app-debug.apk`.
 The same script also creates the Autumn Sunday launcher, splash and system-bar palette.
-Native source generation remains ignored; customizations are tracked in the script.
+Generated Android source remains ignored; customizations live in the preparation
+script and tracked Java sources in native/android/.
 
 ## Push backend
 
@@ -87,6 +93,8 @@ FCM has no exactly-once send contract: stable Android tags collapse duplicate
 alerts for a game, but a delivery whose acknowledgment was lost may be retried.
 
 Edge Function `push` uses secrets `FCM_SERVICE_ACCOUNT_JSON` and `PUSH_SECRET`.
+The authenticated game API uses the same FCM secret for the per-phone test action.
+Tests are rate-limited with other API actions and cannot target another account.
 The game API wakes it after successful invitation/turn transactions; `wc-push-retry`
 Cron checks once a minute and invokes it only when deliveries are due, using Vault
 secret `wc_push_secret`. Reapply `supabase/operations/schedule-push.sql` to restore

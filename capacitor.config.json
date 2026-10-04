@@ -2,5 +2,15 @@
   "appId": "com.wordconquest.app",
   "appName": "Word Conquest",
   "webDir": "dist/online",
-  "server": { "androidScheme": "https" }
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "PushNotifications": {
+      "presentationOptions": [
+        "alert",
+        "sound"
+      ]
+    }
+  }
 }

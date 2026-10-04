@@ -20,7 +20,7 @@ const native=Capacitor.isNativePlatform();
 const publicApp='https://xnorbertx.github.io/word-conquest/online/';
 const authRedirect=()=>native?publicApp:location.origin+location.pathname;
 const status=(message,error=false)=>notify(message,error);
-const push=createPushControls({api,getUser:()=>user,onStatus:message=>{status(message);renderPush();},onUpdate:()=>void poll(),onOpen:id=>{notificationGame=id;if(user&&authReady&&!recovering)void run(openNotification);}});
+const push=createPushControls({api,getUser:()=>user,onStatus:message=>{status(message);renderPush();},onChange:()=>renderPush(),onUpdate:()=>void poll(),onOpen:id=>{notificationGame=id;if(user&&authReady&&!recovering)void run(openNotification);}});
 const screens=['loading','setup','auth','recovery','home','activity','account','game'];
 function screen(name,{route=true,replace=false}={}){
   closeSheet();currentView=name;for(const id of screens)$(id).hidden=id!==name;
@@ -46,7 +46,14 @@ async function run(fn){try{return await fn();}catch(e){lastProblem=friendlyError
 const act=(label,fn,className='secondary',symbol)=>button(label,()=>run(fn),className,symbol);
 const row=(label,symbol,fn,options)=>setting(label,symbol,()=>run(fn),options);
 function avatar(name,className=''){return node('span',(name||'?').trim().slice(0,1).toUpperCase(),'avatar '+className);}
-function renderPush(){const preferred=push.preferred();$('push-settings').hidden=!push.available;$('push-state').textContent=preferred?'On for this phone':'Off';}
+function renderPush(){
+  const info=push.snapshot(),labels={off:'Off',connecting:'Connecting...',ready:'Connected on this phone',blocked:'Blocked in Android settings',error:'Needs attention'};
+  $('push-settings').hidden=!push.available;$('push-state').textContent=labels[info.state];
+  $('push-prompt').hidden=!push.shouldPrompt();
+  $('push-prompt-copy').textContent=info.state==='error'?'Notifications could not connect. Let us fix that.':info.state==='blocked'?'Allow notifications in Android settings to hear about your turn.':'A quiet nudge when it is your turn.';
+  $('push-prompt-enable').textContent=info.state==='blocked'?'Open settings':info.state==='error'?'Connect notifications':'Enable notifications';
+  if($('sheet').open&&$('sheet-title').textContent==='Game notifications.')showPush();
+}
 async function connectLiveUpdates(session){
   if(session?.access_token)await db.realtime.setAuth(session.access_token);if(session?.user?.id!==user?.id)return;if(liveUser===user?.id)return;
   if(liveChannel){void db.removeChannel(liveChannel);liveChannel=null;}liveUser=user?.id||null;if(!liveUser)return;
@@ -71,7 +78,7 @@ function renderHome(){
     bottom.append(node('span',gameStatus(g,user.id),'card-status'+(gameStatus(g,user.id)==='Your turn'?'':' waiting')));card.append(top,bottom);list.append(card);
   }
   if(!list.childElementCount){const blank=emptyState(filter==='finished'?'Your story starts here.':'A little friendly competition?',filter==='finished'?'Finished games will find a home here.':'Invite someone. Take your time. Find a great word.',filter==='finished'?'award':'leaf');if(filter==='active')blank.append(act('Invite a friend',createGame,'primary','plus'));list.append(blank);}
-  renderActivity();
+  renderActivity();renderPush();
 }
 function renderActivity(){
   if(!homeData)return;const unread=homeData.notifications.filter(n=>!n.read_at).length;$('activity-badge').hidden=!unread;$('activity-badge').textContent=unread>9?'9+':String(unread);$('read-inbox').disabled=!unread;
@@ -229,7 +236,22 @@ async function account({route=true}={}){
   for(const [version,s]of entries){if(entries.length>1)$('statistics').append(node('p',version.startsWith('autumn-v1')?'Standard English':'Earlier rules','record-note'));const grid=node('div',undefined,'stats-grid');for(const [label,count]of [['Wins',s.wins],['Draws',s.draws],['Losses',s.losses]]){const item=node('div',undefined,'stat');item.append(node('strong',count),node('span',label));grid.append(item);}$('statistics').append(grid);if(s.bestWord){const best=node('div',undefined,'best-word');best.append(icon('award'),node('span','Best word'),node('strong',`${s.bestWord} · ${s.bestTurn}`));$('statistics').append(best,node('p',`Highest final score: ${s.highestFinalScore}`,'record-note'));}else $('statistics').append(node('p','Your first finished game starts your record.','record-note'));}
 }
 function editProfile(){const form=node('form',undefined,'stack-form'),label=node('label','Display name'),input=node('input');input.id='display-name';label.htmlFor=input.id;input.maxLength=40;input.required=true;input.autocomplete='nickname';input.value=homeData.profile.display_name;const save=button('Save name',null,'primary full','check');save.type='submit';form.append(label,input,save);form.onsubmit=e=>{e.preventDefault();void run(async()=>{save.disabled=true;try{const name=input.value.trim();if(!name)throw Error('Add a name for your friends to see.');await api({action:'profile',name,emailNotifications:homeData.profile.email_notifications});homeData.profile.display_name=name;closeSheet();await account({route:false});status('Your name is updated.');}finally{save.disabled=false;}});};showSheet('What should we call you?',form);}
-function showPush(){const enabled=push.preferred();showSheet('Game notifications.',[node('p',enabled?'This phone will let you know when a game needs you.':'A quiet nudge when it is your turn. You can change this anytime.'),act(enabled?'Turn off notifications':'Enable notifications',async()=>{const b=$('sheet-content').querySelector('button');b.disabled=true;try{if(enabled){await push.disable();status('Notifications are off on this phone.');}else await push.enable();closeSheet();renderPush();}finally{b.disabled=false;}},'primary full',enabled?'bell':'check')]);}
+async function connectPush(){try{await push.enable();}catch{showPush();}}
+function showPush(){
+  const info=push.snapshot(),content=[];
+  content.push(node('p',info.state==='ready'?'Connected on this phone. Turn updates will appear even when the app is in the background.':info.state==='connecting'?'Connecting this phone to game notifications...':info.problem||'Get a quiet nudge when it is your turn. You can turn this off anytime.'));
+  if(info.state==='ready'){
+    content.push(act('Send a test notification',async()=>{await push.test();showSheet('Test sent.',[node('p','Firebase accepted the test. Look for a Word Conquest notification on this phone.'),act('Back to notifications',showPush,'primary full')]);},'primary full','bell'));
+    content.push(act('Android notification settings',()=>push.openSettings(),'secondary full','bell'));
+    content.push(act('Turn off notifications',async()=>{await push.disable();showPush();},'text-button full'));
+  }else if(info.state==='connecting'){
+    const waiting=act('Connecting...',()=>{},'primary full');waiting.disabled=true;content.push(waiting);
+  }else {
+    content.push(act(info.state==='blocked'?'Open Android settings':info.state==='error'?'Retry connection':'Enable notifications',()=>info.state==='blocked'?push.openSettings():connectPush(),'primary full','bell'));
+    if(info.state==='error')content.push(act('Android notification settings',()=>push.openSettings(),'text-button full'));
+  }
+  showSheet('Game notifications.',content);
+}
 function showPrivacy(){
   const list=node('div',undefined,'settings-list');list.append(row('How your data is used','shield',showDataInfo),row('Dictionary & word list','book',showDictionary));
   if(user)list.append(row('Download my data','download',exportData),row('Delete my account','trash',showDelete,{danger:true}));
@@ -268,6 +290,7 @@ $('home-button').onclick=$('back').onclick=$('result-home').onclick=()=>run(()=>
 $('brand').onclick=e=>{e.preventDefault();void run(()=>user?showHome():screen(configured?'auth':'setup',{route:false}));};
 $('activity-button').onclick=()=>run(()=>showActivity());$('account-button').onclick=()=>run(()=>account());
 $('active-games').onclick=()=>{filter='active';renderHome();};$('finished-games').onclick=()=>{filter='finished';renderHome();};
+$('push-prompt-enable').onclick=()=>run(async()=>{if(push.snapshot().state==='blocked')await push.openSettings();else await connectPush();});$('push-prompt-dismiss').onclick=()=>push.snooze();
 $('new-game').onclick=showNewGame;$('edit-profile').onclick=editProfile;$('push-settings').onclick=showPush;
 $('help-button').onclick=showRules;for(const b of document.querySelectorAll('[data-sheet]'))b.onclick=()=>b.dataset.sheet==='rules'?showRules():showPrivacy();
 $('game-menu').onclick=showGameMenu;$('share-invite').onclick=()=>run(shareInvite);$('copy-invite').onclick=()=>run(copyInvite);$('cancel-invite').onclick=()=>run(quitGame);
@@ -297,11 +320,11 @@ async function poll(){
 }
 if(native){void push.initialize().catch(()=>{});void App.addListener('appStateChange',({isActive})=>{if(isActive){void poll();void push.restore().catch(()=>{});}});void App.addListener('backButton',()=>{if(closeTopDialog())return;if(currentView!=='home'&&user)void run(()=>showHome());else void App.minimizeApp();});}
 window.addEventListener('popstate',()=>run(async()=>{if(!user)return;closeSheet();const route=new URLSearchParams(location.search);if(route.get('game'))await openGame(route.get('game'),false,{route:false});else if(route.get('view')==='account')await account({route:false});else if(route.get('view')==='activity')await showActivity({route:false});else await showHome(false,{route:false});}));
-window.addEventListener('online',()=>run(poll));window.addEventListener('offline',()=>offlineNotice());window.addEventListener('focus',()=>run(poll));document.addEventListener('visibilitychange',()=>{if(!document.hidden)void run(poll);});setInterval(poll,20000);
+window.addEventListener('online',()=>{void run(poll);void push.restore().catch(()=>{});});window.addEventListener('offline',()=>offlineNotice());window.addEventListener('focus',()=>run(poll));document.addEventListener('visibilitychange',()=>{if(!document.hidden)void run(poll);});setInterval(poll,20000);
 if(!db)screen('setup',{route:false});else db.auth.onAuthStateChange((event,session)=>{
   const previousUser=user?.id;user=session?.user||null;setTimeout(()=>run(()=>connectLiveUpdates(session)),0);
   if(event==='PASSWORD_RECOVERY'){authReady=false;recovering=true;screen('recovery',{route:false});return;}
-  if(!user){authReady=false;homeData=null;++navigation;++gameLoad;++homeLoad;screen('auth',{route:false});return;}
+  if(!user){authReady=false;homeData=null;renderPush();++navigation;++gameLoad;++homeLoad;screen('auth',{route:false});return;}
   if(recovering||!['SIGNED_IN','INITIAL_SESSION'].includes(event)||(previousUser===user.id&&currentView!=='auth'))return;
   setTimeout(()=>run(async()=>{if(recovering)return;await showHome(false,{route:false});const invited=await showInvite();authReady=true;if(notificationGame)await openNotification();else if(launchGame&&!invited)await openGame(launchGame,false,{route:false});else if(!invited&&params.get('view')==='account')await account({route:false});else if(!invited&&params.get('view')==='activity')await showActivity({route:false});void push.restore().catch(()=>{});}),0);
 });

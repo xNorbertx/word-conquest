@@ -203,3 +203,25 @@ Published UX build evidence:
 
 No new recurring costs or backend migrations. Install over the previous pilot;
 physical upgrade and push acceptance are still pending owner/device checks.
+
+## Android notification recovery - 4 October
+
+Owner reported Android permission granted but no turn alerts. Hosted diagnostics
+initially found no enabled phone registration. Enabling notifications inside the
+app registered the Seeker; a targeted generic FCM test was accepted by Firebase
+and the owner confirmed it appeared. This confirms delivery to the real phone;
+normal turn/background/cold-start routing and the updated APK still need device
+acceptance. No owner game was modified for testing.
+
+Version 0.3.1 adds a home opt-in prompt (dismissible for seven days), confirmed
+connection states, retry after failed registration, Android app/channel settings,
+and a self-test for only the signed-in account's registered phone. Foreground
+notifications now request native presentation and show brief in-app feedback.
+Consent survives temporary failures; reconnect happens on resume/sign-in/online.
+The server rejects cross-account or disabled-device tests and never returns tokens.
+
+Deployed game-api and push functions; no schema migration or new service.
+All three original rule suites and 32 integration/service/controller tests pass.
+Local Android compilation passes. Browser fixtures cover opt-in, opt-out, retry,
+blocked settings and self-test feedback. No phone is attached to ADB; real device
+receipt above is owner-confirmed, not simulated. Release evidence follows below.

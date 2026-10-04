@@ -22,14 +22,15 @@ export function firebaseSender(credentials, fetcher=fetch) {
     const response=await fetcher(`https://fcm.googleapis.com/v1/projects/${credentials.project_id}/messages:send`,{
       method:'POST',signal:AbortSignal.timeout(10000),headers:{Authorization:`Bearer ${bearer}`,'Content-Type':'application/json'},
       body:JSON.stringify({validate_only:validateOnly,message:{token:event.token,
-        notification:{title:'Word Conquest',body:event.kind==='game complete'?'Your game has finished.':event.kind.startsWith('invitation')?'Your game invitation has an update.':'Your game has an update. It may be your turn.'},
-        data:{gameId:event.game_id,eventId:String(event.notification_id)},
-        android:{priority:'high',ttl:'86400s',collapse_key:event.game_id,
-          notification:{channel_id:'game_updates',tag:`game-${event.game_id}`,icon:'ic_stat_word_conquest',color:'#75866B',visibility:'PRIVATE'}}}})});
+        notification:{title:'Word Conquest',body:event.kind==='test'?'Notifications are working on this phone.':event.kind==='game complete'?'Your game has finished.':event.kind.startsWith('invitation')?'Your game invitation has an update.':'Your game has an update. It may be your turn.'},
+        data:event.kind==='test'?{test:'true'}:{gameId:event.game_id,eventId:String(event.notification_id)},
+        android:{priority:'high',ttl:'86400s',collapse_key:event.kind==='test'?'notification-test':event.game_id,
+          notification:{channel_id:'game_updates',tag:event.kind==='test'?'notification-test':`game-${event.game_id}`,icon:'ic_stat_word_conquest',color:'#75866B',visibility:'PRIVATE'}}}})});
     const data=await response.json().catch(()=>({}));
     if(response.ok)return 'sent';
     if(response.status===401)cached=null;
     const code=data.error?.details?.find(d=>d['@type']?.endsWith('FcmError'))?.errorCode;
+    console.warn(JSON.stringify({pushProviderStatus:response.status,code:/^[A-Z_]{1,64}$/.test(code||data.error?.status||'')?(code||data.error.status):'unknown'}));
     // INVALID_ARGUMENT can also mean our payload/config is wrong: do not destroy tokens for that.
     return code==='UNREGISTERED'?'invalid_token':'retry';
   };

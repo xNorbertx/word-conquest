@@ -102,6 +102,16 @@ export function createHandler(db, settings={}) {
           unwrap(await db.rpc('wc_push_register',{p_actor:actor,p_device:input.deviceId,p_token:input.enabled?input.token:'',p_enabled:input.enabled}));
           return reply({ok:true});
         }
+        case 'push_test': {
+          if(!uuid(input.deviceId))throw new Fault('invalid_device','Invalid device registration.');
+          const device=unwrap(await db.from('push_devices').select('id,token,enabled').eq('id',input.deviceId).eq('user_id',actor).maybeSingle());
+          if(!device?.enabled)throw new Fault('push_not_connected','Connect notifications on this phone first.',409);
+          if(!settings.sendTestPush)throw new Fault('push_unavailable','Notification testing is temporarily unavailable.',503);
+          const outcome=await settings.sendTestPush({token:device.token,kind:'test',notification_id:crypto.randomUUID()});
+          if(outcome==='invalid_token')throw new Fault('push_reconnect','Reconnect notifications on this phone and try again.',409);
+          if(outcome!=='sent')throw new Fault('push_unavailable','The notification service could not send the test. Please retry.',503);
+          return reply({accepted:true});
+        }
         case 'profile': {
           const name=typeof input.name==='string'?input.name.trim():'';
           if(!name || name.length>40 || /[\p{C}<>]/u.test(name))throw new Fault('invalid_name','Use a name of 1–40 ordinary characters.');

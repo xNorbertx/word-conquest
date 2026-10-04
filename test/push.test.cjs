@@ -56,3 +56,21 @@ test('push function rejects calls without its private trigger secret',async()=>{
   const handler=pushHandler({}, {secret:'private-test',credentials:{}},async()=>{throw Error('must not send');});
   assert.equal((await handler(new Request('https://example.invalid',{method:'POST'}))).status,401);
 });
+
+test('test notifications are authenticated, rate-limited, and restricted to the caller own enabled device',async()=>{
+  const {createHandler}=await import('../server/api.mjs');let sent=0,rate=true,enabled=true,owner=A;
+  const mock={auth:{getUser:async()=>({data:{user:{id:A}}})},rpc:async()=>({data:rate}),from:table=>{
+    const filters={};const query={upsert:async()=>({data:{}}),select:()=>query,eq:(key,value)=>{filters[key]=value;return query;},single:async()=>({data:{id:A,deleting:false}}),maybeSingle:async()=>({data:filters.id===D&&filters.user_id===owner?{id:D,token,enabled}:null})};return query;
+  }};
+  const handler=createHandler(mock,{origins:['https://localhost'],sendTestPush:async event=>{sent++;assert.equal(event.token,token);assert.equal(event.kind,'test');assert.equal(event.game_id,undefined);return 'sent';}});
+  const send=(id=D,auth=true)=>handler(new Request('https://example.invalid',{method:'POST',headers:{Origin:'https://localhost',...(auth?{Authorization:'Bearer test'}:{}),'Content-Type':'application/json'},body:JSON.stringify({action:'push_test',deviceId:id,token:'ignored-attacker-token'})}));
+  assert.equal((await send()).status,200);assert.equal(sent,1);
+  assert.equal((await send(D,false)).status,401);owner=B;assert.equal((await send()).status,409);owner=A;enabled=false;assert.equal((await send()).status,409);enabled=true;rate=false;assert.equal((await send()).status,429);assert.equal(sent,1);
+});
+test('test FCM message contains no game, account or registration token in its display/data payload',async()=>{
+  const {firebaseSender}=await import('../server/push.mjs');const {privateKey}=crypto.generateKeyPairSync('rsa',{modulusLength:2048});let payload;
+  const send=firebaseSender({type:'service_account',project_id:'word-conquest-test',client_email:'test@example.invalid',private_key:privateKey.export({type:'pkcs8',format:'pem'})},async(url,options)=>{
+    if(url.includes('oauth2'))return Response.json({access_token:'test',expires_in:3600});payload=JSON.parse(options.body);return Response.json({name:'accepted'});
+  });
+  assert.equal(await send({kind:'test',token,notification_id:'test'}),'sent');assert.deepEqual(payload.message.data,{test:'true'});assert.equal(payload.message.android.notification.tag,'notification-test');assert.match(payload.message.notification.body,/working/);
+});

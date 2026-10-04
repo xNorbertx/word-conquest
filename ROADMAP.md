@@ -27,7 +27,7 @@ interrupted submissions, resume/session recovery, backup/restore and monitoring.
 
 UX revision 0.3.0: rebuilt navigation, board presentation, invitations, identity,
 activity and account screens. Browser checks and regression suites pass; owner
-visual review and physical-phone acceptance remain open. See [UX review](docs/UX.md).
+visual feedback is positive; physical-phone acceptance remains open. See [UX review](docs/UX.md).
 
 First milestone: invite a friend and reliably finish a game over several days.
 
@@ -111,5 +111,8 @@ The client framework does not replace the game server, storage, identity, or not
 
 Android update: opt-in FCM delivery, registration/logout handling and retry queue
 are implemented and deployed. Automatic versioned APK builds pass in GitHub Actions.
-Native notification acceptance remains unchecked until a Seeker receives a real
-background push and opens the correct game. See docs/ANDROID.md for builds and tests.
+The owner confirmed a real test notification on the Seeker after enabling in-app
+registration on 4 October. Version 0.3.1 adds a home opt-in prompt, connection
+status, retry/settings, a per-phone test and foreground alerts. Normal turn
+delivery, notification taps and upgrade acceptance remain open.
+See docs/ANDROID.md for builds and tests.

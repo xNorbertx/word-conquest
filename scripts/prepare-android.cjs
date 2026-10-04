@@ -46,3 +46,7 @@ fs.writeFileSync(res+'/values/styles.xml',`<resources>
 <style name="AppTheme.NoActionBar" parent="AppTheme"><item name="windowActionBar">false</item><item name="windowNoTitle">true</item><item name="android:background">@null</item><item name="android:windowLightStatusBar">true</item><item name="android:statusBarColor">@color/wc_ivory</item><item name="android:navigationBarColor">@color/wc_ivory</item><item name="android:windowLightNavigationBar">true</item></style>
 <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen"><item name="android:background">@drawable/wc_splash</item><item name="windowSplashScreenBackground">@color/wc_ivory</item><item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item><item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item></style>
 </resources>`);
+
+const javaDir='android/app/src/main/java/com/wordconquest/app';
+fs.mkdirSync(javaDir,{recursive:true});
+for(const name of ['MainActivity.java','NotificationSettingsPlugin.java'])fs.copyFileSync('native/android/'+name,javaDir+'/'+name);

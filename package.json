@@ -1,6 +1,6 @@
 {
   "name": "word-conquest",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "scripts": {
     "test": "node engine.test.cjs && node scoring.test.cjs && node supply.test.cjs && node --test test/*.test.cjs",
