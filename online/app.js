@@ -3,7 +3,7 @@ import {Capacitor} from '@capacitor/core';
 import {App} from '@capacitor/app';
 import {createClient} from '@supabase/supabase-js';
 import {createPushControls} from './push.js';
-import {Engine,config as defaultConfig,configFor,RULES_VERSION,SUPPORTED_RULES,rulesLabel,captureRule} from '../server/domain.mjs';
+import {Engine,config as defaultConfig,configFor,RULES_VERSION,SUPPORTED_RULES,rulesLabel,captureRule,castleRule} from '../server/domain.mjs';
 let config=defaultConfig;
 import {$,svg,icon,node,button,setting,notify,showSheet,closeSheet,ask,initUI,closeTopDialog,emptyState} from './ui.js';
 import {seatOf,isFinished,opponentName,gameStatus,visibleGames,timeAgo,invitationToken,activityText,friendlyError} from './presentation.mjs';
@@ -101,7 +101,7 @@ async function showInvite(){
   const available=i.status==='invited'&&Date.parse(i.expires_at)>Date.now();
   if(!available){localStorage.removeItem('wc-invitation');showSheet('This seat is no longer available.',[node('p','Ask your friend for a new invitation.'),act('Back to games',closeSheet,'primary full')]);return true;}
   const heading=node('div',undefined,'invitation-summary');heading.append(avatar(i.host,'avatar-large'),node('h3',`${i.host} saved you a seat.`));
-  showSheet('You are invited.',[heading,node('p',captureRule(configFor(i.rulesVersion)||configFor('autumn-v1'))),act('Join game',()=>decideInvite('accept'),'primary full','arrow'),act('Not this time',()=>decideInvite('decline'),'text-button full')]);return true;
+  showSheet('You are invited.',[heading,node('p',captureRule(configFor(i.rulesVersion)||configFor('autumn-v1'))),node('p',castleRule(configFor(i.rulesVersion)||configFor('autumn-v1'))),act('Join game',()=>decideInvite('accept'),'primary full','arrow'),act('Not this time',()=>decideInvite('decline'),'text-button full')]);return true;
 }
 async function decideInvite(choice){const token=invitationToken(localStorage.getItem('wc-invitation')||'');const result=await api({action:'invitation',choice,token});localStorage.removeItem('wc-invitation');closeSheet();if(choice==='accept'&&result.game.status==='active')await openGame(result.game.id);else {await showHome();status('Invitation declined.');}}
 async function openGame(id,quiet=false,{route=true}={}){
@@ -125,7 +125,7 @@ function drawBoard(){
     const points=Array.from({length:8},(_,i)=>{const a=(45*i+22.5)*Math.PI/180;return `${p.x+32*Math.cos(a)},${p.y+32*Math.sin(a)}`;}).join(' ');
     g.append(svg('polygon',{points}),svg('text',{x:p.x,y:p.y-2},letter),svg('text',{x:p.x,y:p.y+19,class:'value'},Engine.letterValue(t.letter,config)));
     if(t.owner)g.append(svg('circle',{cx:p.x+20,cy:p.y-19,r:4.3,class:'marker'}));
-    if(t.castle){const points=Array.from({length:10},(_,i)=>{const a=(i*36-90)*Math.PI/180,r=i%2?2.7:6;return `${p.x+19+r*Math.cos(a)},${p.y+18+r*Math.sin(a)}`;}).join(' ');g.append(svg('polygon',{points,class:'castle'}));}
+    if(t.castle){const title=svg('title',{},config.castleIncome?`${t.q===0&&t.r===0?'Centre':'Side'} castle: +${t.q===0&&t.r===0?config.castleIncome.center:config.castleIncome.side} each round, ${t.q===0&&t.r===0?config.centerCastlePoints:config.castlePoints} final points`:`Castle: ${config.castlePoints} territory points`);g.append(title);const points=Array.from({length:10},(_,i)=>{const a=(i*36-90)*Math.PI/180,r=i%2?2.7:6;return `${p.x+19+r*Math.cos(a)},${p.y+18+r*Math.sin(a)}`;}).join(' ');g.append(svg('polygon',{points,class:'castle'}));}
     if(step>=0)g.append(svg('text',{x:p.x-19,y:p.y-18,class:'step'},step+1));board.append(g);
   }
   const centers=selection.map(id=>pos(game.state.tiles.find(t=>t.id===id)));const segments=centers.slice(1).map((b,i)=>{const a=centers[i],length=Math.hypot(b.x-a.x,b.y-a.y),dx=(b.x-a.x)/length*15,dy=(b.y-a.y)/length*15;return `M${a.x+dx},${a.y+dy} L${b.x-dx},${b.y-dy}`;}).join(' ');board.append(svg('path',{class:'path',d:segments}));
@@ -144,7 +144,7 @@ function renderSelection(){
   $('word').textContent=word;$('word').classList.toggle('placeholder',!selection.length);$('submit-word').disabled=!canPlay()||!!error;$('clear-word').disabled=!selection.length||busy||!!pending();
   $('selection-help').textContent=preview?'Board preview. Moves are not saved.':selectionHint(error);$('selection-help').classList.toggle('invalid',!!error&&selection.length>=config.minimumWordLength&&!selection.some(id=>game.state.tiles.find(t=>t.id===id).letter==='?'&&!jokers[id]));
   $('score-preview').hidden=!selection.length;
-  if(selection.length){const s=Engine.scoreMove(game.state,selection,config);$('score-preview').replaceChildren(node('span',`${s.wordPoints} word points + ${s.territoryGain} land`),icon('info'));$('submit-label').textContent=`Play word · ${s.totalGain}`;}else $('submit-label').textContent='Play word';
+  if(selection.length){const s=Engine.scoreMove(game.state,selection,config);$('score-preview').replaceChildren(node('span',`${s.wordPoints} word points + ${s.territoryGain} land${s.castleIncome?` + ${s.castleIncome} income`:''}`),icon('info'));$('submit-label').textContent=`Play word · ${s.totalGain}`;}else $('submit-label').textContent='Play word';
   if(busy)$('submit-label').textContent='Saving...';
   $('pending').hidden=!pending();$('pending-message').textContent=busy?'Saving your move...':'Move not confirmed yet. Retry when connected.';$('retry').disabled=busy;
 }
@@ -155,14 +155,14 @@ function renderGame(){
   $('game-table').dataset.side=seat===1?'sage':'walnut';
   [1,2].forEach(p=>{
     const mine=p===seat,name=game.names?.[p-1]||(mine?'You':'Your friend'),colour=p===1?'Sage green':'Walnut brown',card=$('player-score-'+p);
-    $('role-'+p).textContent=mine?'You':'Opponent';$('name-'+p).textContent=name;$('name-'+p).title=name;$('colour-'+p).textContent=colour;
+    $('role-'+p).textContent=mine?'You':'Opponent';$('name-'+p).textContent=name;$('name-'+p).title=name;$('colour-'+p).replaceChildren(node('span',colour),...(config.castleIncome&&!isFinished(game)?[node('span',`+${Engine.castleIncomePerRound(game.state,config)[p-1]} each round`,'income-rate')]:[]));
     $('score-'+p).textContent=totals[p-1].total;card.style.order=mine?1:2;
     card.classList.toggle('is-you',mine);card.classList.toggle('is-turn',active&&!unconfirmed&&game.state.player===p);
     card.setAttribute('aria-label',`${mine?'You, ':''}${name}. ${colour}. ${active&&!unconfirmed&&game.state.player===p?'Current turn. ':''}Score: ${totals[p-1].total}. View breakdown`);
   });
   const scoreboard=document.querySelector('.scoreboard'),ownCard=$('player-score-'+seat);if(scoreboard.firstElementChild!==ownCard)scoreboard.prepend(ownCard);
   document.querySelector('.turn').style.order=3;
-  $('game-heading-name').textContent=preview?'The Sunday table':other;$('game-heading-subtitle').textContent=game.status==='invited'?'Invitation':isFinished(game)?'Finished game':`Turn ${game.state.turns.reduce((a,b)=>a+b,0)+1}`;
+  $('game-heading-name').textContent=preview?'The Sunday table':other;$('game-heading-subtitle').textContent=game.status==='invited'?'Invitation':isFinished(game)?'Finished game':config.castleIncome?`Round ${Math.min(...game.state.turns)+1} · Castle income 2 / 4`:`Turn ${game.state.turns.reduce((a,b)=>a+b,0)+1}`;
   const turnText=unconfirmed?(busy?'Saving your turn...':'Turn awaiting confirmation'):preview?'Your turn':active?(ownTurn?'Your turn':`${other}'s turn`):gameStatus(game,user?.id);
   const turnIcon=unconfirmed?'refresh':!active?'flag':ownTurn?'arrow':'hourglass';
   if($('turn').dataset.label!==turnText){const copy=node('span',undefined,'turn-copy');if(active&&!ownTurn&&!unconfirmed){copy.append(node('span',other,'turn-player'),node('span',"'s turn",'turn-suffix'));}else copy.textContent=turnText;$('turn').replaceChildren(icon(turnIcon),copy);$('turn').dataset.label=turnText;}
@@ -199,11 +199,12 @@ async function action(kind){
   localStorage.setItem(pendingKey(),JSON.stringify(command));closeSheet();await sendPending();
 }
 function scoreLines(rows){const container=node('div',undefined,'score-lines');for(const [label,value,total]of rows){const line=node('div',undefined,'score-line'+(total?' total':''));line.append(node('span',label),node('strong',value));container.append(line);}return container;}
-function showScore(player){const s=Engine.scoreBreakdown(game.state,config)[player-1];showSheet(player===seatOf(game,user?.id)?'Your score':`${game.names[player-1]}'s score`,[scoreLines([['Word points',s.words],['Current territory',s.territory],['Total',s.total,true]]),node('p','Word points stay yours. Territory points change when tiles are captured.')]);}
-function showWordScore(){if(!selection.length)return;const s=Engine.scoreMove(game.state,selection,config);const content=[scoreLines([['Letter points',s.letters],['Length bonus',s.lengthBonus],['New territory',s.territoryGain],['Added to your score',s.totalGain,true]])];if(s.enemyLoss)content.push(node('p',`Your opponent also loses ${s.enemyLoss} territory points.`));showSheet('A good word adds up.',content);}
+function showScore(player){const s=Engine.scoreBreakdown(game.state,config)[player-1];showSheet(player===seatOf(game,user?.id)?'Your score':`${game.names[player-1]}'s score`,[scoreLines([['Word points',s.words],['Current territory',s.territory],...(config.castleIncome?[['Castle income earned',s.income]]:[]),['Total',s.total,true]]),node('p',config.castleIncome?'Word points and earned castle income stay yours. Current territory changes with ownership. Income pays after both players move, including the final round.':'Word points stay yours. Territory points change when tiles are captured.')]);}
+function showWordScore(){if(!selection.length)return;const s=Engine.scoreMove(game.state,selection,config);const content=[scoreLines([['Letter points',s.letters],['Length bonus',s.lengthBonus],['New territory',s.territoryGain],...(s.castleIncome?[['Castle income this round',s.castleIncome]]:[]),['Added to your score',s.totalGain,true]])];if(s.enemyLoss)content.push(node('p',`Your opponent also loses ${s.enemyLoss} territory points.`));if(s.incomeAwarded?.[2-game.state.player])content.push(node('p',`Your opponent also earns ${s.incomeAwarded[2-game.state.player]} castle income this round.`));showSheet('A good word adds up.',content);}
 function showRules(){
   const config=currentView==='game'&&game?(configFor(game.rules_version)||defaultConfig):defaultConfig;
-  const steps=[['Find a word',`Start on a tile you own. Connect at least ${config.minimumWordLength} letters in any of the eight directions. Use each tile once. No territory left? Start anywhere.`],['Make it yours',`${captureRule(config)} Neutral tiles in your word become yours too. Ordinary tiles score ${config.normalTerritoryPoints} for territory; castles are worth ${config.castlePoints}.`],['Every letter counts','Small numbers are letter points. Longer words earn a bonus. Jokers can be any letter. Ordinary letters in a played word are replaced; jokers stay wild.'],['Take your time',`Both players share ${config.letterBudget} letters. When they run out, Player 2 gets a final reply if needed. The highest final score wins. Refreshing your letters uses your turn.`]];
+  const steps=[['Find a word',`Start on a tile you own. Connect at least ${config.minimumWordLength} letters in any of the eight directions. Use each tile once. No territory left? Start anywhere.`],['Make it yours',`${captureRule(config)} Neutral tiles in your word become yours too. Ordinary tiles score ${config.normalTerritoryPoints} for territory. ${castleRule(config)}`],['Every letter counts','Small numbers are letter points. Longer words earn a bonus. Jokers can be any letter. Ordinary letters in a played word are replaced; jokers stay wild.'],['Take your time',`Both players share ${config.letterBudget} letters. When they run out, the player who went second gets a final reply if needed. The highest final score wins. Refreshing your letters uses your turn.`]];
+  if(config.castleIncome)steps.splice(2,0,['Hold your castles','The starting player is chosen at random. A round ends after both players move. Castles pay whoever owns them then, including the final round. Earned income stays yours even if a castle is captured later.']);
   const content=steps.map(([title,copy],i)=>{const row=node('div',undefined,'rule-step'),text=node('div');text.append(node('h3',title),node('p',copy));row.append(node('span',i+1,'step-number'),text);return row;});
   const legend=node('div',undefined,'rule-legend');for(const [className,label]of [['owner-dot','Sage player'],['owner-ring','Walnut player']]){const item=node('span');item.append(node('span',undefined,className),node('span',label));legend.append(item);}content.push(legend,act('About the dictionary',showDictionary,'text-button'));showSheet('A little word. A little world.',content);
 }
@@ -212,11 +213,12 @@ function showHistory(){const list=node('ol',undefined,'move-list');for(const [in
 function showRecap(){
   const r=history[0]?.recap;if(!r)return;const content=[node('div',r.word||'Game update','recap-word'),node('div',`${game.names[r.player-1]} · ${timeAgo(r.at)}`,'recap-byline')];
   if(r.score)content.push(scoreLines([['Word points',r.score.wordPoints],['Territory gained',r.score.territoryGain],...(r.score.enemyLoss?[['Opponent territory lost',r.score.enemyLoss]]:[])]));
+  if(r.roundComplete)content.push(node('h3',`Round ${r.round} castle income`),scoreLines([1,2].map(p=>[game.names[p-1],`+${r.income[p-1]}`])));
   if(r.changed?.length){content.push(node('h3','After the word'));const changes=node('div',undefined,'tile-changes');for(const c of r.changed){const chip=node('span',undefined,'tile-change'+(c.before.owner!==c.after.owner?' captured':''));chip.append(node('b',c.before.letter),node('span','→'),node('b',c.after.letter));chip.title=c.before.owner!==c.after.owner?'Captured tile':'Replacement letter';changes.append(chip);}content.push(changes,node('p','Green chips are tiles captured on this turn.','field-hint'));}
   if(r.path?.length)content.push(act('Show word on the board',()=>{highlightLast=true;closeSheet();renderGame();$('board').scrollIntoView({block:'center',behavior:'smooth'});},'secondary full','eye'));
   content.push(act('All moves',showHistory,'text-button full'));showSheet('The last move.',content);
 }
-function showNewGame(){showSheet('Pull up a chair.',[node('p',captureRule(defaultConfig)),act('Invite a friend',createGame,'primary full','user-plus'),act('I have an invitation',showJoin,'secondary full','mail')]);}
+function showNewGame(){showSheet('Pull up a chair.',[node('p',castleRule(defaultConfig)),node('p','Starting player is chosen at random.','field-hint'),act('Invite a friend',createGame,'primary full','user-plus'),act('I have an invitation',showJoin,'secondary full','mail')]);}
 function showJoin(){const form=node('form',undefined,'stack-form'),label=node('label','Invitation link or code'),input=node('input');input.id='invite-code';input.autocomplete='off';input.required=true;input.placeholder='Paste your invitation here';label.htmlFor=input.id;const submit=button('Open invitation',null,'primary full','arrow');submit.type='submit';form.append(label,input,submit);form.onsubmit=e=>{e.preventDefault();void run(async()=>{const token=invitationToken(input.value);if(!token)throw Error('Paste a complete invitation link or code.');submit.disabled=true;try{localStorage.setItem('wc-invitation',token);await showInvite();}finally{submit.disabled=false;}});};showSheet('Join a friend.',form);}
 async function createGame(){
   if(creating||!user)return;creating=true;$('new-game').disabled=true;closeSheet();
@@ -329,7 +331,7 @@ $('board').onkeydown=e=>{
   else if(e.key==='Backspace'){e.preventDefault();if(canPlay()||preview){delete jokers[selection.pop()];drawBoard();renderJokers();renderSelection();$('board').querySelector(`[data-id="${id}"]`)?.focus();}}
   else if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();const tile=game.state.tiles.find(t=>t.id===id),[dq,dr]={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0]}[e.key];const next=game.state.tiles.find(t=>t.q===tile.q+dq&&t.r===tile.r+dr);if(next){focusTile=next.id;drawBoard();$('board').querySelector(`[data-id="${next.id}"]`)?.focus();}}
 };
-$('preview-button').onclick=()=>{preview=true;config=defaultConfig;game={id:'preview',rules_version:RULES_VERSION,state:Engine.newGame(config),status:'active',players:[],names:['You','Alex'],revision:0};history=[];invite=null;selection=[];jokers={};screen('game',{route:false});renderGame();};
+$('preview-button').onclick=()=>{preview=true;config=defaultConfig;game={id:'preview',rules_version:RULES_VERSION,state:{...Engine.newGame(config),player:1,startingPlayer:1},status:'active',players:[],names:['You','Alex'],revision:0};history=[];invite=null;selection=[];jokers={};screen('game',{route:false});renderGame();};
 async function poll(){
   if(polling||busy||!user||document.hidden||recovering)return;polling=true;refreshQueued=false;
   try{if(currentView==='game'&&!preview)await openGame(game.id,true);else if(currentView==='home')await showHome(true);else if(currentView==='activity'){await fetchHome();renderActivity();}offlineNotice(!navigator.onLine);}

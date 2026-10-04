@@ -81,3 +81,15 @@ test('old clients must update before opening, joining or moving in v2; v1 remain
   assert.equal((await x.send({action:'invitation',choice:'accept',token:T,supportedRules:['autumn-v1','autumn-v2']})).status,200);
   const old=await apiFixture('autumn-v1');assert.equal((await old.send({action:'game',gameId:G})).status,200);
 });
+
+test('v3 create uses a server state and older clients cannot join, open or submit',async()=>{
+ const x=await apiFixture('autumn-v3'),supportedRules=['autumn-v1','autumn-v2','autumn-v3'];
+ const created=await x.send({action:'create',gameId:G,rulesVersion:'autumn-v3',supportedRules,startingPlayer:99,state:{player:99,castleIncome:[999,999]}});
+ assert.equal(created.status,200);const g=(await created.json()).game;assert.equal(g.rules_version,'autumn-v3');assert.ok([1,2].includes(g.state.player));assert.equal(g.state.player,g.state.startingPlayer);assert.deepEqual(g.state.castleIncome,[0,0]);
+ for(const body of [{action:'game',gameId:G},{action:'invitation',choice:'accept',token:T},{action:'turn',gameId:G,command:command(x.g,['-3,0','-2,0','-1,0'])}]){
+  const r=await x.send({...body,supportedRules:['autumn-v1','autumn-v2']});assert.equal(r.status,409);assert.equal((await r.json()).code,'client_update_required');
+ }
+ assert.equal(x.calls.some(c=>c.name==='wc_commit'||c.name==='wc_invitation'&&c.args.p_action==='accept'),false);
+ assert.equal((await x.send({action:'game',gameId:G,supportedRules})).status,200);
+ assert.equal((await x.send({action:'invitation',choice:'accept',token:T,supportedRules})).status,200);
+});

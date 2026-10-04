@@ -154,3 +154,16 @@ Your proposed 1 / 2 income produced 36.1% territory points in the main simulatio
 These focused results make recurring castle income a valid next comparison
 alongside the earlier land-value proposal. No live rules changed.
 See [castle income findings](docs/research/CASTLE-INCOME-2026-10-04.md).
+
+
+Castle income pilot implementation (4 October):
+
+- [x] Add versioned 2 / 4 recurring castle income with final values 3 / 5 for new games.
+- [x] Randomly select and persist the starting player on the server; retain player colours and equal turns.
+- [x] Pay both players once per completed round, including the final reply; preserve banked income after capture.
+- [x] Add income previews, score breakdowns, per-round rates, recaps and rules help.
+- [x] Preserve v1/v2 games and prevent incompatible clients playing v3.
+- [ ] Human playtest 2 / 4 income on both devices; assess castle dominance and starting-order balance.
+
+Random starting order distributes the starting/last-reply roles; it does not
+prove that those roles have equal strategic value.

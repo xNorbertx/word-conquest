@@ -1,6 +1,6 @@
-import Engine from './versions/engine-v1.mjs';
+import Engine from './engine.mjs';
 import {configFor} from './rules.mjs';
-export {config,configFor,RULES_VERSION,LEGACY_RULES_VERSION,SUPPORTED_RULES,rulesLabel,captureRule} from './rules.mjs';
+export {config,configFor,RULES_VERSION,LEGACY_RULES_VERSION,SUPPORTED_RULES,rulesLabel,captureRule,castleRule} from './rules.mjs';
 export { Engine };
 export class Fault extends Error {
   constructor(code, message, status = 400) { super(message); this.code = code; this.status = status; }
@@ -74,6 +74,7 @@ export function applyCommand(game, actor, input, dictionary, dictionaryVersion, 
   const recap = {action: input.action, player: seat, at: now.toISOString(),
     word: input.action === 'word' ? Engine.wordForPath(before, input.path, input.jokers || {}) : null,
     path: input.path || [], captured, refreshed, changed, score,
+    ...(config.castleIncome && ['word','refresh'].includes(input.action)?{income:next.state.log[0].income,roundComplete:next.state.log[0].roundComplete,round:next.state.log[0].round}:{}),
     totalsBefore: Engine.scores(before, config), totalsAfter: Engine.scores(next.state, config)};
   return {next, recap};
 }

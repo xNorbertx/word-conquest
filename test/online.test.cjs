@@ -15,7 +15,7 @@ before(async()=>{
 });
 after(async()=>{await db?.close();});
 async function rpc(name,args){const {rows}=await db.query(`select ${name}(${args.map((_,i)=>'$'+(i+1)).join(',')}) as result`,args);return rows[0].result;}
-async function newGame(){const id=crypto.randomUUID(),token=crypto.randomUUID();let g=await rpc('wc_create',[A,id,token,JSON.stringify(domain.Engine.newGame(domain.config)),domain.RULES_VERSION,meta.version]);return {g,token};}
+async function newGame(){const id=crypto.randomUUID(),token=crypto.randomUUID();let g=await rpc('wc_create',[A,id,token,JSON.stringify(domain.Engine.newGame(domain.configFor('autumn-v2'))),'autumn-v2',meta.version]);return {g,token};}
 const command=(g,action='refresh',extra={})=>({operationId:crypto.randomUUID(),revision:g.revision,action,...extra});
 async function commit(g,actor,c){const {next,recap}=domain.applyCommand(g,actor,c,dictionary,meta.version);return rpc('wc_commit',[actor,g.id,c.operationId,domain.commandKey(c),c.revision,JSON.stringify(next),JSON.stringify(recap)]);}
 function findWord(state){
@@ -26,7 +26,7 @@ function findWord(state){
     const last=state.tiles.find(t=>t.id===path.at(-1));
     for(const tile of state.tiles){
       if(path.includes(tile.id) || (last && !domain.Engine.adjacent(last,tile)))continue;
-      const next=[...path,tile.id];if(domain.Engine.validatePath(state,next,domain.config,false))continue;
+      const next=[...path,tile.id];if(domain.Engine.validatePath(state,next,domain.configFor('autumn-v2'),false))continue;
       for(const letter of tile.letter==='?'?'ABCDEFGHIJKLMNOPQRSTUVWXYZ':tile.letter){
         const word=text+letter.toLowerCase();if(!prefixes.has(word))continue;
         const found=visit(next,word,tile.letter==='?'?{...jokers,[tile.id]:letter}:jokers);if(found)return found;

@@ -412,3 +412,36 @@ Audit checks all game score components, dictionary membership and payout timing,
 plus exact reproduction of six complete games.
 
 No app/backend deployment, player-data change, new ongoing cost or APK build.
+
+
+## Castle income implementation - 4 October
+
+Version 0.5.0 adds autumn-v3 for new games: side castles pay 2 and the centre 4
+after a complete round; their current/final ownership values are 3 and 5.
+Earned income is permanent. The server draws and persists the starting player
+with cryptographic randomness; colours/participant seats stay fixed. Both
+players receive equal turns, with the second starter receiving the final reply.
+The last complete round also pays. Resignation, draw offers and other lifecycle
+commands do not mint extra income.
+
+Immutable engine-v1, rules-v1 and rules-v2 remain available. The v3 engine wraps
+the old legality/word/replacement logic; version selection controls scoring.
+The API rejects old-client v3 opens, joins and turns. Older clients retain their
+creation defaults. Existing games are not migrated. No database migration is
+needed: state and receipts already store the new fields transactionally.
+
+Score cards show the current income rate; score breakdowns separate earned
+income from ownership. Move previews include the actor's round payment and
+explain any simultaneous opponent payment. Recaps show both payments. Help and
+invitation/new-game copy explain the rules.
+
+Verification before deployment: three original engine suites and 51
+integration/service/controller tests pass. New coverage includes both starters,
+final replies/payments, center steals, unchanged legacy behavior, saved create
+retries, join preservation, stale submissions and exactly-once payments/receipts.
+Complete dictionary-valid games finish for both starting seats. Mobile fixture
+GARDENS previews/saves 19 word +10 territory +4 income =33, with the opponent
+losing 9 territory and earning 2 income. Scores 50:62 become 83:55; the recap and
+score breakdown agree. Physical phone acceptance remains a user playtest.
+
+Deployment and APK verification will be recorded after release. No new costs.
