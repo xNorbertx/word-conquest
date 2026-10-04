@@ -3,9 +3,9 @@
 Target test phone: Solana Seeker / Android 16. Package: `com.wordconquest.app`.
 The APK uses the same Supabase accounts and games as the web app.
 
-Verified pilot build: `0.3.0-6ff2644` (version code `23842588`), from
-[this successful pipeline run](https://github.com/xNorbertx/word-conquest/actions/runs/37160098609).
-Local APK: `dist/word-conquest-0.3.0.apk`. Earlier compilation-only artifacts are
+Verified pilot build: `0.3.1-17b2017` (version code `23880867`), from
+[this successful pipeline run](https://github.com/xNorbertx/word-conquest/actions/runs/37192576334).
+Local APK: `dist/word-conquest-0.3.1.apk`. Earlier compilation-only artifacts are
 superseded; use this build or a later successful build for the stable pilot signer.
 
 ## Install and use
@@ -13,7 +13,7 @@ superseded; use this build or a later successful build for the stable pilot sign
 On your Android phone, open the repository's [Releases page](https://github.com/xNorbertx/word-conquest/releases).
 Open the newest published Android pilot and, under **Assets**, download
 `word-conquest-android.apk`. No GitHub account or ZIP extraction is needed.
-[Direct verified APK download](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-23842588/word-conquest-android.apk).
+[Direct verified APK download](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-23880867/word-conquest-android.apk).
 Open the downloaded APK and allow installation from your browser if Android asks.
 Updates install over the existing pilot app; do not uninstall it, because that
 removes locally saved sessions and pending actions.

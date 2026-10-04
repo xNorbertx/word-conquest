@@ -225,3 +225,23 @@ All three original rule suites and 32 integration/service/controller tests pass.
 Local Android compilation passes. Browser fixtures cover opt-in, opt-out, retry,
 blocked settings and self-test feedback. No phone is attached to ADB; real device
 receipt above is owner-confirmed, not simulated. Release evidence follows below.
+
+Published notification fix evidence:
+
+- Source: 17b2017807f5ee9b419b5bc9713170b06a7ddad3.
+- Web: gh-pages 0875d83; nine checked public assets match the local build,
+  including the unchanged root prototype. API preflight 204; unauthenticated 401.
+- Hosted push_test API rejects unknown, disabled and another account's phone
+  with 409, verified using an isolated test identity without sending messages.
+- CI: https://github.com/xNorbertx/word-conquest/actions/runs/37192576334
+- APK: 0.3.1-17b2017, version code 23880867, 4,937,926 bytes. Stable pilot
+  signing certificate verified; notification permission present; no PEM private
+  key or local fixture adapter in the package.
+- Release: https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-23880867
+- Anonymous APK download: HTTP 200; SHA-256
+  ff967632881c2b6f31697d635e11dc99f748d1556b3d9206940c4d236a6608c4.
+- Local verified copy: dist/word-conquest-0.3.1.apk.
+
+Install over the existing pilot. No added recurring costs or store publication.
+Device acceptance still covers normal turn/background/cold-start routing, the
+new foreground presentation, settings handoff and the APK upgrade.
