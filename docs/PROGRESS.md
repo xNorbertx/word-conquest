@@ -31,7 +31,25 @@
   completions returning the same winner; delayed retry and sign-out/relogin
   retaining the saved name; completed profile becoming searchable. All eight
   pre-existing profiles retained their names/IDs. No email or push sent and no
-  real player/game changed. Web/APK release evidence follows after publication.
+  real player/game changed.
+- Source: `5d76bf119599aa34841ba7004661317a568d6c7d`. Web build pushed to
+  gh-pages commit `b25252d7685c5ccca8d22d9eb0d4b26d448e71d6`. Pages reports
+  building and the public online assets still serve 0.6.1 at this checkpoint.
+  The matching Android Actions run `37372286774` is queued. GitHub reports
+  [runner assignment/start delays](https://www.githubstatus.com/incidents/3q1yb5m7ltvb)
+  since 19:11 UTC on 5 October. Do not describe either queued job as passed.
+- Built locally instead using the installed JDK/SDK: Gradle succeeded, then
+  package/version, notification permission, original pilot signing certificate,
+  bundled onboarding code and absence of private keys/fixtures were checked.
+  APK: `0.6.2-5d76bf1`, version code `24008064`, 4,948,708 bytes.
+  SHA-256: `703574ae246609ca80ab021696171b0f30dc37a282be55b3afa8ffbe1be5b96d`.
+  Local file: `dist/word-conquest-0.6.2.apk`.
+- [Pilot release](https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-24008064)
+  published from that verified local artifact. Anonymous download returned HTTP
+  200 with the expected checksum. It bundles the new UI and connects to the live
+  migrated backend independently of the pending Pages rollout. No new cost,
+  service, data deletion or app-store submission. Physical Seeker upgrade and
+  post-queue web asset verification remain open; existing players keep working.
 
 ## Unique usernames - 4 October, 0.6.1
 

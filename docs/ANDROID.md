@@ -3,16 +3,22 @@
 Target test phone: Solana Seeker / Android 16. Package: `com.wordconquest.app`.
 The APK uses the same Supabase accounts and games as the web app.
 
-Verified pilot build: `0.6.1-5ba714e` (version code `23915880`), from
-[this successful pipeline run](https://github.com/xNorbertx/word-conquest/actions/runs/37227714472).
-Local APK: `dist/word-conquest-0.6.1.apk`. Earlier compilation-only artifacts are
+Verified pilot build: `0.6.2-5d76bf1` (version code `24008064`), built locally with
+`scripts/build-android.ps1`, after the local test suites passed. The matching
+[pipeline run](https://github.com/xNorbertx/word-conquest/actions/runs/37372286774)
+was queued during GitHub's [5 October runner incident](https://www.githubstatus.com/incidents/3q1yb5m7ltvb).
+The public APK is the verified local build, not an uncompleted CI artifact.
+Local APK: `dist/word-conquest-0.6.2.apk`. Earlier compilation-only artifacts are
 superseded; use this build or a later successful build for the stable pilot signer.
 
-Version 0.6.1 requires a unique username at signup and uses it as the display name.
-Existing accounts keep their names and games. Names ignore case when checking
-uniqueness; You lets you change to an available username. Email/password login
-stays unchanged. Older APKs can use existing accounts; install this update to
-create an account with the new required username field.
+Version 0.6.2 uses email/password-only signup, followed after confirmation/sign-in
+by a separate Choose your username screen. Randomize suggests an available name;
+Continue saves it. Until saved, setup returns on every reopening/device. Invitations
+resume afterward. Existing accounts keep their names/games and skip setup.
+Names ignore case when checking uniqueness; You still lets you rename to an
+available name. Older APKs can use accounts that already have names; unfinished
+new accounts need this update or the updated web app. The APK bundles its UI and
+works with the deployed backend while the web rollout waits for GitHub Pages.
 
 Version 0.6.0 added Friends: search usernames, accept friend requests and invite
 someone directly from your list. Activity is under You. Incoming game invitations
@@ -34,7 +40,7 @@ statistics stay separate.
 On your Android phone, open the repository's [Releases page](https://github.com/xNorbertx/word-conquest/releases).
 Open the newest published Android pilot and, under **Assets**, download
 `word-conquest-android.apk`. No GitHub account or ZIP extraction is needed.
-[Direct verified APK download](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-23915880/word-conquest-android.apk).
+[Direct verified APK download](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-24008064/word-conquest-android.apk).
 Open the downloaded APK and allow installation from your browser if Android asks.
 Updates install over the existing pilot app; do not uninstall it, because that
 removes locally saved sessions and pending actions.
