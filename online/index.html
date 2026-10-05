@@ -24,8 +24,6 @@
   <div class="welcome-art" aria-hidden="true"><span>W<small>2</small></span><span>O<small>1</small></span><span>R<small>1</small></span><span>D<small>2</small></span></div>
   <p class="eyebrow">WORDS BRING US TOGETHER</p><h1 id="auth-heading">Your next good word<br>is waiting.</h1><p id="auth-intro" class="muted">A friendly game, at your own pace.</p>
   <form id="auth-form" class="stack-form">
-    <label id="username-label" for="username" hidden>Username</label><input id="username" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="40" aria-describedby="username-hint username-error" hidden>
-    <p id="username-hint" class="field-hint" hidden>Your unique name, shown to other players.</p><p id="username-error" class="field-hint" role="alert" hidden></p>
     <label for="email">Email</label><input id="email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" required>
     <div id="password-label" class="field-heading"><label for="password">Password</label><button id="recover" type="button" class="text-button">Forgot?</button></div>
     <div id="password-field" class="password-field"><input id="password" type="password" autocomplete="current-password" required><button id="show-password" type="button" class="icon-button" aria-label="Show password" data-icon="eye"></button></div>
@@ -34,6 +32,16 @@
   </form>
   <p class="auth-switch"><span id="auth-switch-text">New here?</span> <button id="signup" class="text-button">Create an account</button></p>
   <button class="subtle-link" data-sheet="privacy">Privacy &amp; support</button>
+</section>
+<section id="username-setup" class="auth-screen" hidden>
+  <span class="large-icon" data-icon="user"></span><h1>Choose your username.</h1>
+  <form id="username-form" class="stack-form">
+    <div class="field-heading"><label for="setup-username">Username</label><button id="randomize-username" type="button" class="text-button"><span data-icon="refresh"></span>Randomize</button></div>
+    <input id="setup-username" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="40" required aria-describedby="setup-username-error">
+    <p id="setup-username-error" class="form-alert" role="alert" hidden></p>
+    <button id="save-username" class="primary full" type="submit"><span>Continue</span><span data-icon="arrow"></span></button>
+  </form>
+  <button id="setup-signout" class="subtle-link">Sign out</button>
 </section>
 <section id="recovery" class="auth-screen" hidden><span class="large-icon" data-icon="lock"></span><h1>A fresh start.</h1><p class="muted">Choose a new password for your account.</p><form id="recovery-form" class="stack-form"><label for="new-password">New password</label><input id="new-password" type="password" autocomplete="new-password" minlength="12" required><p class="field-hint">At least 12 characters.</p><button class="primary full">Save password<span data-icon="arrow"></span></button></form></section>
 <section id="home" class="page" hidden>

@@ -802,6 +802,14 @@ input:read-only {
 .stack-form > .primary {
   margin-top: 12px;
 }
+#username-setup .field-heading .text-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+}
+#username-setup .field-heading .icon { width: 16px; height: 16px; }
+#username-setup h1 { margin-bottom: 24px; }
 .field-heading {
   display: flex;
   align-items: center;

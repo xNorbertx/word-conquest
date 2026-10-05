@@ -1796,7 +1796,7 @@ var require_cjs = __commonJS({
 });
 
 // package.json
-var version = "0.6.1";
+var version = "0.6.2";
 
 // online/app.js
 init_dist();
@@ -8952,7 +8952,7 @@ function createFriends({ api: api2, getUser, getData, setData, run: run2, status
 
 // online/username.mjs
 var normalizeUsername = (value) => typeof value === "string" ? value.normalize("NFKC").trim() : "";
-var usernameHint = "1\u201340 characters. Letters, numbers and simple punctuation.";
+var usernameHint = "Use 1\u201340 letters, numbers, spaces or . _ - ( ) '.";
 function validUsername(value) {
   return typeof value === "string" && value === normalizeUsername(value) && [...value].length >= 1 && [...value].length <= 40 && /^[\p{L}\p{N}_.() '\-]+$/u.test(value) && /[\p{L}\p{N}]/u.test(value);
 }
@@ -8961,25 +8961,9 @@ function requireUsername(value) {
   if (!validUsername(name)) throw Object.assign(new Error(usernameHint), { code: "invalid_username" });
   return name;
 }
-async function signUpWithUsername(db2, { username, email, password, redirectTo }) {
-  const name = requireUsername(username);
-  const available = async () => {
-    const { data, error } = await db2.rpc("wc_username_available", { p_username: name });
-    if (error) throw Error("We could not check that username. Please try again.");
-    return data;
-  };
-  const taken = () => Object.assign(new Error("That username is already taken. Try another."), { code: "username_taken" });
-  if (!await available()) throw taken();
-  const result = await db2.auth.signUp({ email, password, options: { emailRedirectTo: redirectTo, data: { username: name } } });
-  if (result.error) {
-    let free = true;
-    try {
-      free = await available();
-    } catch {
-    }
-    if (!free) throw taken();
-    throw result.error;
-  }
+async function signUpAccount(db2, { email, password, redirectTo }) {
+  const result = await db2.auth.signUp({ email, password, options: { emailRedirectTo: redirectTo } });
+  if (result.error) throw result.error;
   return result;
 }
 
@@ -9398,6 +9382,7 @@ function activityText(kind, name) {
   return labels[kind] || "Your game has an update";
 }
 function friendlyError(error) {
+  if (error.code === "client_update_required") return "Update Word Conquest or open the latest web app to continue.";
   if (error.code === "username_taken") return "That username is already taken. Try another.";
   if (error.code === "username_required") return "Choose a username to continue.";
   const social = { friend_stale: "This friend request has changed. Refresh Friends and try again.", friend_unavailable: "This player is not available for a new invitation.", friend_cooldown: "Give them a little time. You can send another request tomorrow.", friend_limit: "Your friend request limit has been reached. Try again later.", invitation_pending: "An invitation is already waiting for this friend. Open it from Games." };
@@ -9447,6 +9432,7 @@ var authMode = "signin";
 var authBusy = false;
 var lastRequestId = null;
 var lastProblem = null;
+var usernameSetupBusy = false;
 var native = Capacitor.isNativePlatform();
 var publicApp = "https://xnorbertx.github.io/word-conquest/online/";
 var authRedirect = () => native ? publicApp : location.origin + location.pathname;
@@ -9461,7 +9447,7 @@ var push = createPushControls({ api, getUser: () => user, onStatus: (message) =>
 var friends = createFriends({ api, getUser: () => user, getData: () => homeData, setData: (partial) => {
   if (homeData) Object.assign(homeData, partial);
 }, run, status, invite: (person) => createGame(person), openGame, editProfile });
-var screens = ["loading", "setup", "auth", "recovery", "home", "friends", "activity", "account", "game"];
+var screens = ["loading", "setup", "auth", "username-setup", "recovery", "home", "friends", "activity", "account", "game"];
 function screen(name, { route = true, replace = false } = {}) {
   closeSheet();
   currentView = name;
@@ -9506,9 +9492,12 @@ async function api(body) {
   if (!db) throw new Error("Online play is not connected yet.");
   const { data: { session }, error } = await db.auth.getSession();
   if (error || !session) throw apiError("Sign in to continue.", "unauthorized", 401);
-  const response = await fetch(`${cfg.supabaseUrl}/functions/v1/game-api`, { method: "POST", signal: AbortSignal.timeout(2e4), headers: { "Content-Type": "application/json", apikey: cfg.supabaseAnonKey, Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ ...body, supportedRules: SUPPORTED_RULES, supportsFriends: true }) });
+  const response = await fetch(`${cfg.supabaseUrl}/functions/v1/game-api`, { method: "POST", signal: AbortSignal.timeout(2e4), headers: { "Content-Type": "application/json", apikey: cfg.supabaseAnonKey, Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ ...body, supportedRules: SUPPORTED_RULES, supportsFriends: true, supportsUsernameOnboarding: true }) });
   const result = await response.json();
-  if (!response.ok) throw apiError(result.error || "Request failed.", result.code, response.status, result.requestId);
+  if (!response.ok) {
+    if (result.code === "username_required" && user?.id === session.user.id) showUsernameSetup();
+    throw apiError(result.error || "Request failed.", result.code, response.status, result.requestId);
+  }
   return result;
 }
 async function run(fn) {
@@ -9561,7 +9550,7 @@ async function connectLiveUpdates(session) {
   });
 }
 async function openNotification() {
-  if (notificationGame && user && !recovering) {
+  if (notificationGame && user && authReady && !recovering) {
     const id = notificationGame;
     notificationGame = null;
     await openGame(id);
@@ -9635,11 +9624,23 @@ function renderActivity() {
   }
   if (!homeData.notifications.length) $("inbox").append(emptyState("All quiet at the table.", "Game updates will appear here.", "bell"));
 }
+function showUsernameSetup() {
+  authReady = false;
+  if (currentView !== "username-setup") {
+    $("setup-username-error").hidden = true;
+    $("setup-username").removeAttribute("aria-invalid");
+    screen("username-setup", { route: false });
+  }
+}
 async function fetchHome() {
   const request = ++homeLoad, actor = user?.id;
   const result = await api({ action: "home" });
   if (user?.id !== actor || request !== homeLoad) return null;
   homeData = result;
+  if (result.needsUsername || result.profile.username === null) {
+    showUsernameSetup();
+    return null;
+  }
   return result;
 }
 async function showHome(quiet = false, { route = true, replace = false } = {}) {
@@ -9651,12 +9652,14 @@ async function showHome(quiet = false, { route = true, replace = false } = {}) {
     screen("home", { route, replace });
   }
   if (!quiet || before !== JSON.stringify(result)) renderHome();
+  return true;
 }
 async function showActivity({ route = true } = {}) {
   if (!user) return;
   const ticket = ++navigation, actor = user.id;
   if (!homeData) await fetchHome();
   if (ticket !== navigation || actor !== user?.id || !homeData) return;
+  if (homeData.profile.username === null) return showUsernameSetup();
   ++gameLoad;
   screen("activity", { route });
   renderActivity();
@@ -9666,6 +9669,7 @@ async function showFriends({ route = true } = {}) {
   const ticket = ++navigation, actor = user.id;
   if (!homeData) await fetchHome();
   if (ticket !== navigation || actor !== user?.id || !homeData) return;
+  if (homeData.profile.username === null) return showUsernameSetup();
   ++gameLoad;
   screen("friends", { route });
   friends.render();
@@ -9673,7 +9677,7 @@ async function showFriends({ route = true } = {}) {
 }
 async function showInvite() {
   const raw = localStorage.getItem("wc-invitation");
-  if (!raw || !user) return false;
+  if (!raw || !user || homeData?.profile.username === null) return false;
   const token = invitationToken(raw);
   if (!token) {
     localStorage.removeItem("wc-invitation");
@@ -10174,6 +10178,7 @@ async function account({ route = true } = {}) {
   const ticket = ++navigation, actor = user.id;
   if (!homeData) await fetchHome();
   if (ticket !== navigation || actor !== user?.id || !homeData) return;
+  if (homeData.profile.username === null) return showUsernameSetup();
   ++gameLoad;
   screen("account", { route });
   const profile = homeData.profile;
@@ -10204,7 +10209,7 @@ async function account({ route = true } = {}) {
   }
 }
 function editProfile() {
-  const form = node("form", void 0, "stack-form"), label = node("label", "Username"), input = node("input"), hint = node("p", usernameHint, "field-hint"), error = node("p", void 0, "field-hint");
+  const form = node("form", void 0, "stack-form"), label = node("label", "Username"), input = node("input"), error = node("p", void 0, "form-alert");
   input.id = "edit-username";
   label.htmlFor = input.id;
   input.maxLength = 40;
@@ -10213,18 +10218,17 @@ function editProfile() {
   input.autocapitalize = "none";
   input.spellcheck = false;
   input.value = homeData.profile.username || homeData.profile.display_name;
-  hint.id = "edit-username-hint";
   error.id = "edit-username-error";
   error.setAttribute("role", "alert");
   error.hidden = true;
-  input.setAttribute("aria-describedby", hint.id + " " + error.id);
+  input.setAttribute("aria-describedby", error.id);
   input.oninput = () => {
     input.removeAttribute("aria-invalid");
     error.hidden = true;
   };
   const save = button("Save username", null, "primary full", "check");
   save.type = "submit";
-  form.append(label, input, hint, error, save);
+  form.append(label, input, error, save);
   form.onsubmit = (e) => {
     e.preventDefault();
     void run(async () => {
@@ -10341,11 +10345,6 @@ function showDelete() {
 function setAuthMode(mode) {
   authMode = mode;
   const signup = mode === "signup", forgot = mode === "recover";
-  for (const id of ["username", "username-label", "username-hint"]) $(id).hidden = !signup;
-  $("username").required = signup;
-  $("username").disabled = !signup;
-  $("username-error").hidden = true;
-  $("username").removeAttribute("aria-invalid");
   $("auth-heading").replaceChildren();
   if (signup) $("auth-heading").textContent = "Your seat at the table.";
   else if (forgot) $("auth-heading").textContent = "Let us get you back in.";
@@ -10378,20 +10377,11 @@ $("auth-form").onsubmit = (e) => {
           setAuthMode("signin");
         }, "primary full")]);
       } else if (authMode === "signup") {
-        try {
-          const { data } = await signUpWithUsername(db, { username: $("username").value, email, password, redirectTo: authRedirect() });
-          if (!data.session) {
-            $("password").value = "";
-            setAuthMode("signin");
-            showSheet("One last step.", [node("p", "Open the confirmation email, then come back here to sign in."), act("Got it", closeSheet, "primary full", "check")]);
-          }
-        } catch (e2) {
-          if (["username_taken", "invalid_username"].includes(e2.code)) {
-            $("username-error").textContent = friendlyError(e2);
-            $("username-error").hidden = false;
-            $("username").setAttribute("aria-invalid", "true");
-            $("username").focus();
-          } else throw e2;
+        const { data } = await signUpAccount(db, { email, password, redirectTo: authRedirect() });
+        if (!data.session) {
+          $("password").value = "";
+          setAuthMode("signin");
+          showSheet("One last step.", [node("p", "Open the confirmation email, then come back here to sign in."), act("Got it", closeSheet, "primary full", "check")]);
         }
       } else {
         const { error } = await db.auth.signInWithPassword({ email, password });
@@ -10405,10 +10395,6 @@ $("auth-form").onsubmit = (e) => {
 };
 $("signup").onclick = () => setAuthMode(authMode === "signin" ? "signup" : "signin");
 $("recover").onclick = () => setAuthMode("recover");
-$("username").oninput = () => {
-  $("username-error").hidden = true;
-  $("username").removeAttribute("aria-invalid");
-};
 $("show-password").onclick = () => {
   const showing = $("password").type === "password";
   $("password").type = showing ? "text" : "password";
@@ -10423,21 +10409,15 @@ $("recovery-form").onsubmit = (e) => {
       const { error } = await db.auth.updateUser({ password: $("new-password").value });
       if (error) throw error;
       recovering = false;
-      authReady = true;
       $("new-password").value = "";
-      await showHome();
       status("Password updated.");
-      await openNotification();
+      await enterApp();
     } finally {
       submit2.disabled = false;
     }
   });
 };
-$("retry-load").onclick = () => run(async () => {
-  await showHome(false, { route: false });
-  authReady = true;
-  await showInvite();
-});
+$("retry-load").onclick = () => run(enterApp);
 $("home-button").onclick = $("back").onclick = $("result-home").onclick = () => run(() => user ? showHome() : screen(configured ? "auth" : "setup", { route: false }));
 $("brand").onclick = (e) => {
   e.preventDefault();
@@ -10473,7 +10453,7 @@ $("player-score-2").onclick = () => showScore(2);
 $("score-preview").onclick = showWordScore;
 $("recap").onclick = showRecap;
 $("accept-draw").onclick = () => run(() => confirmAction("accept_draw"));
-$("signout").onclick = () => run(async () => {
+$("setup-signout").onclick = $("signout").onclick = () => run(async () => {
   await push.disable(false);
   notificationGame = null;
   await db.auth.signOut();
@@ -10481,6 +10461,7 @@ $("signout").onclick = () => run(async () => {
   homeData = null;
   selection = [];
   $("password").value = "";
+  $("setup-username").value = "";
   status("Signed out.");
 });
 $("read-inbox").onclick = () => run(async () => {
@@ -10556,12 +10537,65 @@ $("preview-button").onclick = () => {
   screen("game", { route: false });
   renderGame();
 };
+async function enterApp() {
+  if (recovering || !user) return;
+  const actor = user.id;
+  if (!await showHome(false, { route: false }) || actor !== user?.id) return;
+  authReady = true;
+  const invited = await showInvite();
+  if (actor !== user?.id) return;
+  if (notificationGame) await openNotification();
+  else if (launchGame && !invited) await openGame(launchGame, false, { route: false });
+  else if (!invited && params.get("view") === "friends") await showFriends({ route: false });
+  else if (!invited && params.get("view") === "account") await account({ route: false });
+  else if (!invited && params.get("view") === "activity") await showActivity({ route: false });
+  void push.restore().catch(() => {
+  });
+}
+async function usernameSetup(randomize = false) {
+  if (usernameSetupBusy || !user) return;
+  usernameSetupBusy = true;
+  const actor = user.id, input = $("setup-username"), error = $("setup-username-error");
+  error.hidden = true;
+  input.removeAttribute("aria-invalid");
+  for (const id of ["setup-username", "save-username", "randomize-username", "setup-signout"]) $(id).disabled = true;
+  try {
+    if (randomize) {
+      const result = await api({ action: "suggest_username" });
+      if (user?.id === actor && currentView === "username-setup") input.value = result.username;
+    } else {
+      await api({ action: "complete_username", username: requireUsername(input.value) });
+      if (user?.id === actor) await enterApp();
+    }
+  } catch (e) {
+    if (user?.id === actor && currentView === "username-setup") {
+      error.textContent = friendlyError(e);
+      error.hidden = false;
+      if (["invalid_username", "username_taken"].includes(e.code)) input.setAttribute("aria-invalid", "true");
+    }
+  } finally {
+    usernameSetupBusy = false;
+    for (const id of ["setup-username", "save-username", "randomize-username", "setup-signout"]) $(id).disabled = false;
+    if (user?.id === actor && currentView === "username-setup" && !randomize) input.focus();
+  }
+}
+$("username-form").onsubmit = (e) => {
+  e.preventDefault();
+  void usernameSetup();
+};
+$("randomize-username").onclick = () => usernameSetup(true);
+$("setup-username").oninput = () => {
+  $("setup-username-error").hidden = true;
+  $("setup-username").removeAttribute("aria-invalid");
+};
 async function poll() {
-  if (polling || busy || !user || document.hidden || recovering) return;
+  if (polling || busy || usernameSetupBusy || !user || document.hidden || recovering) return;
   polling = true;
   refreshQueued = false;
   try {
-    if (currentView === "game" && !preview) await openGame(game.id, true);
+    if (currentView === "username-setup") {
+      if (await fetchHome()) await enterApp();
+    } else if (currentView === "game" && !preview) await openGame(game.id, true);
     else if (currentView === "home") await showHome(true);
     else if (currentView === "friends") await friends.refresh();
     else if (currentView === "activity") {
@@ -10582,13 +10616,13 @@ if (native) {
   void App.addListener("appStateChange", ({ isActive }) => {
     if (isActive) {
       void poll();
-      void push.restore().catch(() => {
+      if (authReady) void push.restore().catch(() => {
       });
     }
   });
   void App.addListener("backButton", () => {
     if (closeTopDialog()) return;
-    if (currentView !== "home" && user) void run(() => showHome());
+    if (currentView !== "home" && currentView !== "username-setup" && user) void run(() => showHome());
     else void App.minimizeApp();
   });
 }
@@ -10604,7 +10638,7 @@ window.addEventListener("popstate", () => run(async () => {
 }));
 window.addEventListener("online", () => {
   void run(poll);
-  void push.restore().catch(() => {
+  if (authReady) void push.restore().catch(() => {
   });
 });
 window.addEventListener("offline", () => offlineNotice());
@@ -10627,6 +10661,7 @@ else db.auth.onAuthStateChange((event, session) => {
   if (!user) {
     authReady = false;
     homeData = null;
+    $("setup-username").value = "";
     friends.reset();
     renderPush();
     ++navigation;
@@ -10636,19 +10671,12 @@ else db.auth.onAuthStateChange((event, session) => {
     return;
   }
   if (recovering || !["SIGNED_IN", "INITIAL_SESSION"].includes(event) || previousUser === user.id && currentView !== "auth") return;
-  setTimeout(() => run(async () => {
-    if (recovering) return;
-    await showHome(false, { route: false });
-    const invited = await showInvite();
-    authReady = true;
-    if (notificationGame) await openNotification();
-    else if (launchGame && !invited) await openGame(launchGame, false, { route: false });
-    else if (!invited && params.get("view") === "friends") await showFriends({ route: false });
-    else if (!invited && params.get("view") === "account") await account({ route: false });
-    else if (!invited && params.get("view") === "activity") await showActivity({ route: false });
-    void push.restore().catch(() => {
-    });
-  }), 0);
+  if (previousUser !== user.id) {
+    authReady = false;
+    homeData = null;
+    $("setup-username").value = "";
+  }
+  setTimeout(() => run(enterApp), 0);
 });
 /*! Bundled license information:
 
