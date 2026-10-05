@@ -17,18 +17,24 @@ statistics or device information. Friend codes can also be shared as an exact
 lookup. Partial search requires three characters; shorter usernames match exactly. Search returns at
 most 20 matches, and is covered by authenticated API rate limiting.
 
-Owner decision, 4 October: usernames are required at signup and serve as display
-names. Existing account names are retained. A database unique index ignores case;
+Owner clarification, 5 October: account creation uses email/password. Authenticated
+new accounts choose their username on a separate required screen, with an optional
+Randomize suggestion. Existing account names are retained. A database unique index ignores case;
 Unicode NFKC normalization and outer-space trimming precede reservation. Names
 contain 1–40 letters, numbers, spaces or `. _ - ( ) '` and at least one letter/number.
-Signup and profile reservation are atomic, including unconfirmed accounts. The
-signup availability endpoint is public and exposes only a boolean, not a directory,
-profile or email. Auth's signup/email limits remain enabled. Username reservation
-has no automatic expiry; no accounts are deleted by this feature. An authenticated
+`profiles.username IS NULL` is the persistent incomplete-setup state; no local flag
+or editable Auth metadata can skip it. Names are reserved only when Continue saves
+them. Unnamed accounts cannot play or use Friends and do not appear in friend search,
+including by code. Random suggestions are availability-checked, editable and not
+reserved until saved; the unique index handles a competing claim at save time.
+Completion uses a locked transaction, so lost replies or another device completing
+setup cannot overwrite a saved name. The legacy availability endpoint remains public
+for older clients and exposes only a boolean, not a directory, profile or email.
+Auth's signup/email limits remain enabled. Saved usernames have no automatic expiry;
+no accounts are deleted by this feature. An authenticated
 rename releases the old name, and account deletion releases the name. Names may
 therefore be reused; friendships, invitations and games identify accounts by UUID,
-never by username. Auth metadata is input at initial creation, not the source of
-displayed identity after a rename. `display_name` remains a synchronized database
+never by username. Auth metadata cannot set or change a username. `display_name` remains a synchronized database
 alias for installed older clients.
 
 Friend requests require acceptance. Users can decline, cancel, remove or block;

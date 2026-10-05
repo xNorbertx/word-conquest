@@ -1,6 +1,41 @@
-# Implementation and verification - updated 4 October 2026
+# Implementation and verification - updated 5 October 2026
+
+## Separate first-time username setup - 5 October, 0.6.2
+
+- Owner clarified the flow: signup uses email/password only; authenticated new
+  accounts see a separate username screen. The screen contains Username,
+  Randomize, Continue and Sign out, without field explanations. Existing names
+  remain set and those accounts skip this screen.
+- Migration `202610050001_username_onboarding.sql` and `game-api` deployed.
+  `profiles.username IS NULL` is the durable incomplete flag. App reopening,
+  another device, recovery and deep links cannot bypass it. Game/social actions
+  are gated in the API; unnamed accounts are excluded from search, including code
+  search, and cannot send/receive friend requests. Signup metadata cannot set a name.
+- Randomize proposes an availability-checked readable name; Continue claims it
+  under the unique index. Row locking makes first completion win across devices;
+  retries return the existing name, including after a later normal profile rename.
+  Pending invitations and notification targets resume after setup. Existing
+  accounts and the original prototype are preserved.
+- Three original engine suites plus 77 tests pass. Added database/API coverage
+  for missing-name persistence, metadata bypass attempts, uniqueness, concurrent
+  completion/retries, clearing prevention, short-code search exclusion, access
+  controls, deletion before setup, and bounded random suggestions.
+- Browser fixtures verified email/password-only signup, confirmation handoff,
+  separate setup after sign-in, Randomize, duplicate feedback, unfinished setup
+  after reload, saved-name retention after a lost reply/retry/reload, invitation
+  resumption and 390x844/320x640 layouts. Physical Seeker acceptance remains open.
+- Hosted verification passed with one retained example.invalid test account:
+  account creation without username; two-session pending state; blocked game,
+  friend and profile actions; hidden friend-code lookup; old-client update message;
+  random suggestion without reservation; duplicate-name 409; two simultaneous
+  completions returning the same winner; delayed retry and sign-out/relogin
+  retaining the saved name; completed profile becoming searchable. All eight
+  pre-existing profiles retained their names/IDs. No email or push sent and no
+  real player/game changed. Web/APK release evidence follows after publication.
 
 ## Unique usernames - 4 October, 0.6.1
+
+Historical release; its signup-name requirement is superseded by 0.6.2 above.
 
 - Owner promoted unique names into this iteration. Signup requires a username;
   it is also the visible identity in games, Friends, recaps and notifications.

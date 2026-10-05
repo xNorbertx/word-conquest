@@ -30,19 +30,21 @@ See [Android installation](docs/ANDROID.md) and [0.3.0 UX review](docs/UX.md). H
 36-turn and owner playtests passed; multi-day/device acceptance, backup restoration
 and operational monitoring remain open. The local prototype below is unchanged.
 
-### Usernames and Friends (0.6.1)
+### Usernames and Friends (0.6.2)
 
 Friends replaces Activity in the bottom navigation. Search by username, send
 a request, accept it, then use Invite beside a friend. Their game invitation
 appears in Games and can trigger their enabled Android notifications. Only the
 addressed friend can accept. Activity remains available under You.
 
-Signup requires a unique username, which is also your displayed name. Existing
-accounts retain their names. Uniqueness ignores case and normalizes Unicode width
-and composition; names use 1–40 letters, numbers, spaces or simple punctuation.
-You can change your username under You, provided the new name is available.
-Email/password sign-in is unchanged. Signed-in players can search usernames;
-signup checks reveal only whether a name is taken, never an email or profile.
+Create an account with email and password. After confirmation/sign-in, a separate
+screen asks you to choose a unique username or tap Randomize, then Continue.
+Closing the app keeps setup unfinished until a name is saved; reopening or using
+another device returns to that screen. Existing accounts retain their names.
+The username is your displayed name. Uniqueness ignores case and normalizes Unicode
+width and composition; names use 1–40 letters, numbers, spaces or simple punctuation.
+You can change it under You, provided the new name is available. Signed-in players
+can search usernames; unfinished accounts do not appear in friend search.
 Friend codes still support sharing and exact lookup. My code includes blocked-player
 management. Existing games, friendships and rules are unchanged.
 

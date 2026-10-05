@@ -22,10 +22,10 @@ const api=(user,body,expected=200)=>request('/functions/v1/game-api',body,{token
 const run=crypto.randomUUID().slice(0,8),accounts=[];
 for(let i=0;i<3;i++){
   const email=`wc-smoke-${run}-${i}@example.invalid`,password=crypto.randomUUID()+crypto.randomUUID();
-  await request('/auth/v1/admin/users',{email,password,email_confirm:true,user_metadata:{username:`Test player ${i+1} (${run})`,purpose:'Word Conquest deployment smoke test'}},{key:service,token:service});
+  await request('/auth/v1/admin/users',{email,password,email_confirm:true,user_metadata:{purpose:'Word Conquest deployment smoke test'}},{key:service,token:service});
   const session=await request('/auth/v1/token?grant_type=password',{email,password});
   accounts.push(session);
-  await api(session,{action:'profile',name:`Test player ${i+1} (${run})`,emailNotifications:false});
+  await api(session,{action:'complete_username',username:`Test player ${i+1} (${run})`});
 }
 const [a,b,c]=accounts;console.log('Three isolated test identities authenticated; email preferences are off.');
 const id=crypto.randomUUID();

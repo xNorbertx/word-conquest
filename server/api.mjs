@@ -2,6 +2,7 @@ import {applyCommand,checkCommand,commandKey,configFor,Engine,Fault,LEGACY_RULES
 import words from './versions/dictionary-v1.json' with {type:'json'};
 import metadata from './versions/dictionary-v1.meta.json' with {type:'json'};
 import {normalizeUsername,validUsername,usernameHint} from '../online/username.mjs';
+import {suggestUsername} from './usernames.mjs';
 const dictionary = new Set(words);
 const serverRandom=()=>crypto.getRandomValues(new Uint32Array(1))[0]/4294967296;
 function unwrap(result) {
@@ -53,6 +54,8 @@ export function createHandler(db, settings={}) {
       if(!unwrap(await db.rpc('wc_rate_limit',{p_actor:actor}))) throw new Fault('rate_limit','Please wait a minute before trying again.',429);
       const profile=unwrap(await db.from('profiles').select('*').eq('id',actor).single());
       if(profile.deleting && input.action!=='delete_account')throw new Fault('account_deleting','Account deletion is in progress. Retry deletion.',409);
+      const needsUsername=profile.username===null;
+      if(needsUsername&&!['home','complete_username','suggest_username','export','delete_account'].includes(input.action)&&!(input.action==='push_device'&&input.enabled===false))throw new Fault('username_required','Choose your username to continue.',409);
       const gameForActor=async id=>{
         if(!uuid(id))throw new Fault('invalid_game','Invalid game link.');
         const g=unwrap(await db.from('games').select('*').eq('id',id).contains('players',[actor]).maybeSingle());
@@ -65,10 +68,14 @@ export function createHandler(db, settings={}) {
       };
       switch(input.action) {
         case 'home': {
+          if(needsUsername){
+            if(input.supportsUsernameOnboarding!==true)throw new Fault('client_update_required','Update Word Conquest or open the web app to choose your username.',409);
+            return reply({profile,needsUsername:true,games:[],notifications:[],social:{people:[],invitations:[],outgoing:[],blocked:[]}});
+          }
           const games=unwrap(await db.from('games').select('*').contains('players',[actor]).order('updated_at',{ascending:false}).limit(200));
           const notifications=unwrap(await db.from('notifications').select('id,game_id,kind,read_at,created_at').eq('user_id',actor).order('created_at',{ascending:false}).limit(50));
           const social=unwrap(await db.rpc('wc_friends',{p_actor:actor}));
-          return reply({profile,games:await Promise.all(games.map(decorate)),notifications,social});
+          return reply({profile,needsUsername:false,games:await Promise.all(games.map(decorate)),notifications,social});
         }
         case 'game': {
           if(uuid(input.gameId)){
@@ -151,6 +158,16 @@ export function createHandler(db, settings={}) {
           if(!uuid(input.friendId)||!uuid(input.operationId)||!['request','accept','decline','cancel','remove','block','unblock'].includes(input.choice)||input.requestId!=null&&!uuid(input.requestId))throw new Fault('invalid_friend','Invalid friend action.');
           unwrap(await db.rpc('wc_friend_action',{p_actor:actor,p_target:input.friendId,p_action:input.choice,p_operation:input.operationId,p_request:input.requestId||null}));
           return reply({social:unwrap(await db.rpc('wc_friends',{p_actor:actor}))});
+        }
+        case 'suggest_username': {
+          try{return reply({username:await suggestUsername(name=>db.rpc('wc_username_available',{p_username:name}).then(unwrap))});}
+          catch(e){if(e.message==='username_suggestion_busy')throw new Fault('username_suggestion_busy','Try randomizing again.',503);throw e;}
+        }
+        case 'complete_username': {
+          const name=normalizeUsername(input.username);
+          if(!validUsername(name))throw new Fault('invalid_username',usernameHint);
+          const saved=unwrap(await db.rpc('wc_complete_username',{p_actor:actor,p_username:name}));
+          return reply({profile:saved,username:saved.username});
         }
         case 'profile': {
           const name=normalizeUsername(input.username??input.name);

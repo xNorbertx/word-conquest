@@ -19,7 +19,7 @@ test('migration preserves existing names, IDs and compatibility alias',async()=>
  assert.equal((await db.query('select username from profiles where id=$1',[legacy])).rows[0].username,'Norbert');
 });
 
-test('signup requires a valid name and atomically reserves its case-insensitive Unicode-normalized key',async()=>{
+test('historical 0.6.1 migration reserves signup names before the later onboarding migration',async()=>{
  const id=await signup('  Élise  ');assert.equal((await db.query('select username,display_name from profiles where id=$1',[id])).rows[0].username,'Élise');
  for(const name of [undefined,'','   ','<script>','a\nb','x\u200by','a'.repeat(41),'...','🙂']){
   const failed=crypto.randomUUID();await assert.rejects(()=>signup(name,failed),/username_required|invalid_username/);assert.equal((await db.query('select * from auth.users where id=$1',[failed])).rows.length,0);
@@ -80,18 +80,12 @@ test('ambiguous legacy names stop migration without silently changing accounts',
  }finally{await p.close();}
 });
 
-test('signup sends the canonical username in Auth metadata and blocks an unavailable name before sending email',async()=>{
- const calls=[],db={rpc:async()=>({data:true}),auth:{signUp:async body=>{calls.push(body);return {data:{session:null}};}}};
- await names.signUpWithUsername(db,{username:'  Ａlex  ',email:'test@example.invalid',password:'not-a-real-password',redirectTo:'https://example.invalid/'});
- assert.deepEqual(calls[0].options,{emailRedirectTo:'https://example.invalid/',data:{username:'Alex'}});
- db.rpc=async()=>({data:false});await assert.rejects(()=>names.signUpWithUsername(db,{username:'Alex'}),e=>e.code==='username_taken');assert.equal(calls.length,1);
-});
-
-test('signup resolves lost reservation races and preserves unrelated Auth/network failures',async()=>{
- let n=0;const original=Object.assign(new Error('Rate limit'),{code:'over_email_send_rate_limit'}),db={rpc:async()=>({data:n++===0}),auth:{signUp:async()=>({error:original})}};
- await assert.rejects(()=>names.signUpWithUsername(db,{username:'Race'}),e=>e.code==='username_taken');
- db.rpc=async()=>({data:true});await assert.rejects(()=>names.signUpWithUsername(db,{username:'Race'}),e=>e===original);
- db.rpc=async()=>({error:{message:'offline'}});await assert.rejects(()=>names.signUpWithUsername(db,{username:'Race'}),/could not check/);
+test('account creation takes email/password only, independently of username availability',async()=>{
+ const calls=[],db={rpc:()=>{throw Error('Signup must not depend on a username');},auth:{signUp:async body=>{calls.push(body);return {data:{session:null}};}}};
+ await names.signUpAccount(db,{email:'test@example.invalid',password:'not-a-real-password',redirectTo:'https://example.invalid/'});
+ assert.deepEqual(calls[0],{email:'test@example.invalid',password:'not-a-real-password',options:{emailRedirectTo:'https://example.invalid/'}});
+ const original=Object.assign(new Error('Rate limit'),{code:'over_email_send_rate_limit'});db.auth.signUp=async()=>({error:original});
+ await assert.rejects(()=>names.signUpAccount(db,{email:'test@example.invalid'}),e=>e===original);
 });
 
 test('profile API accepts old and new payloads and returns a useful duplicate-name conflict',async()=>{

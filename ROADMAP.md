@@ -1,6 +1,6 @@
 # Word Conquest — app roadmap
 
-Updated: 4 October 2026
+Updated: 5 October 2026
 
 This is an acceptance checklist. The original local two-player prototype remains
 available; a separate online implementation now exists. Rules remain experimental.
@@ -47,7 +47,7 @@ First milestone: invite a friend and reliably finish a game over several days.
 - [ ] Invitations: share a link or code, accept or decline, and cancel unaccepted invitations. Opening an invitation should lead to the right game after sign-in.
 - [ ] Game list: show invitations, active games, whose turn it is, and completed games.
 - [ ] Friends (promoted to first iteration on 4 October): search usernames, mutually accept requests, keep a friends list, and invite a specific friend directly. Implementation, automated and hosted verification passed; Seeker acceptance remains open.
-- [x] Unique usernames (promoted to first iteration on 4 October): required at signup, case-insensitive database uniqueness, editable with conflict feedback, existing names preserved. Migration/API deployed; hosted concurrency, rename and access-control checks plus browser verification passed. APK upgrade acceptance remains under mobile verification.
+- [x] Unique usernames (promoted to first iteration on 4 October): case-insensitive database uniqueness, editable with conflict feedback, existing names preserved. Follow-up 0.6.2 uses email/password signup followed by a separate required username screen, with Randomize and persistent completion state across reopening/devices. Hosted and release verification recorded in PROGRESS.md; APK upgrade acceptance remains under mobile verification.
 - [x] Web pilot notifications: in-app inbox and live game updates, with participant-only access. Turn-alert email is out of scope by owner decision.
 - [ ] Mobile notifications: native push for turns/invitations, preferences, and links to the relevant game; verify permissions, background delivery and logout/token cleanup on devices.
 - [ ] Opponent-move recap: show the word, traced path, captures, score changes, and replaced letters when returning to a game.

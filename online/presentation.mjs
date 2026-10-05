@@ -31,6 +31,7 @@ export function activityText(kind,name){
   return labels[kind]||'Your game has an update';
 }
 export function friendlyError(error){
+  if(error.code==='client_update_required')return 'Update Word Conquest or open the latest web app to continue.';
   if(error.code==='username_taken')return 'That username is already taken. Try another.';
   if(error.code==='username_required')return 'Choose a username to continue.';
   const social={friend_stale:'This friend request has changed. Refresh Friends and try again.',friend_unavailable:'This player is not available for a new invitation.',friend_cooldown:'Give them a little time. You can send another request tomorrow.',friend_limit:'Your friend request limit has been reached. Try again later.',invitation_pending:'An invitation is already waiting for this friend. Open it from Games.'};
