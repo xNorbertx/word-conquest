@@ -11,15 +11,15 @@
 <div class="app-shell">
 <header class="app-header">
   <button id="back" class="icon-button" aria-label="Back to games" hidden data-icon="back"></button>
-  <a id="brand" href="./" aria-label="Word Conquest home"><span class="brand-mark" aria-hidden="true">W</span><span>Word Conquest</span></a>
+  <a id="brand" href="./" aria-label="Word Conquest home"><span class="brand-mark" aria-hidden="true">WC</span><span>Word Conquest</span></a>
   <div id="game-heading" hidden><span id="game-heading-name"></span><span id="game-heading-subtitle"></span></div>
   <button id="help-button" class="icon-button" aria-label="How to play" data-icon="help"></button>
   <button id="game-menu" class="icon-button" aria-label="Game options" data-icon="more" hidden></button>
 </header>
 <div id="connection" class="connection-banner" role="status" aria-live="polite" hidden></div>
 <main id="content" tabindex="-1">
-<section id="loading" class="loading-screen"><span class="spinner" aria-hidden="true"></span><p id="loading-message">Opening your table...</p><button id="retry-load" class="secondary" hidden>Try again</button></section>
-<section id="setup" class="auth-screen" hidden><h1>A seat is waiting.</h1><p class="muted">Online play is not connected yet.</p><button id="preview-button" class="primary">Explore the board</button><a class="text-link" href="../index.html">Local two-player game</a></section>
+<section id="loading" class="loading-screen"><span class="spinner" aria-hidden="true"></span><p id="loading-message">Loading your games...</p><button id="retry-load" class="secondary" hidden>Try again</button></section>
+<section id="setup" class="auth-screen" hidden><h1>Find your next word.</h1><p class="muted">Online play is not connected yet.</p><button id="preview-button" class="primary">Explore the board</button><a class="text-link" href="../index.html">Local two-player game</a></section>
 <section id="auth" class="auth-screen" hidden>
   <div class="welcome-art" aria-hidden="true"><span>W<small>2</small></span><span>O<small>1</small></span><span>R<small>1</small></span><span>D<small>2</small></span></div>
   <p class="eyebrow">WORDS BRING US TOGETHER</p><h1 id="auth-heading">Your next good word<br>is waiting.</h1><p id="auth-intro" class="muted">A friendly game, at your own pace.</p>
@@ -56,11 +56,10 @@
   <div class="friend-search-meta"><span id="friend-search-status" class="small-note" role="status"></span><button id="clear-friend-search" class="text-button" hidden>Clear search</button></div>
   <div id="friend-search-results" aria-live="polite"></div><div id="friend-list"></div>
 </section>
-<section id="activity" class="page" hidden><div class="page-heading"><div><p class="eyebrow">AROUND THE TABLE</p><h1>Activity<span class="heading-dot">.</span></h1></div><button id="read-inbox" class="icon-button" aria-label="Mark all updates as read" data-icon="check-all"></button></div><div id="inbox" class="activity-list"></div></section>
+<section id="activity" class="page" hidden><div class="page-heading"><div><p class="eyebrow">YOUR UPDATES</p><h1>Activity<span class="heading-dot">.</span></h1></div><button id="read-inbox" class="icon-button" aria-label="Mark all updates as read" data-icon="check-all"></button></div><div id="inbox" class="activity-list"></div></section>
 <section id="account" class="page" hidden>
   <div class="page-heading"><div><h1>Your corner<span class="heading-dot">.</span></h1></div></div>
   <div class="profile-card"><span id="profile-avatar" class="avatar avatar-large"></span><div><h2 id="profile-name"></h2><p id="profile-email" class="muted"></p></div><button id="edit-profile" class="icon-button" aria-label="Edit username" data-icon="edit"></button></div>
-  <div class="section-label"><h2>Your record</h2></div><div id="statistics"></div>
   <div class="settings-list">
     <button id="activity-button" class="settings-row"><span data-icon="history"></span><span>Activity<small id="activity-state"></small></span><span id="activity-badge" class="badge" hidden></span><span data-icon="chevron"></span></button>
     <button id="push-settings" class="settings-row" hidden><span data-icon="bell"></span><span>Notifications<small id="push-state"></small></span><span data-icon="chevron"></span></button>
@@ -70,14 +69,13 @@
   </div><p class="quiet-footer">Word Conquest <span id="app-version"></span></p>
 </section>
 <section id="game" class="game-screen" hidden>
-  <div id="share" class="invite-waiting" hidden><div class="seat-art" aria-hidden="true"><span class="avatar avatar-large sage">You</span><span class="invite-dots">&middot;&middot;&middot;</span><span class="avatar avatar-large ghost" data-icon="user-plus"></span></div><p class="eyebrow">BETTER WITH A FRIEND</p><h1>A seat at your table.</h1><p class="muted">Share your invitation to get the game going.</p><button id="share-invite" class="primary full"><span data-icon="share"></span>Share invitation</button><div class="copy-field"><input id="share-link" readonly aria-label="Invitation link"><button id="copy-invite" class="icon-button" aria-label="Copy invitation link" data-icon="copy"></button></div><p id="invite-expiry" class="small-note"></p><button id="cancel-invite" class="text-button">Cancel invitation</button></div>
+  <div id="share" class="invite-waiting" hidden><div class="seat-art" aria-hidden="true"><span class="avatar avatar-large sage">You</span><span class="invite-dots">&middot;&middot;&middot;</span><span class="avatar avatar-large ghost" data-icon="user-plus"></span></div><p class="eyebrow">BETTER WITH A FRIEND</p><h1>Invite a friend.</h1><p class="muted">Share your invitation to get the game going.</p><button id="share-invite" class="primary full"><span data-icon="share"></span>Share invitation</button><div class="copy-field"><input id="share-link" readonly aria-label="Invitation link"><button id="copy-invite" class="icon-button" aria-label="Copy invitation link" data-icon="copy"></button></div><p id="invite-expiry" class="small-note"></p><button id="cancel-invite" class="text-button">Cancel invitation</button></div>
   <div id="game-table">
     <div class="scoreboard" aria-label="Players and current scores"><button id="player-score-1" class="score sage"><span class="player-identity"><span class="owner-dot" aria-hidden="true"></span><span id="name-1" class="player-name"></span></span><strong id="score-1">0</strong></button><button id="player-score-2" class="score walnut"><span class="player-identity"><span class="owner-ring" aria-hidden="true"></span><span id="name-2" class="player-name"></span></span><strong id="score-2">0</strong></button><div class="turn"><span id="turn" class="turn-pill" role="status" aria-live="polite"></span><div class="letter-supply"><p id="supply"></p><div class="supply-track" aria-hidden="true"><span id="supply-fill"></span></div></div></div></div>
     <div id="pending" class="pending-card" role="status" hidden><span id="pending-message"></span><button id="retry" class="text-button">Retry</button></div>
     <div id="draw-offer" class="inline-notice" hidden><span>Your friend offered a draw.</span><button id="accept-draw" class="text-button">Review</button></div>
     <div class="play-layout"><div class="board-area"><div class="board-tools"><span id="board-context"></span><button id="zoom" class="icon-button" aria-label="Enlarge board" aria-pressed="false" data-icon="expand"></button></div><div id="board-scroll" class="board-scroll"><svg id="board" role="group" aria-label="Word game board"></svg></div></div>
     <div class="game-aside"><section id="score-motion" aria-label="Scoring the saved move" hidden><p id="motion-byline" class="eyebrow"></p><h2 id="motion-word"></h2><div class="motion-caption"><span id="motion-symbol"></span><span id="motion-label"></span><strong id="motion-tally"></strong></div><p id="motion-recipient"></p><button id="motion-skip" class="text-button" type="button">Skip<span data-icon="chevron"></span></button></section><section id="composer" class="word-panel" aria-label="Your word"><div class="word-heading"><p class="eyebrow">YOUR WORD</p><button id="clear-word" class="icon-button" aria-label="Clear selected word" data-icon="undo" disabled></button></div><h2 id="word">Find your word.</h2><p id="selection-help" aria-live="polite"></p><div id="jokers"></div><button id="score-preview" class="score-preview" aria-label="Selected word score breakdown" hidden></button><button id="submit-word" class="primary full" disabled><span id="submit-label">Play word</span><span data-icon="arrow"></span></button></section>
-    <div id="waiting-turn" class="waiting-turn" hidden><span data-icon="hourglass"></span><h2 id="waiting-heading">Over to your friend.</h2><p id="waiting-copy" class="muted">A good word is worth the wait.</p></div>
 
     <button id="recap" class="recap-row" hidden></button>
     <div id="game-result" class="result-card" hidden><span data-icon="award"></span><p class="eyebrow">THE LAST WORD</p><h2 id="result-title"></h2><p id="result-description"></p><button id="result-home" class="primary full">Back to games<span data-icon="arrow"></span></button></div>
