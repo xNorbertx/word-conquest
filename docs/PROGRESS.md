@@ -25,8 +25,21 @@
   revisions, device reopening, account isolation and unavailable storage.
 - Local browser checks passed own moves in both seats, incoming moves, skip,
   leaving/reopening during playback, manual replay, a lost-reply retry with one
-  commit, final-game restoration, and the forced reduced-motion fixture. Deployment
-  and Android artifact verification are recorded below when complete.
+  commit, final-game restoration, and the forced reduced-motion fixture. The
+  320-wide long-name layout fits without horizontal overflow; no console errors.
+- Released source `f76456c` to the existing [web app](https://xnorbertx.github.io/word-conquest/online/).
+  Pages build `8642e7c` succeeded; all ten checked public assets match the built
+  files after Git line-ending normalization. The root prototype is unchanged.
+- [Android CI run](https://github.com/xNorbertx/word-conquest/actions/runs/37525868326)
+  passed at that source. Published [pilot 0.7.0-f76456c](https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-24092536),
+  version code `24092536`, using the existing stable signer. APK package/version,
+  signature, notification permission, new animation bundle and absence of test
+  fixtures/private-key material were checked. Anonymous APK download matches
+  SHA-256 `bbf32b49bea92ca7e7c8f11b2e521e6aa5ef873c16705485c9392d6c742c8935`.
+  Local copy: `dist/word-conquest-0.7.0.apk`.
+- Remaining owner acceptance: install over the existing Seeker pilot and judge
+  animation timing/feel on the physical device. No backend migration, scoring-rule
+  change, new service or added ongoing cost.
 
 ## Score animation concepts - 6 October, local design review
 
