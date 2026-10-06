@@ -17,7 +17,11 @@ A relaxed Sunday word puzzle with an autumn atmosphere. Emphasize finding satisf
 
 This is an approved visual concept, not an exact gameplay specification. Illustrated tile values, paths, score breakdowns, and special-tile positions are placeholders; implementation must use the real game rules. The online client now implements this direction with the 0.3.0 UX revision; see [screen structure and verification](../docs/UX.md). The root local prototype is preserved.
 
-## Source
+## Score animations — concepts for review
+
+The [local score animation gallery](score-animations/index.html) has four offline HTML/CSS/JS prototypes: a score ribbon, a persistent receipt, board-origin points, and a round-end reveal. Each uses the same engine-verified round and has replay, speed, and reduced-motion controls. These are awaiting a design choice; the live app has not been changed. See the [prototype notes](score-animations/README.md).
+
+## Reference source
 
 Created with the built-in image generation tool, refining the Paper & Ink concept.
 

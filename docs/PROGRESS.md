@@ -1,4 +1,24 @@
-# Implementation and verification - updated 5 October 2026
+# Implementation and verification - updated 6 October 2026
+
+## Score animation concepts - 6 October, local design review
+
+- Added four separate HTML/CSS/JS prototypes and a comparison gallery in
+  `design/score-animations/`: score ribbon, paper receipt, points from the board,
+  and round-end reveal. Each has replay, normal/slow/quick speed, reduced motion,
+  and a skip-to-result control. Uses the current ivory/sage/walnut style.
+- Shared fixture is generated and asserted against the real autumn-v3 engine
+  and dictionary: GARDENS earns 19 word points, 6 castle income and 6 territory;
+  the opponent loses 3. Totals move from 84/79 to 115/76. Castle income is paid
+  after a full round, not every turn. The board option splits the 9 letter points
+  and 10 length bonus, plus separate 2/4 castle payments.
+- Local browser checks verified all four sequences and intermediate totals,
+  replay interruption, skip, reduced motion and responsive 390/320-wide layouts.
+  No horizontal overflow. Very short screens can scroll. Fixture assertions and
+  JavaScript syntax checks passed. Browser automation tested through localhost;
+  direct file URLs are blocked by the browser tool, so file-opening support is
+  based on plain relative scripts/styles without imports, fetches or dependencies.
+- The gallery awaits the owner's design choice. Live game, server, scoring,
+  original prototype and APK are unchanged. No deployment or ongoing cost.
 
 ## Separate first-time username setup - 5 October, 0.6.2
 
