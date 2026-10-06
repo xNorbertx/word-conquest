@@ -1,5 +1,33 @@
 # Implementation and verification - updated 6 October 2026
 
+## Board score animation and simpler player cards - 6 October, 0.7.0
+
+- Implemented the owner's chosen option 3 in the actual online/Capacitor client.
+  Letter points and length bonus, held-castle income, territory gains and territory
+  deductions rise from the board and travel to the relevant player's balance.
+  Castle income only appears when the saved receipt closes a round, including
+  both owners and final replies. Refresh turns can show earned castle income too.
+- Cards now show only You/opponent name, the large total and the existing shape
+  marker/seat colour. A quiet border marks the current turn; the turn line stays.
+- Animation plans reconcile server-reported before/after totals and the latest
+  receipt; missing, stale or inconsistent receipts fall back to the saved board.
+  The saved game is never modified by playback. Old letters are reconstructed for
+  the animation; the real replacement letters return when it finishes.
+- New submitted and received moves play once per account/game/revision on this
+  device. The local seen marker is claimed before playback, so cancellation,
+  duplicate updates and retries cannot replay automatically. Returning players see
+  the latest unseen opponent move; the last-move sheet also has Replay points.
+  Skip, navigation, backgrounding, layout changes and scroll restore current state.
+  Reduced motion uses static point labels and sequential balance updates.
+- Validation: three original engine suites plus 86 tests passed, including nine
+  new receipt/ledger tests covering both seats, both castle owners, legacy rules,
+  incomplete/final rounds, jokers, refresh income, inconsistent receipts, duplicate
+  revisions, device reopening, account isolation and unavailable storage.
+- Local browser checks passed own moves in both seats, incoming moves, skip,
+  leaving/reopening during playback, manual replay, a lost-reply retry with one
+  commit, final-game restoration, and the forced reduced-motion fixture. Deployment
+  and Android artifact verification are recorded below when complete.
+
 ## Score animation concepts - 6 October, local design review
 
 - Added four separate HTML/CSS/JS prototypes and a comparison gallery in

@@ -7,7 +7,11 @@ const token='eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',dictionary=new Set(words),now
 let randomSeed=981;function random(){randomSeed=(Math.imul(randomSeed,1664525)+1013904223)>>>0;return randomSeed/4294967296;}
 const date=minutes=>new Date(now-minutes*60000).toISOString();
 const scenario=new URLSearchParams(location.search).get('fixture')||'home';
-const secondSeat=['walnut','walnut_waiting'].includes(scenario);
+if(scenario==='motion_reduced'){
+ const originalMedia=window.matchMedia.bind(window);
+ window.matchMedia=query=>query==='(prefers-reduced-motion: reduce)'?{matches:true,addEventListener(){},removeEventListener(){}}:originalMedia(query);
+}
+const secondSeat=['walnut','walnut_waiting','motion_walnut'].includes(scenario);
 const self={id:secondSeat?B:A,email:'demo@example.invalid'},profile={display_name:secondSeat?'Mara':'Norbert',email_notifications:false,friend_code:'A1B2C3D4E5F6'};
 profile.username=scenario==='onboarding'?(sessionStorage.getItem('wc-design-username')||null):profile.display_name;
 if(scenario==='onboarding')profile.display_name=profile.username||'Player';
@@ -27,10 +31,12 @@ if(['capture','legacy_capture'].includes(scenario)){
   [...'GARDENS'].forEach((letter,i)=>{const tile=games[0].state.tiles.find(t=>t.id===`${i-3},0`);Object.assign(tile,{letter,owner:i===0?1:i<6?2:0,castle:i===3});});
 }
 
-if(scenario==='income'){
- const s=games[0].state;s.player=1;s.startingPlayer=2;s.turns=[5,6];s.castleIncome=[8,12];
- s.tiles.forEach(t=>{if(t.castle)t.owner=0;});s.tiles.find(t=>t.castle&&t.q<0).owner=2;
- [...'GARDENS'].forEach((letter,i)=>Object.assign(s.tiles.find(t=>t.id===`${i-3},0`),{letter,owner:i===0?1:i<6?2:0,castle:i===3}));
+if(['income','motion','motion_walnut','motion_incoming','motion_final','motion_reduced'].includes(scenario)){
+ if(scenario.startsWith('motion'))games[0].revision=Math.floor(Date.now()/1000);
+ const s=games[0].state,actor=['motion_walnut','motion_incoming'].includes(scenario)?2:1;s.player=actor;s.startingPlayer=3-actor;s.turns=actor===1?[5,6]:[6,5];s.castleIncome=[8,12];
+ s.tiles.forEach(t=>{if(t.castle)t.owner=0;});s.tiles.find(t=>t.castle&&t.q<0).owner=3-actor;
+ [...'GARDENS'].forEach((letter,i)=>Object.assign(s.tiles.find(t=>t.id===`${i-3},0`),{letter,owner:i===0?actor:i<6?3-actor:0,castle:i===3}));
+ if(scenario==='motion_final')s.lettersUsed=119;
 }
 
 const jokersPath=wordPath.slice(0,3);
@@ -42,6 +48,7 @@ const notifications=[{id:'1',game_id:ids[0],kind:'word',read_at:null,created_at:
 const receipts=new Map();
 const initialGames=scenario==='empty'?[]:games;
 const sceneGame={game:ids[0],income:ids[0],capture:ids[0],legacy_capture:ids[0],walnut:ids[0],walnut_waiting:ids[0],reentry:ids[0],joker:ids[0],waiting:ids[1],finished:ids[2],invitation:ids[3],longnames:ids[0],draw:ids[0]};
+for(const s of ['motion','motion_walnut','motion_incoming','motion_final','motion_reduced'])sceneGame[s]=ids[0];
 if(scenario==='draw')games[0].draw_by=B;
 if(sceneGame[scenario]){const url=new URL(location.href);url.searchParams.set('game',sceneGame[scenario]);window.history.replaceState(null,'',url);}
 const social={people:scenario==='empty'?[]:[{id:B,display_name:'Mara',friend_code:'ABCDEF123456',status:'accepted',request_id:ids[1],requested_by:A},{id:C,display_name:'Jules',friend_code:'ABCDEF234567',status:'pending',request_id:ids[2],requested_by:C}],invitations:[],outgoing:[],blocked:[]};
@@ -60,9 +67,9 @@ window.fetch=async(url,options)=>{
     case 'create':{let g=games.find(g=>g.id===input.gameId);if(!g){g=newGame(input.gameId);g.status='invited';g.players=[A,null];g.revision=0;g.names=['Norbert',''];games.unshift(g);}if(input.friendId)social.outgoing.push({id:g.id,recipient:input.friendId});result={game:g};break;}
     case 'invitation':if(input.choice==='preview'){result={invitation:{id:'ffffffff-ffff-4fff-8fff-ffffffffffff',status:'invited',host:'Olivia',expires_at:date(-1440),rulesVersion:RULES_VERSION}};}else if(input.choice==='cancel'){games[3].status='cancelled';result={game:games[3]};}else if(input.choice==='accept'){const g=newGame('ffffffff-ffff-4fff-8fff-ffffffffffff','Olivia');games.push(g);result={game:g};}else result={game:{status:'declined'}};break;
     case 'turn':{
-      const existing=receipts.get(input.command.operationId);if(existing){result={game,replayed:true};break;}
+      const existing=receipts.get(input.command.operationId);if(existing){result={game,replayed:true,...existing};break;}
       if(staleNext){staleNext=false;game.revision++;return error('Stale board','stale',409);}
-      try{const update=applyCommand(game,user.id,input.command,dictionary,'english-letterpress-v1',random);Object.assign(game,update.next);game.updated_at=new Date().toISOString();history[game.id]??=[];history[game.id].unshift({recap:update.recap});receipts.set(input.command.operationId,true);commits++;result={game,replayed:false};updateMarker();if(failNext){failNext=false;throw new TypeError('Simulated response lost after commit');}}
+      try{const update=applyCommand(game,user.id,input.command,dictionary,'english-letterpress-v1',random);Object.assign(game,update.next);game.updated_at=new Date().toISOString();history[game.id]??=[];history[game.id].unshift({revision:game.revision,recap:update.recap});const receipt={acceptedRevision:game.revision,recap:update.recap};receipts.set(input.command.operationId,receipt);commits++;result={game,replayed:false,...receipt};updateMarker();if(failNext){failNext=false;throw new TypeError('Simulated response lost after commit');}}
       catch(e){if(e instanceof TypeError)throw e;return error(e.message,e.code||'invalid_word',e.status||400);}break;
     }
     case 'friends':result={social,profile};break;
@@ -81,6 +88,12 @@ function session(){return user?{user,access_token:'local-design-fixture'}:null;}
 export function createClient(){return {rpc:async(name,args)=>({data:name==='wc_username_available'&&!['norbert','mara'].includes(args.p_username.toLowerCase())}),auth:{getSession:async()=>({data:{session:session()}}),onAuthStateChange:fn=>{authListener=fn;setTimeout(()=>fn('INITIAL_SESSION',session()),0);},signInWithPassword:async()=>{user=self;authListener?.('SIGNED_IN',session());return {data:{session:session()}};},signUp:async()=>{profile.username=null;profile.display_name='Player';return {data:{session:null}};},resetPasswordForEmail:async()=>({}),updateUser:async()=>({}),signOut:async()=>{user=null;authListener?.('SIGNED_OUT',null);return {};},},realtime:{setAuth:async()=>{}},channel:()=>{const channel={on:(_a,_b,fn)=>{channelListener=fn;return channel;},subscribe:fn=>{setTimeout(()=>fn('SUBSCRIBED'),0);return {};}};return channel;},removeChannel:async()=>{}};}
 const controls=document.createElement('div');controls.id='fixture-controls';controls.style.cssText='position:fixed;right:8px;top:0;z-index:70;font:10px system-ui;background:#eee7c9;color:#504f3c;padding:2px 6px;border-radius:0 0 6px 6px;';
 const select=document.createElement('select');select.setAttribute('aria-label','Design test scenario');select.style.cssText='font:10px system-ui;background:transparent;border:0;width:80px';
-for(const value of ['home','friends','game','income','capture','legacy_capture','walnut','walnut_waiting','reentry','waiting','finished','invitation','empty','auth','onboarding','joker','draw','longnames','push_off','push_blocked','push_error']){const option=document.createElement('option');option.value=value;option.textContent=value;select.append(option);}select.value=scenario;select.onchange=()=>{location.href=location.pathname+'?fixture='+select.value;};
+for(const value of ['home','friends','game','income','motion','motion_walnut','motion_incoming','motion_final','motion_reduced','capture','legacy_capture','walnut','walnut_waiting','reentry','waiting','finished','invitation','empty','auth','onboarding','joker','draw','longnames','push_off','push_blocked','push_error']){const option=document.createElement('option');option.value=value;option.textContent=value;select.append(option);}select.value=scenario;select.onchange=()=>{location.href=location.pathname+'?fixture='+select.value;};
 const marker=document.createElement('span');function updateMarker(){marker.textContent=`Test data · ${commits} saved `;}updateMarker();controls.append(marker,select);
 for(const [label,handler]of [['Lose reply',()=>{failNext=true;}],['Stale',()=>{staleNext=true;}],['Other turn',()=>{games[0].state.player=2;games[0].revision++;channelListener?.();}]]){const b=document.createElement('button');b.textContent=label;b.style.cssText='font:9px system-ui;background:none;border:0;padding:3px;color:#504f3c';b.onclick=handler;controls.append(b);}document.body.append(controls);document.querySelector('.app-shell').style.paddingTop='24px';
+if(scenario==='motion_incoming'){
+ const incoming=document.createElement('button');incoming.textContent='Incoming word';incoming.onclick=()=>{
+  const g=games[0],update=applyCommand(g,g.players[g.state.player-1],{action:'word',revision:g.revision,operationId:crypto.randomUUID(),path:[...'GARDENS'].map((_,i)=>`${i-3},0`)},dictionary,'english-letterpress-v1',random);
+  Object.assign(g,update.next);history[g.id]=[{revision:g.revision,recap:update.recap}];incoming.disabled=true;channelListener?.();
+ };controls.append(incoming);
+}

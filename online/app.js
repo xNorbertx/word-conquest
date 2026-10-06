@@ -5,6 +5,8 @@ import {createClient} from '@supabase/supabase-js';
 import {createPushControls} from './push.js';
 import {createFriends} from './friends.js';
 import {requireUsername,signUpAccount} from './username.mjs';
+import {scoreMotionPlan,createScoreLedger} from './score-motion.mjs';
+import {createBoardScoreMotion} from './score-motion.js';
 import {Engine,config as defaultConfig,configFor,RULES_VERSION,SUPPORTED_RULES,rulesLabel,captureRule,castleRule} from '../server/domain.mjs';
 let config=defaultConfig;
 import {$,svg,icon,node,button,setting,notify,showSheet,closeSheet,ask,initUI,closeTopDialog,emptyState} from './ui.js';
@@ -26,7 +28,10 @@ const status=(message,error=false)=>notify(message,error);
 const push=createPushControls({api,getUser:()=>user,onStatus:message=>{status(message);renderPush();},onChange:()=>renderPush(),onUpdate:()=>void poll(),onOpen:id=>{notificationGame=id;if(user&&authReady&&!recovering)void run(openNotification);}});
 const friends=createFriends({api,getUser:()=>user,getData:()=>homeData,setData:partial=>{if(homeData)Object.assign(homeData,partial);},run,status,invite:person=>createGame(person),openGame,editProfile});
 const screens=['loading','setup','auth','username-setup','recovery','home','friends','activity','account','game'];
+const scoreLedger=createScoreLedger(localStorage);
+const scoreMotion=createBoardScoreMotion({onComplete:()=>{if(game&&currentView==='game')renderGame();}});
 function screen(name,{route=true,replace=false}={}){
+  scoreMotion.cancel(false);
   closeSheet();currentView=name;for(const id of screens)$(id).hidden=id!==name;
   const inGame=name==='game';document.body.classList.toggle('game-view',inGame);
   $('back').hidden=!inGame;$('game-heading').hidden=!inGame;$('game-menu').hidden=!inGame;$('help-button').hidden=inGame;
@@ -117,16 +122,29 @@ async function openGame(id,quiet=false,{route=true}={}){
   const ticket=quiet?navigation:++navigation,request=quiet?gameLoad:++gameLoad,actor=user?.id;const result=await api({action:'game',gameId:id});
   if(ticket!==navigation||request!==gameLoad||actor!==user?.id)return;if(quiet&&(currentView!=='game'||game?.id!==id))return;if(game?.id===id&&game.revision>result.game.revision)return;
   if(result.invitation&&!result.game){if(!quiet){localStorage.setItem('wc-invitation',result.invitation.token);await showInvite();}return;}
+  const previousRevision=game?.id===id?game.revision:null;
   const changed=!game||game.id!==id||game.revision!==result.game.revision;
   const gameConfig=configFor(result.game.rules_version);if(!gameConfig)throw apiError('Update Word Conquest to play this game.','client_update_required',409);
   preview=false;config=gameConfig;game=result.game;history=result.history;invite=result.invitation;
   if(changed){selection=[];jokers={};highlightLast=false;focusTile=null;}
   if(!quiet){$('board').classList.remove('enlarged');$('zoom').setAttribute('aria-pressed','false');screen('game',{route});}
-  if(changed||!quiet)renderGame();
+  if(changed||!quiet){renderGame();animateScore(previousRevision);}
+}
+function animateScore(previousRevision=null,{replay=false}={}){
+  if(preview||currentView!=='game'||!game||pending())return;
+  const move=history[0];
+  const claimed=replay||scoreLedger.claim({userId:user?.id,game,move,previousRevision});
+  const plan=claimed&&scoreMotionPlan(game,move,config);
+  if(!plan||document.hidden)return;
+  closeSheet();$('toast').hidden=true;
+  $('board').classList.remove('enlarged');$('zoom').setAttribute('aria-pressed','false');$('zoom').setAttribute('aria-label','Enlarge board');$('zoom').replaceChildren(icon('expand'));
+  // Keep the source tiles and score destinations in view before motion begins.
+  $('game-table').scrollIntoView({block:'start',behavior:'instant'});
+  void scoreMotion.play(plan,{seat:seatOf(game,user.id),names:game.names});
 }
 const pos=t=>({x:t.q*64,y:t.r*64});
 function myTurn(){return game?.status==='active'&&game.players[game.state.player-1]===user?.id;}
-function canPlay(){return !preview&&myTurn()&&!busy&&!pending();}
+function canPlay(){return !preview&&myTurn()&&!busy&&!pending()&&!scoreMotion.active;}
 function drawBoard(){
   const board=$('board');board.replaceChildren();board.setAttribute('viewBox','-295 -295 590 590');
   const last=history[0]?.recap,seat=seatOf(game,user?.id)||1;if(!focusTile)focusTile=game.state.tiles.find(t=>t.owner===seat)?.id||game.state.tiles[0].id;
@@ -159,13 +177,15 @@ function renderSelection(){
   $('pending').hidden=!pending();$('pending-message').textContent=busy?'Saving your move...':'Move not confirmed yet. Retry when connected.';$('retry').disabled=busy;
 }
 function renderGame(){
+  scoreMotion.cancel(false);
   const totals=Engine.scoreBreakdown(game.state,config),seat=seatOf(game,user?.id)||1;
   const active=game.status==='active',ownTurn=preview||myTurn(),unconfirmed=!!pending();
   const other=opponentName(game,user?.id);
   $('game-table').dataset.side=seat===1?'sage':'walnut';
+  $('game-table').dataset.seat=seat;
   [1,2].forEach(p=>{
     const mine=p===seat,name=game.names?.[p-1]||(mine?'You':'Your friend'),colour=p===1?'Sage green':'Walnut brown',card=$('player-score-'+p);
-    $('role-'+p).textContent=mine?'You':'Opponent';$('name-'+p).textContent=name;$('name-'+p).title=name;$('colour-'+p).replaceChildren(node('span',colour),...(config.castleIncome&&!isFinished(game)?[node('span',`+${Engine.castleIncomePerRound(game.state,config)[p-1]} each round`,'income-rate')]:[]));
+    $('name-'+p).textContent=mine?'You':name;$('name-'+p).title=mine?'You':name;
     $('score-'+p).textContent=totals[p-1].total;card.style.order=mine?1:2;
     card.classList.toggle('is-you',mine);card.classList.toggle('is-turn',active&&!unconfirmed&&game.state.player===p);
     card.setAttribute('aria-label',`${mine?'You, ':''}${name}. ${colour}. ${active&&!unconfirmed&&game.state.player===p?'Current turn. ':''}Score: ${totals[p-1].total}. View breakdown`);
@@ -200,9 +220,21 @@ function choose(id){
 function clearWord(){if(busy||pending())return;selection=[];jokers={};highlightLast=false;renderGame();}
 async function sendPending(){
   const command=pending();if(!command||busy)return;const sentGame=game.id,sentUser=user.id,storageKey=pendingKey();busy=true;renderGame();
-  try{const result=await api({action:'turn',gameId:sentGame,command});localStorage.removeItem(storageKey);if(user?.id===sentUser){status(result.replayed?'Your earlier move was already saved.':'Move saved.');if(game?.id===sentGame){game=result.game;selection=[];jokers={};if(command.action==='resign'){await showHome();status('You left the game.');}else await openGame(sentGame,true);}}}
+  try{
+    const result=await api({action:'turn',gameId:sentGame,command});localStorage.removeItem(storageKey);
+    if(user?.id===sentUser&&game?.id===sentGame&&result.game.revision>=game.revision){
+      const previousRevision=game.revision;game=result.game;selection=[];jokers={};
+      if(result.recap&&result.acceptedRevision===game.revision)history=[{revision:result.acceptedRevision,recap:result.recap},...history.filter(m=>m.revision!==result.acceptedRevision)];
+      if(command.action==='resign'){await showHome();status('You left the game.');}
+      else if(currentView==='game'){
+        // The accepted receipt is enough to render, even if a history refresh fails.
+        busy=false;renderGame();animateScore(previousRevision);refreshQueued=true;
+        if(!scoreMotion.active)status(result.replayed?'Your earlier move was already saved.':'Move saved.');
+      }
+    }
+  }
   catch(e){if(e.status>=400&&e.status<500&&![401,429].includes(e.status)){localStorage.removeItem(storageKey);if(user?.id===sentUser&&game?.id===sentGame){if(e.code!=='illegal_move'){selection=[];jokers={};}await openGame(sentGame,true).catch(()=>{});}}if(user?.id===sentUser){lastProblem=friendlyError(e);lastRequestId=e.requestId||null;if(!pending())status(lastProblem,true);}}
-  finally{busy=false;if(game&&currentView==='game')renderGame();if(refreshQueued)void poll();}
+  finally{busy=false;if(game&&currentView==='game'&&!scoreMotion.active)renderGame();if(refreshQueued)void poll();}
 }
 async function action(kind){
   if(preview||busy||pending()||game?.status!=='active')return;if(['word','refresh'].includes(kind)&&!canPlay())return;
@@ -222,7 +254,9 @@ function showRules(){
 function showDictionary(){const link=node('a','Dictionary license','text-link');link.href='dictionary-license.txt';link.target='_blank';link.rel='noopener';showSheet('Words we play.',[node('p','English words are checked against a fixed Letterpress-derived word list. Listed inflections, slang and repeated words are allowed.'),node('p','The list includes some uncommon, archaic and offensive words. A game keeps the dictionary it started with.'),link]);}
 function showHistory(){const list=node('ol',undefined,'move-list');for(const [index,move]of history.entries()){const r=move.recap,item=node('li'),copy=node('div',undefined,'move-copy');copy.append(node('strong',r.word||({refresh:'Letters refreshed',resign:'Resigned',offer_draw:'Draw offered',accept_draw:'Draw accepted',abandon:'Game abandoned'}[r.action]||'Game update')),node('small',`${game.names[r.player-1]} · ${timeAgo(r.at)}`));item.append(node('span',history.length-index,'move-number'),copy,node('span',r.score?`+${r.score.wordPoints}`:'','move-points'));list.append(item);}showSheet('The story so far.',history.length?list:emptyState('The first word is yours.','Played words will appear here.','history'));}
 function showRecap(){
+  scoreMotion.cancel();
   const r=history[0]?.recap;if(!r)return;const content=[node('div',r.word||'Game update','recap-word'),node('div',`${game.names[r.player-1]} · ${timeAgo(r.at)}`,'recap-byline')];
+  if(scoreMotionPlan(game,history[0],config))content.push(act('Replay points',()=>animateScore(null,{replay:true}),'secondary full','refresh'));
   if(r.score)content.push(scoreLines([['Word points',r.score.wordPoints],['Territory gained',r.score.territoryGain],...(r.score.enemyLoss?[['Opponent territory lost',r.score.enemyLoss]]:[])]));
   if(r.roundComplete)content.push(node('h3',`Round ${r.round} castle income`),scoreLines([1,2].map(p=>[game.names[p-1],`+${r.income[p-1]}`])));
   if(r.changed?.length){content.push(node('h3','After the word'));const changes=node('div',undefined,'tile-changes');for(const c of r.changed){const chip=node('span',undefined,'tile-change'+(c.before.owner!==c.after.owner?' captured':''));chip.append(node('b',c.before.letter),node('span','→'),node('b',c.after.letter));chip.title=c.before.owner!==c.after.owner?'Captured tile':'Replacement letter';changes.append(chip);}content.push(changes,node('p','Green chips are tiles captured on this turn.','field-hint'));}
@@ -250,6 +284,7 @@ async function confirmAction(kind){
   if(await ask(options[kind]))await action(kind);
 }
 function showGameMenu(){
+  scoreMotion.cancel();
   const list=node('div',undefined,'settings-list');list.append(row('Move history','history',showHistory),row('How to play','book',showRules,{note:rulesLabel(game.rules_version)}));
   if(game.status==='active'&&!preview){
     const refresh=row('Refresh letters','refresh',()=>confirmAction('refresh'),{note:'Replace your letters instead of playing a word'});refresh.disabled=!canPlay();list.append(refresh);
@@ -333,7 +368,7 @@ $('push-prompt-enable').onclick=()=>run(async()=>{if(push.snapshot().state==='bl
 $('new-game').onclick=showNewGame;$('edit-profile').onclick=editProfile;$('push-settings').onclick=showPush;
 $('help-button').onclick=showRules;for(const b of document.querySelectorAll('[data-sheet]'))b.onclick=()=>b.dataset.sheet==='rules'?showRules():showPrivacy();
 $('game-menu').onclick=showGameMenu;$('share-invite').onclick=()=>run(shareInvite);$('copy-invite').onclick=()=>run(copyInvite);$('cancel-invite').onclick=()=>run(quitGame);
-$('player-score-1').onclick=()=>showScore(1);$('player-score-2').onclick=()=>showScore(2);$('score-preview').onclick=showWordScore;$('recap').onclick=showRecap;
+$('player-score-1').onclick=()=>{scoreMotion.cancel();showScore(1);};$('player-score-2').onclick=()=>{scoreMotion.cancel();showScore(2);};$('score-preview').onclick=showWordScore;$('recap').onclick=showRecap;
 $('accept-draw').onclick=()=>run(()=>confirmAction('accept_draw'));
 $('setup-signout').onclick=$('signout').onclick=()=>run(async()=>{await push.disable(false);notificationGame=null;await db.auth.signOut();game=null;homeData=null;selection=[];$('password').value='';$('setup-username').value='';status('Signed out.');});
 $('read-inbox').onclick=()=>run(async()=>{await api({action:'read_notifications'});await fetchHome();renderActivity();status('All caught up.');});
@@ -376,7 +411,7 @@ async function poll(){
   catch{offlineNotice(true,'Could not refresh. Reconnect to get the latest turn.');}
   finally{polling=false;if(refreshQueued)void poll();}
 }
-if(native){void push.initialize().catch(()=>{});void App.addListener('appStateChange',({isActive})=>{if(isActive){void poll();if(authReady)void push.restore().catch(()=>{});}});void App.addListener('backButton',()=>{if(closeTopDialog())return;if(currentView!=='home'&&currentView!=='username-setup'&&user)void run(()=>showHome());else void App.minimizeApp();});}
+if(native){void push.initialize().catch(()=>{});void App.addListener('appStateChange',({isActive})=>{if(isActive){void poll();if(authReady)void push.restore().catch(()=>{});}else scoreMotion.cancel();});void App.addListener('backButton',()=>{if(closeTopDialog())return;if(currentView!=='home'&&currentView!=='username-setup'&&user)void run(()=>showHome());else void App.minimizeApp();});}
 window.addEventListener('popstate',()=>run(async()=>{if(!user)return;closeSheet();const route=new URLSearchParams(location.search);if(route.get('game'))await openGame(route.get('game'),false,{route:false});else if(route.get('view')==='friends')await showFriends({route:false});else if(route.get('view')==='account')await account({route:false});else if(route.get('view')==='activity')await showActivity({route:false});else await showHome(false,{route:false});}));
 window.addEventListener('online',()=>{void run(poll);if(authReady)void push.restore().catch(()=>{});});window.addEventListener('offline',()=>offlineNotice());window.addEventListener('focus',()=>run(poll));document.addEventListener('visibilitychange',()=>{if(!document.hidden)void run(poll);});setInterval(poll,20000);
 if(!db)screen('setup',{route:false});else db.auth.onAuthStateChange((event,session)=>{
