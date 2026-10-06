@@ -1,5 +1,7 @@
 // Reproduce native customizations after `cap add android`; no native secrets in source.
 const fs=require('node:fs'),path=require('node:path'),cp=require('node:child_process');
+const monogram=require('../assets/monogram.json');
+const nativeMark=(size,color)=>`<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="${size}dp" android:height="${size}dp" android:viewportWidth="108" android:viewportHeight="108">${monogram.paths.map(p=>`<path android:fillColor="@android:color/transparent" android:strokeColor="${color}" android:strokeWidth="${p.width}" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="${p.d}" />`).join('')}</vector>`;
 const root=path.resolve(__dirname,'..');process.chdir(root);
 if(!fs.existsSync('android/app'))cp.execFileSync(process.execPath,['node_modules/@capacitor/cli/bin/capacitor','add','android'],{stdio:'inherit'});
 if(process.env.GOOGLE_SERVICES_JSON)fs.writeFileSync('android/app/google-services.json',process.env.GOOGLE_SERVICES_JSON);
@@ -31,12 +33,12 @@ if(!manifest.includes('ic_stat_word_conquest'))manifest=manifest.replace('<activ
 if(!manifest.includes('firebase_messaging_auto_init_enabled'))manifest=manifest.replace('<activity','<meta-data android:name="firebase_messaging_auto_init_enabled" android:value="false" />\n        <activity');
 fs.writeFileSync('android/app/src/main/AndroidManifest.xml',manifest);
 fs.mkdirSync('android/app/src/main/res/drawable',{recursive:true});
-fs.writeFileSync('android/app/src/main/res/drawable/ic_stat_word_conquest.xml',`<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24"><path android:fillColor="#FFFFFFFF" android:pathData="M3,5 L6,5 L8,15 L10.5,7 L13.5,7 L16,15 L18,5 L21,5 L17.5,20 L14.5,20 L12,12 L9.5,20 L6.5,20 Z" /></vector>`);
+fs.writeFileSync('android/app/src/main/res/drawable/ic_stat_word_conquest.xml',nativeMark(24,'#FFFFFFFF'));
 fs.mkdirSync('dist',{recursive:true});fs.writeFileSync('dist/android-build.json',JSON.stringify({versionCode,versionName,commit:sha,builtAt:new Date().toISOString()},null,2));
 console.log(`Android ${versionName} (${versionCode}) prepared.`);
 // Match the native launcher and launch surface to the in-app wordmark.
 const res='android/app/src/main/res';
-const foreground=`<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108"><path android:fillColor="#FFFAF7EC" android:pathData="M29,32 L37,32 L44,62 L51,39 L57,39 L64,62 L71,32 L79,32 L69,77 L61,77 L54,53 L47,77 L39,77 Z" /></vector>`;
+const foreground=nativeMark(108,'#FFFAF7EC');
 fs.writeFileSync(res+'/drawable/wc_launcher_foreground.xml',foreground);
 fs.writeFileSync(res+'/values/wc_colors.xml','<resources><color name="wc_forest">#385340</color><color name="wc_ivory">#F6F3EB</color></resources>');
 fs.writeFileSync(res+'/drawable/wc_splash.xml','<layer-list xmlns:android="http://schemas.android.com/apk/res/android"><item android:drawable="@color/wc_ivory" /><item android:width="96dp" android:height="96dp" android:gravity="center"><shape android:shape="rectangle"><solid android:color="@color/wc_forest"/><corners android:radius="24dp"/></shape></item><item android:width="96dp" android:height="96dp" android:gravity="center" android:drawable="@drawable/wc_launcher_foreground"/></layer-list>');

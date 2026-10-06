@@ -17,6 +17,13 @@ A relaxed Sunday word puzzle with an autumn atmosphere. Emphasize finding satisf
 
 This is an approved visual concept, not an exact gameplay specification. Illustrated tile values, paths, score breakdowns, and special-tile positions are placeholders; implementation must use the real game rules. The online client now implements this direction with the 0.3.0 UX revision; see [screen structure and verification](../docs/UX.md). The root local prototype is preserved.
 
+## Identity and copy refinement - 7 October 2026
+
+The WC monogram now combines a curved C and a W; shared vector paths keep web and
+Android marks consistent. Keep the warm palette and literary typography, but avoid
+table/seat metaphors in product copy. The owner prefers direct, minimal wording.
+The game waiting card and You-page Record section have been removed.
+
 ## Score animations — concepts for review
 
 The [local score animation gallery](score-animations/index.html) has four offline HTML/CSS/JS prototypes: a score ribbon, a persistent receipt, board-origin points, and a round-end reveal. Each uses the same engine-verified round and has replay, speed, and reduced-motion controls. Option 3 was selected on 6 October and is implemented in the 0.7.0 client; the gallery remains a design reference. See the [prototype notes](score-animations/README.md) and [implementation progress](../docs/PROGRESS.md).

@@ -635,59 +635,6 @@ input:read-only {
 .section-label h2 {
   font-size: 21px;
 }
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  border: 1px solid var(--line);
-  background: var(--paper);
-  border-radius: 18px;
-  overflow: hidden;
-}
-.stat {
-  text-align: center;
-  padding: 19px 8px;
-  border-right: 1px solid var(--line);
-}
-.stat:last-child {
-  border-right: 0;
-}
-.stat strong {
-  display: block;
-  font: 34px var(--serif);
-  color: var(--green);
-  margin-bottom: 4px;
-}
-.stat span {
-  font-size: 11px;
-  color: var(--muted);
-}
-.best-word {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 13px;
-  padding: 17px 19px;
-  border-radius: 16px;
-  background: var(--green-soft);
-}
-.best-word .icon {
-  color: #8b9a75;
-}
-.best-word span {
-  font-size: 12px;
-  color: var(--muted);
-}
-.best-word strong {
-  font-size: 15px;
-  font-weight: 600;
-  margin-left: auto;
-  overflow-wrap: anywhere;
-}
-.record-note {
-  font-size: 12px;
-  color: var(--muted);
-  margin-top: 12px;
-}
 .settings-list {
   background: var(--paper);
   border: 1px solid var(--line);
@@ -1129,26 +1076,6 @@ input:read-only {
 }
 .word-panel > .primary {
   min-height: 52px;
-}
-.waiting-turn {
-  text-align: center;
-  padding: 35px 20px;
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  background: #f0f0e5;
-}
-.waiting-turn > .icon {
-  margin: 0 auto 15px;
-  color: #9aa889;
-  width: 28px;
-  height: 28px;
-}
-.waiting-turn h2 {
-  font-size: 24px;
-}
-.waiting-turn p {
-  font-size: 13px;
-  margin-top: 8px;
 }
 .recap-row {
   display: flex;
@@ -1814,19 +1741,6 @@ input:read-only {
   .recap-row strong {
     font-size: 12px;
   }
-  .waiting-turn {
-    padding: 20px;
-  }
-  .waiting-turn > .icon {
-    display: none;
-  }
-  .waiting-turn h2 {
-    font-size: 22px;
-  }
-  .waiting-turn p {
-    margin-top: 5px;
-    font-size: 12px;
-  }
   .invite-waiting {
     margin: 55px auto 30px;
     max-width: 350px;
@@ -1862,9 +1776,6 @@ input:read-only {
   .profile-card .icon-button {
     width: 37px;
     min-width: 37px;
-  }
-  .stat strong {
-    font-size: 30px;
   }
   .settings-row {
     padding: 15px 18px;
@@ -2006,10 +1917,6 @@ input:read-only {
   align-items: baseline;
   gap: 8px;
 }
-.best-word strong {
-  max-width: 65%;
-  text-align: right;
-}
 .invitation-summary .avatar {
   margin: auto;
 }
@@ -2046,7 +1953,6 @@ input:read-only {
 #submit-word {background:var(--own-ink)}
 .game-card.has-turn {border-color:#a1b394}
 .game-card.has-turn .card-status {font-weight:750;color:var(--paper);background:var(--green)}
-.waiting-turn h2 {overflow-wrap:anywhere}
 @media(max-width:799px){.scoreboard{padding:4px 0 8px;margin:0;gap:8px}.score{padding:10px 11px}.score strong{font-size:32px;margin:0}.player-name{font-size:15px}.game-screen .turn-pill{font-size:17px}.board-tools{height:30px}}
 @media(max-width:370px){.score{padding:9px;gap:5px}.score strong{font-size:29px}.player-colour{font-size:10px}.player-name{font-size:14px}.game-screen .turn-pill{font-size:16px}.turn{gap:8px}}
 
@@ -2093,3 +1999,7 @@ input:read-only {
 @media(max-width:799px){#score-motion{min-height:185px;padding-top:14px}#motion-word{font-size:34px;margin-bottom:24px}.score-point{min-width:29px;height:29px;font-size:20px}}
 @media(prefers-reduced-motion:reduce){.score-point{box-shadow:none}.is-scoring .tile>polygon:first-child{transition:none}}
 .is-scoring.score-reduced .tile>polygon:first-child{transition:none}
+
+/* Linked WC monogram; the same paths are used by the Android launcher. */
+.brand-mark{width:38px;height:38px;flex-shrink:0;border-radius:11px}
+.brand-mark svg{width:100%;height:100%;display:block}

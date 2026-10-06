@@ -1,3 +1,4 @@
+import {gameSummary} from './game-summary.mjs';
 import {applyCommand,checkCommand,commandKey,configFor,Engine,Fault,LEGACY_RULES_VERSION,statistics,uuid} from './domain.mjs';
 import words from './versions/dictionary-v1.json' with {type:'json'};
 import metadata from './versions/dictionary-v1.meta.json' with {type:'json'};
@@ -51,8 +52,11 @@ export function createHandler(db, settings={}) {
         if(!supported.includes(game.rules_version))throw new Fault('client_update_required','Update Word Conquest or open the latest web app to play this game.',409);
       };
       const wakePush=()=>{try{settings.wakePush?.();}catch{/* Cron retries the durable queue. */}};
-      if(!unwrap(await db.rpc('wc_rate_limit',{p_actor:actor}))) throw new Fault('rate_limit','Please wait a minute before trying again.',429);
-      const profile=unwrap(await db.from('profiles').select('*').eq('id',actor).single());
+      const [rate,profileResult]=await Promise.all([
+        db.rpc('wc_rate_limit',{p_actor:actor}),db.from('profiles').select('*').eq('id',actor).single()
+      ]);
+      if(!unwrap(rate))throw new Fault('rate_limit','Please wait a minute before trying again.',429);
+      const profile=unwrap(profileResult);
       if(profile.deleting && input.action!=='delete_account')throw new Fault('account_deleting','Account deletion is in progress. Retry deletion.',409);
       const needsUsername=profile.username===null;
       if(needsUsername&&!['home','complete_username','suggest_username','export','delete_account'].includes(input.action)&&!(input.action==='push_device'&&input.enabled===false))throw new Fault('username_required','Choose your username to continue.',409);
@@ -72,10 +76,19 @@ export function createHandler(db, settings={}) {
             if(input.supportsUsernameOnboarding!==true)throw new Fault('client_update_required','Update Word Conquest or open the web app to choose your username.',409);
             return reply({profile,needsUsername:true,games:[],notifications:[],social:{people:[],invitations:[],outgoing:[],blocked:[]}});
           }
-          const games=unwrap(await db.from('games').select('*').contains('players',[actor]).order('updated_at',{ascending:false}).limit(200));
-          const notifications=unwrap(await db.from('notifications').select('id,game_id,kind,read_at,created_at').eq('user_id',actor).order('created_at',{ascending:false}).limit(50));
-          const social=unwrap(await db.rpc('wc_friends',{p_actor:actor}));
-          return reply({profile,needsUsername:false,games:await Promise.all(games.map(decorate)),notifications,social});
+          const gamesRequest=(async()=>{
+            const rows=unwrap(await db.from('games').select('*').contains('players',[actor]).order('updated_at',{ascending:false}).limit(200));
+            const ids=[...new Set(rows.flatMap(g=>g.players).filter(id=>id&&id!==actor))];
+            const profiles=ids.length?unwrap(await db.from('profiles').select('id,display_name').in('id',ids)):[];
+            const names=new Map([[actor,profile.display_name],...profiles.map(p=>[p.id,p.display_name])]);
+            return rows.map(g=>{const named={...g,names:g.players.map(id=>names.get(id)||'Deleted player')};
+              return input.supportsGameSummaries===true?gameSummary(named):named;});
+          })();
+          const [games,notifications,social]=await Promise.all([gamesRequest,
+            db.from('notifications').select('id,game_id,kind,read_at,created_at').eq('user_id',actor).order('created_at',{ascending:false}).limit(50).then(unwrap),
+            db.rpc('wc_friends',{p_actor:actor}).then(unwrap)
+          ]);
+          return reply({profile,needsUsername:false,games,notifications,social});
         }
         case 'game': {
           if(uuid(input.gameId)){

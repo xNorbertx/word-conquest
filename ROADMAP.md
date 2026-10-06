@@ -1,6 +1,6 @@
 # Word Conquest — app roadmap
 
-Updated: 6 October 2026
+Updated: 7 October 2026
 
 This is an acceptance checklist. The original local two-player prototype remains
 available; a separate online implementation now exists. Rules remain experimental.
@@ -46,7 +46,7 @@ First milestone: invite a friend and reliably finish a game over several days.
 - [x] Server-authoritative play: validate players, turn order, paths, words, captures, and scores on the server; generate replacement letters there too. A modified client must not be able to award itself points.
 - [ ] Reliable turn submission: retries cannot submit the same move twice; reconnecting restores the accepted state; stale boards cannot overwrite newer turns. Clearly distinguish pending and accepted moves.
 - [ ] Invitations: share a link or code, accept or decline, and cancel unaccepted invitations. Opening an invitation should lead to the right game after sign-in.
-- [ ] Game list: show invitations, active games, whose turn it is, and completed games.
+- [ ] Game list: show invitations, active games, whose turn it is, and completed games. Version 0.7.1 adds immediate return navigation, background refresh, shared in-flight reads and a compact/batched server response; hosted and browser measurements are in PROGRESS.md. Seeker responsiveness remains owner acceptance.
 - [ ] Friends (promoted to first iteration on 4 October): search usernames, mutually accept requests, keep a friends list, and invite a specific friend directly. Implementation, automated and hosted verification passed; Seeker acceptance remains open.
 - [x] Unique usernames (promoted to first iteration on 4 October): case-insensitive database uniqueness, editable with conflict feedback, existing names preserved. Follow-up 0.6.2 uses email/password signup followed by a separate required username screen, with Randomize and persistent completion state across reopening/devices. Hosted and release verification recorded in PROGRESS.md; APK upgrade acceptance remains under mobile verification.
 - [x] Web pilot notifications: in-app inbox and live game updates, with participant-only access. Turn-alert email is out of scope by owner decision.
@@ -54,7 +54,7 @@ First milestone: invite a friend and reliably finish a game over several days.
 - [ ] Opponent-move recap: show the word, traced path, captures, score changes, and replaced letters when returning to a game.
 - [ ] English dictionary validation: choose a word list with suitable usage rights. Define treatment of inflections, slang, proper nouns, abbreviations, and offensive words. Explain rejected words clearly.
 - [ ] Game lifecycle rules: define resignation, draws, inactive opponents, and abandonment, including their effect on statistics. Make the ending and final-reply rule clear.
-- [ ] Basic statistics: wins, losses, draws, highest final score, and best-scoring turn/word. Record completed games and moves so richer statistics can be added later; do not count a result twice.
+- [ ] Results for future analytics: preserve wins, losses, draws, highest final score and best word/turn in backend records without duplicate results. Owner removed the Record UI from You in 0.7.1; a separate analytics experience is deferred.
 - [x] Versioned rules and dictionaries: games retain the versions they started with. Keep records comparable by separating statistics for materially different rulesets and languages.
 - [ ] Privacy and account controls: decide what profile/results information is public, collect only needed data, and provide account/data deletion.
 - [ ] Operational basics: backups and recovery, error reporting, service monitoring, and a way to investigate a broken game or receive a bug report.

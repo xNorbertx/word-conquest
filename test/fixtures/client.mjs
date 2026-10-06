@@ -1,3 +1,4 @@
+import {gameSummary} from '../../server/game-summary.mjs';
 // Local-only UI fixture adapter. Never imported by the production build.
 import {Engine,config,applyCommand,RULES_VERSION} from '../../server/domain.mjs';
 import words from '../../server/versions/dictionary-v1.json';
@@ -15,7 +16,7 @@ const secondSeat=['walnut','walnut_waiting','motion_walnut'].includes(scenario);
 const self={id:secondSeat?B:A,email:'demo@example.invalid'},profile={display_name:secondSeat?'Mara':'Norbert',email_notifications:false,friend_code:'A1B2C3D4E5F6'};
 profile.username=scenario==='onboarding'?(sessionStorage.getItem('wc-design-username')||null):profile.display_name;
 if(scenario==='onboarding')profile.display_name=profile.username||'Player';
-let user=scenario==='auth'?null:self,authListener=null,channelListener=null,failNext=false,staleNext=false,commits=0;
+let user=scenario==='auth'?null:self,authListener=null,channelListener=null,failNext=false,staleNext=false,commits=0,slowHome=false,homeRequests=0;
 function newGame(id,other='Mara'){return {id,players:[A,B],names:['Norbert',other],state:{...Engine.newGame(config,random),player:1,startingPlayer:1},status:'active',revision:10,updated_at:date(24),last_play_at:date(24),rules_version:RULES_VERSION,dictionary_version:'english-letterpress-v1',draw_by:null};}
 const games=[newGame(ids[0]),newGame(ids[1],'Jules'),newGame(ids[2],'Alex'),newGame(ids[3])];
 games[0].state.wordPoints=[38,35];games[0].state.lettersUsed=62;games[0].state.turns=[5,5];
@@ -60,7 +61,7 @@ window.fetch=async(url,options)=>{
   const error=(message,code,status=400)=>new Response(JSON.stringify({error:message,code,requestId:'test-reference'}),{status,headers:{'Content-Type':'application/json'}});
   if(!user)return error('Sign in to continue.','unauthorized',401);
   switch(input.action){
-    case 'home':result={profile,needsUsername:profile.username===null,games:initialGames,notifications:scenario==='empty'?[]:notifications,social};break;
+    case 'home':{homeRequests++;updateMarker();const snapshot={profile,needsUsername:profile.username===null,games:input.supportsGameSummaries?initialGames.map(gameSummary):initialGames,notifications:scenario==='empty'?[]:notifications,social};result=JSON.parse(JSON.stringify(snapshot));if(slowHome)await new Promise(r=>setTimeout(r,4000));break;}
     case 'suggest_username':result={username:'GentleOtter'+String(Math.floor(Math.random()*10000)).padStart(4,'0')};break;
     case 'complete_username':if(profile.username===null){if(['norbert','mara'].includes(input.username.toLowerCase()))return error('That username is already taken. Try another.','username_taken',409);profile.username=profile.display_name=input.username;sessionStorage.setItem('wc-design-username',input.username);}result={profile,username:profile.username};if(failNext){failNext=false;throw new TypeError('Simulated response lost after username saved');}break;
     case 'game':if(!game)return error('Game not found','not_found',404);result={game,history:history[game.id]||[],invitation:game.status==='invited'?{token,expires_at:date(-7*1440)}:null};break;
@@ -89,7 +90,7 @@ export function createClient(){return {rpc:async(name,args)=>({data:name==='wc_u
 const controls=document.createElement('div');controls.id='fixture-controls';controls.style.cssText='position:fixed;right:8px;top:0;z-index:70;font:10px system-ui;background:#eee7c9;color:#504f3c;padding:2px 6px;border-radius:0 0 6px 6px;';
 const select=document.createElement('select');select.setAttribute('aria-label','Design test scenario');select.style.cssText='font:10px system-ui;background:transparent;border:0;width:80px';
 for(const value of ['home','friends','game','income','motion','motion_walnut','motion_incoming','motion_final','motion_reduced','capture','legacy_capture','walnut','walnut_waiting','reentry','waiting','finished','invitation','empty','auth','onboarding','joker','draw','longnames','push_off','push_blocked','push_error']){const option=document.createElement('option');option.value=value;option.textContent=value;select.append(option);}select.value=scenario;select.onchange=()=>{location.href=location.pathname+'?fixture='+select.value;};
-const marker=document.createElement('span');function updateMarker(){marker.textContent=`Test data · ${commits} saved `;}updateMarker();controls.append(marker,select);
+const marker=document.createElement('span');function updateMarker(){marker.textContent=`Test data · ${commits} saved · ${homeRequests} home `;}updateMarker();controls.append(marker,select);
 for(const [label,handler]of [['Lose reply',()=>{failNext=true;}],['Stale',()=>{staleNext=true;}],['Other turn',()=>{games[0].state.player=2;games[0].revision++;channelListener?.();}]]){const b=document.createElement('button');b.textContent=label;b.style.cssText='font:9px system-ui;background:none;border:0;padding:3px;color:#504f3c';b.onclick=handler;controls.append(b);}document.body.append(controls);document.querySelector('.app-shell').style.paddingTop='24px';
 if(scenario==='motion_incoming'){
  const incoming=document.createElement('button');incoming.textContent='Incoming word';incoming.onclick=()=>{
@@ -97,3 +98,5 @@ if(scenario==='motion_incoming'){
   Object.assign(g,update.next);history[g.id]=[{revision:g.revision,recap:update.recap}];incoming.disabled=true;channelListener?.();
  };controls.append(incoming);
 }
+
+const slow=document.createElement('button');slow.textContent='Slow Games';slow.onclick=()=>{slowHome=!slowHome;slow.textContent=slowHome?'Slow Games on':'Slow Games';};controls.append(slow);

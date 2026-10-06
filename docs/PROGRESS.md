@@ -1,4 +1,40 @@
-# Implementation and verification - updated 6 October 2026
+# Implementation and verification - updated 7 October 2026
+
+## Games performance and UI refinements - 7 October, 0.7.1
+
+- Removed the redundant opponent-waiting card and the Record section on You.
+  The client no longer requests statistics when opening You; backend results,
+  statistics and exports remain intact for the future analytics surface.
+- Replaced player-facing table/seat metaphors across loading, signup, invitations,
+  game options, profile editing and privacy. Internal identifiers and the preserved
+  prototype/design reference are not product copy.
+- Shared WC monogram: a curved C frames a W. Vector paths in assets/monogram.json
+  drive the web header, Android launcher/splash and monochrome notification icon.
+- Investigation: Games navigation waited for the home endpoint, which returned
+  every board, ran independent reads sequentially and looked up names once per
+  game. The new client displays its current session's saved list immediately,
+  refreshes in the background and shares overlapping requests. Confirmed game
+  snapshots update the list before navigation. Request generations and account
+  checks discard reads started before a newer move or a session change.
+- The API batches opponent names, overlaps independent queries and returns compact
+  game summaries to capable clients. Older APKs still get the full game shape.
+  Authentication, participant filtering, rate limits and username gates remain.
+  There is no database migration or scoring change.
+- Hosted read-only comparison on an existing isolated test identity (seven games):
+  response shrank from 48,834 to 7,491 bytes (84.7%). Four before samples were
+  1,193 / 1,219 / 1,025 / 971 ms; immediately after deployment 2,097 / 1,690 /
+  678 / 719 ms. Cold deployment/network variability remains; these are observations,
+  not a latency guarantee. Test authentication sent no email and changed no games.
+- Validation: original engine suites and all 90 tests passed. New coverage includes
+  shared reads/retries, account isolation, invalidation, batched/scoped name lookup,
+  exact scores for all three rules versions, legacy clients and access gates.
+  Phone browser checks: Games appeared within a 98 ms tool round trip while its
+  server reply was deliberately delayed four seconds; three repeated taps shared
+  one request. A later refresh did not navigate away from You. A newly accepted
+  83/55 score appeared immediately when returning to Games. 320/390-wide views fit
+  without horizontal overflow; console errors were absent.
+- Backend optimization deployed to the existing dedicated Supabase project.
+  Web/APK publication and artifact verification are recorded below when complete.
 
 ## Board score animation and simpler player cards - 6 October, 0.7.0
 
