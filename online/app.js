@@ -1796,7 +1796,7 @@ var require_cjs = __commonJS({
 });
 
 // package.json
-var version = "0.6.2";
+var version = "0.7.0";
 
 // online/app.js
 init_dist();
@@ -8616,6 +8616,9 @@ function createPushControls(options) {
 // online/ui.js
 var $ = (id) => document.getElementById(id);
 var paths = {
+  castle: ["M4 20V9h3V4h3v5h4V4h3v5h3v11H4Z", "M10 20v-6h4v6"],
+  territory: ["m7 3 10 0 4 4v10l-4 4H7l-4-4V7Z", "M8 12h8", "M12 8v8"],
+  capture: ["m7 3 10 0 4 4v10l-4 4H7l-4-4V7Z", "M8 12h8"],
   friends: ["M15 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0", "M2 21v-2a7 6 0 0 1 14 0v2", "M18 3a4 4 0 0 1 0 8", "M19 14a6 5 0 0 1 3 5v2"],
   search: ["M17 10a7 7 0 1 1-14 0 7 7 0 0 1 14 0", "m15 15 6 6"],
   back: ["m14 6-6 6 6 6"],
@@ -9028,7 +9031,7 @@ var WordConquest = /* @__PURE__ */ (() => {
   function letter(config3, random = Math.random, accept = () => true) {
     const weights = Object.entries(config3.letterWeights).filter(([value, weight]) => weight > 0 && accept(value));
     if (!weights.length) throw new Error("Letter distribution needs vowels and consonants.");
-    let roll = random() * weights.reduce((sum, [, weight]) => sum + weight, 0);
+    let roll = random() * weights.reduce((sum2, [, weight]) => sum2 + weight, 0);
     for (const [value, weight] of weights) {
       roll -= weight;
       if (roll < 0) return value;
@@ -9060,8 +9063,8 @@ var WordConquest = /* @__PURE__ */ (() => {
     }
     const castleCandidates = tiles.filter((t) => !t.owner && t.q < 0).map((tile) => ({ tile, tie: random() }));
     while (castles.length + 2 <= config3.castleCount && castleCandidates.length) {
-      const pair = Math.floor(castles.length / 2);
-      const target = { q: -Math.max(1, Math.floor(radius / 2)), r: (pair % 2 === 0 ? -1 : 1) * Math.max(1, radius - 1) };
+      const pair2 = Math.floor(castles.length / 2);
+      const target = { q: -Math.max(1, Math.floor(radius / 2)), r: (pair2 % 2 === 0 ? -1 : 1) * Math.max(1, radius - 1) };
       const rank = (t) => Math.min(...starts.map((a) => distance(a, t))) + (castles.length ? Math.min(...castles.map((a) => distance(a, t))) : 0);
       castleCandidates.sort((a, b) => distance(a.tile, target) - distance(b.tile, target) || rank(b.tile) - rank(a.tile) || a.tie - b.tie);
       const tile = castleCandidates.shift().tile;
@@ -9132,16 +9135,16 @@ var WordConquest = /* @__PURE__ */ (() => {
   }
   function scoreMove2(state, ids, config3) {
     const tiles = ids.map((id) => state.tiles.find((t) => t.id === id));
-    const letters = tiles.reduce((sum, t) => sum + letterValue(t.letter, config3), 0);
+    const letters = tiles.reduce((sum2, t) => sum2 + letterValue(t.letter, config3), 0);
     const bonus = lengthBonus(ids.length, config3);
     const captured = capturedTiles(state, ids);
-    const territoryGain = captured.reduce((sum, t) => sum + territoryValue2(t, config3), 0);
-    const enemyLoss = captured.filter((t) => t.owner !== 0).reduce((sum, t) => sum + territoryValue2(t, config3), 0);
+    const territoryGain = captured.reduce((sum2, t) => sum2 + territoryValue2(t, config3), 0);
+    const enemyLoss = captured.filter((t) => t.owner !== 0).reduce((sum2, t) => sum2 + territoryValue2(t, config3), 0);
     return { letters, lengthBonus: bonus, wordPoints: letters + bonus, territoryGain, enemyLoss, totalGain: letters + bonus + territoryGain };
   }
   const scoreBreakdown2 = (state, config3) => [1, 2].map((player) => {
     const words = state.wordPoints?.[player - 1] || 0;
-    const territory = state.tiles.filter((t) => t.owner === player).reduce((sum, t) => sum + territoryValue2(t, config3), 0);
+    const territory = state.tiles.filter((t) => t.owner === player).reduce((sum2, t) => sum2 + territoryValue2(t, config3), 0);
     return { words, territory, total: words + territory };
   });
   const scores2 = (state, config3) => scoreBreakdown2(state, config3).map((score) => score.total);
@@ -9259,6 +9262,282 @@ var engine_default = {
   refreshTurn: (state, config3, random) => engine(config3).refreshTurn(state, config3, random),
   castleIncomePerRound: (state, config3) => config3.castleIncome ? engine_v2_default.castleIncomePerRound(state, config3) : [0, 0]
 };
+
+// online/score-motion.mjs
+var pair = (value) => Array.isArray(value) && value.length === 2 && value.every(Number.isSafeInteger);
+var sum = (sources) => sources.reduce((n, s) => n + s.amount, 0);
+function scoreMotionPlan(game2, move, config3) {
+  const r = move?.recap;
+  if (!r || move.revision !== game2.revision || !["word", "refresh"].includes(r.action) || ![1, 2].includes(r.player) || !pair(r.totalsBefore) || !pair(r.totalsAfter) || !game2.state?.tiles?.length) return null;
+  if (!engine_default.scores(game2.state, config3).every((n, i) => n === r.totalsAfter[i])) return null;
+  const changes = new Map((r.changed || []).map((c) => [c.id, c]));
+  const beforeTiles = game2.state.tiles.map((t) => {
+    const b = { ...t, ...changes.get(t.id)?.before };
+    return { ...b, value: engine_default.letterValue(b.letter, config3) };
+  });
+  const before = new Map(beforeTiles.map((t) => [t.id, t])), after = game2.state.tiles;
+  const events = [], actor = r.player, enemy = 3 - actor;
+  const value = (t) => t.castle ? t.q === 0 && t.r === 0 ? config3.centerCastlePoints ?? config3.castlePoints : config3.castlePoints : config3.normalTerritoryPoints;
+  const add = (kind, player, sources, expected) => {
+    if (!Number.isSafeInteger(expected) || sum(sources) !== expected) throw Error("Receipt does not reconcile");
+    if (expected) events.push({ kind, player, amount: expected, sources: sources.filter((s) => s.amount !== 0) });
+  };
+  try {
+    if (r.action === "word") {
+      if (!r.score || !r.path?.length || r.path.some((id) => !before.has(id))) return null;
+      const letters = r.path.map((id) => ({ id, amount: engine_default.letterValue(before.get(id).letter, config3) }));
+      if (sum(letters) !== r.score.letters) return null;
+      add("word", actor, [...letters, { bonus: true, amount: r.score.lengthBonus }], r.score.wordPoints);
+    }
+    if (r.roundComplete && config3.castleIncome) {
+      if (!pair(r.income)) return null;
+      for (const player of [actor, enemy]) add("castles", player, after.filter((t) => t.castle && t.owner === player).map((t) => ({ id: t.id, amount: t.q === 0 && t.r === 0 ? config3.castleIncome.center : config3.castleIncome.side })), r.income[player - 1]);
+    }
+    if (r.action === "word") {
+      const gained = r.path.map((id) => before.get(id)).filter((t) => t.owner !== actor);
+      add("territory", actor, gained.map((t) => ({ id: t.id, amount: value(t) })), r.score.territoryGain);
+      add("loss", enemy, gained.filter((t) => t.owner === enemy).map((t) => ({ id: t.id, amount: -value(t) })), -r.score.enemyLoss);
+    }
+    const totals = [...r.totalsBefore];
+    for (const e of events) totals[e.player - 1] += e.amount;
+    if (!totals.every((n, i) => n === r.totalsAfter[i]) || !events.length) return null;
+    return {
+      gameId: game2.id,
+      revision: game2.revision,
+      player: actor,
+      word: r.word || "",
+      path: r.path || [],
+      round: r.round,
+      beforeTiles,
+      afterTiles: after,
+      totalsBefore: r.totalsBefore,
+      totalsAfter: r.totalsAfter,
+      events
+    };
+  } catch {
+    return null;
+  }
+}
+function createScoreLedger(storage) {
+  const memory = /* @__PURE__ */ new Map();
+  return { claim({ userId, game: game2, move, previousRevision = null }) {
+    if (!userId || !Number.isSafeInteger(game2.revision)) return false;
+    const key = `wc-score-seen:${userId}:${game2.id}`;
+    let seen = memory.get(key) ?? null;
+    try {
+      const raw = storage.getItem(key), saved = raw === null ? null : Number(raw);
+      if (Number.isSafeInteger(saved)) seen = Math.max(seen ?? -1, saved);
+    } catch {
+    }
+    const observed = Math.max(seen ?? -1, previousRevision ?? -1), latest = Math.max(observed, game2.revision);
+    memory.set(key, latest);
+    try {
+      storage.setItem(key, String(latest));
+    } catch {
+    }
+    if (game2.revision <= observed || move?.revision !== game2.revision) return false;
+    return observed >= 0 || game2.players[move.recap?.player - 1] !== userId;
+  } };
+}
+
+// online/score-motion.js
+var signed = (n) => n < 0 ? "\u2212" + Math.abs(n) : "+" + n;
+function createBoardScoreMotion({ onComplete }) {
+  let controller = null, active = false, layer = null, started = 0;
+  const media = matchMedia("(prefers-reduced-motion: reduce)");
+  const check = (signal) => {
+    if (signal.aborted) throw new DOMException("Cancelled", "AbortError");
+  };
+  const wait = (ms, signal) => new Promise((resolve, reject) => {
+    check(signal);
+    const abort = () => {
+      clearTimeout(timer);
+      reject(new DOMException("Cancelled", "AbortError"));
+    };
+    const timer = setTimeout(() => {
+      signal.removeEventListener("abort", abort);
+      resolve();
+    }, ms);
+    signal.addEventListener("abort", abort, { once: true });
+  });
+  async function animate(el, frames, duration, signal) {
+    check(signal);
+    if (media.matches || !el.animate) return;
+    const animation = el.animate(frames, { duration, easing: "cubic-bezier(.35,0,.25,1)" }), abort = () => animation.cancel();
+    signal.addEventListener("abort", abort, { once: true });
+    try {
+      await animation.finished;
+    } catch (error) {
+      if (!signal.aborted) throw error;
+    } finally {
+      signal.removeEventListener("abort", abort);
+    }
+    check(signal);
+  }
+  async function count(el, from, to, ms, signal, format = signed) {
+    check(signal);
+    if (media.matches) {
+      el.textContent = format(to);
+      return;
+    }
+    const start = performance.now();
+    await new Promise((resolve, reject) => {
+      let frame;
+      const abort = () => {
+        cancelAnimationFrame(frame);
+        reject(new DOMException("Cancelled", "AbortError"));
+      };
+      signal.addEventListener("abort", abort, { once: true });
+      const tick = (now) => {
+        const t = Math.min(1, (now - start) / ms);
+        el.textContent = format(Math.round(from + (to - from) * (1 - (1 - t) ** 2)));
+        if (t < 1) frame = requestAnimationFrame(tick);
+        else {
+          signal.removeEventListener("abort", abort);
+          resolve();
+        }
+      };
+      frame = requestAnimationFrame(tick);
+    });
+    check(signal);
+  }
+  const centre = (el) => {
+    const r = el.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  };
+  const tile = (id) => $("board").querySelector(`[data-id="${id}"]`);
+  const sourcePoint = (s) => s.bonus ? centre($("motion-word")) : centre(tile(s.id).querySelector("polygon"));
+  function paint(tiles, plan) {
+    const path = plan.path;
+    for (const t of tiles) {
+      const el = tile(t.id);
+      if (!el) continue;
+      el.classList.remove("owner0", "owner1", "owner2", "your-tile", "selected", "last-move", "motion-source", "motion-castle", "motion-loss");
+      el.classList.add(`owner${t.owner}`);
+      if (t.owner === Number($("game-table").dataset.seat)) el.classList.add("your-tile");
+      el.classList.toggle("motion-word-tile", path.includes(t.id));
+      el.querySelector("text:not(.value)").textContent = t.letter === "?" && path.includes(t.id) ? plan.word[path.indexOf(t.id)] || "?" : t.letter;
+      el.querySelector(".value").textContent = plan.beforeTiles.find((b) => b.id === t.id).value;
+      el.querySelector(".step")?.remove();
+      el.querySelector(".marker")?.remove();
+      if (t.owner) el.append(svg("circle", { cx: t.q * 64 + 20, cy: t.r * 64 - 19, r: 4.3, class: "marker" }));
+    }
+    const points = path.map((id) => tiles.find((t) => t.id === id)).filter(Boolean);
+    $("board").querySelector(".path")?.setAttribute("d", points.slice(1).map((b, i) => {
+      const a = points[i], d = Math.hypot(b.q - a.q, b.r - a.r), dx = (b.q - a.q) / d * 15, dy = (b.r - a.r) / d * 15;
+      return `M${a.q * 64 + dx},${a.r * 64 + dy}L${b.q * 64 - dx},${b.r * 64 - dy}`;
+    }).join(" "));
+  }
+  function cancel(restore = true) {
+    const wasActive = active;
+    active = false;
+    controller?.abort();
+    controller = null;
+    layer?.remove();
+    layer = null;
+    $("game-table").classList.remove("is-scoring");
+    $("board").inert = false;
+    $("score-motion").hidden = true;
+    if (wasActive && restore) onComplete();
+  }
+  async function fly(b, player, signal, delay) {
+    await wait(delay, signal);
+    const target = centre($("score-" + player)), dx = target.x - b.p.x, dy = target.y - b.p.y;
+    await animate(b.el, [
+      { transform: "translate(-50%,-50%) scale(1)", opacity: 1 },
+      { transform: `translate(calc(-50% + ${dx * 0.4}px),calc(-50% + ${dy * 0.55}px)) scale(1.05)`, opacity: 1, offset: 0.55 },
+      { transform: `translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) scale(.45)`, opacity: 0 }
+    ], 520, signal);
+    b.el.remove();
+  }
+  async function play(plan, { seat, names }) {
+    cancel(false);
+    controller = new AbortController();
+    const signal = controller.signal;
+    active = true;
+    started = performance.now();
+    $("game-table").classList.add("is-scoring");
+    $("score-motion").hidden = false;
+    $("board").inert = true;
+    $("game-table").dataset.motionPlayer = plan.player;
+    $("game-table").classList.toggle("score-reduced", media.matches);
+    layer = node("div", void 0, "score-motion-layer");
+    layer.setAttribute("aria-hidden", "true");
+    document.body.append(layer);
+    $("motion-word").textContent = plan.word || "Fresh letters";
+    $("motion-byline").textContent = plan.player === seat ? "You played" : names[plan.player - 1];
+    $("motion-skip").onclick = () => cancel();
+    $("motion-status").textContent = "";
+    const balances = [...plan.totalsBefore];
+    balances.forEach((n, i) => $("score-" + (i + 1)).textContent = n);
+    paint(plan.beforeTiles, plan);
+    try {
+      await wait(100, signal);
+      for (const e of plan.events) {
+        check(signal);
+        $("score-motion").dataset.phase = e.kind;
+        $("score-motion").dataset.player = e.player;
+        $("game-table").dataset.motionTarget = e.player;
+        if (e.kind === "castles" || e.kind === "territory") paint(plan.afterTiles.map((t) => {
+          const old2 = plan.beforeTiles.find((b) => b.id === t.id);
+          return { ...t, letter: old2.letter, owner: e.kind === "castles" && !t.castle ? old2.owner : t.owner };
+        }), plan);
+        for (const el of $("board").querySelectorAll(".tile")) el.classList.remove("motion-source", "motion-castle", "motion-loss");
+        const label = { word: "Word points", castles: "Castle income", territory: "Territory gained", loss: "Territory lost" }[e.kind];
+        const player = e.player === seat ? "You" : names[e.player - 1];
+        $("motion-label").textContent = label;
+        $("motion-recipient").textContent = player;
+        $("motion-symbol").replaceChildren(icon({ word: "book", castles: "castle", territory: "territory", loss: "capture" }[e.kind]));
+        $("motion-tally").textContent = "+0";
+        $("score-motion").dataset.side = e.player === 1 ? "sage" : "walnut";
+        const bubbles = e.sources.map((s) => {
+          if (s.id) tile(s.id)?.classList.add(e.kind === "castles" ? "motion-castle" : e.kind === "loss" ? "motion-loss" : "motion-source");
+          const p = sourcePoint(s);
+          p.y -= s.bonus ? -18 : 14;
+          const el = node("span", "+0", `score-point side-${e.player}${e.kind === "castles" ? " gold" : ""}${s.bonus ? " bonus" : ""}`);
+          el.style.left = p.x + "px";
+          el.style.top = p.y + "px";
+          layer.append(el);
+          return { ...s, el, p };
+        });
+        await Promise.all([
+          count($("motion-tally"), 0, e.amount, 510, signal),
+          ...bubbles.map((b) => count(b.el, 0, b.amount, 440, signal, (n) => signed(n) + (b.bonus ? " length" : ""))),
+          ...bubbles.map((b) => animate(b.el, [{ opacity: 0, transform: "translate(-50%,0) scale(.7)" }, { opacity: 1, transform: "translate(-50%,-50%) scale(1)" }], 260, signal))
+        ]);
+        await wait(media.matches ? 420 : 230, signal);
+        await Promise.all(bubbles.map((b, i) => fly(b, e.player, signal, media.matches ? 0 : Math.min(i * 40, 280))));
+        const old = balances[e.player - 1];
+        balances[e.player - 1] += e.amount;
+        await Promise.all([
+          count($("score-" + e.player), old, balances[e.player - 1], 280, signal, String),
+          animate($("player-score-" + e.player), [{ transform: "scale(1)" }, { transform: "scale(1.035)", offset: 0.35 }, { transform: "scale(1)" }], 330, signal)
+        ]);
+        await wait(100, signal);
+      }
+      check(signal);
+      cancel();
+      $("motion-status").textContent = `${plan.word || "Round complete"}. You: ${plan.totalsAfter[seat - 1]} points. ${names[2 - seat]}: ${plan.totalsAfter[2 - seat]} points.`;
+    } catch (error) {
+      if (error.name !== "AbortError") cancel();
+    }
+  }
+  window.addEventListener("resize", () => {
+    if (active) cancel();
+  });
+  window.addEventListener("scroll", () => {
+    if (active && performance.now() - started >= 100) cancel();
+  }, { passive: true });
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) cancel();
+  });
+  media.addEventListener("change", () => {
+    if (active) cancel();
+  });
+  return { play, cancel, get active() {
+    return active;
+  } };
+}
 
 // server/versions/rules-v1.mjs
 var GAME_CONFIG = Object.freeze({
@@ -9448,7 +9727,12 @@ var friends = createFriends({ api, getUser: () => user, getData: () => homeData,
   if (homeData) Object.assign(homeData, partial);
 }, run, status, invite: (person) => createGame(person), openGame, editProfile });
 var screens = ["loading", "setup", "auth", "username-setup", "recovery", "home", "friends", "activity", "account", "game"];
+var scoreLedger = createScoreLedger(localStorage);
+var scoreMotion = createBoardScoreMotion({ onComplete: () => {
+  if (game && currentView === "game") renderGame();
+} });
 function screen(name, { route = true, replace = false } = {}) {
+  scoreMotion.cancel(false);
   closeSheet();
   currentView = name;
   for (const id of screens) $(id).hidden = id !== name;
@@ -9725,6 +10009,7 @@ async function openGame(id, quiet = false, { route = true } = {}) {
     }
     return;
   }
+  const previousRevision = game?.id === id ? game.revision : null;
   const changed = !game || game.id !== id || game.revision !== result.game.revision;
   const gameConfig = configFor(result.game.rules_version);
   if (!gameConfig) throw apiError("Update Word Conquest to play this game.", "client_update_required", 409);
@@ -9744,14 +10029,32 @@ async function openGame(id, quiet = false, { route = true } = {}) {
     $("zoom").setAttribute("aria-pressed", "false");
     screen("game", { route });
   }
-  if (changed || !quiet) renderGame();
+  if (changed || !quiet) {
+    renderGame();
+    animateScore(previousRevision);
+  }
+}
+function animateScore(previousRevision = null, { replay = false } = {}) {
+  if (preview || currentView !== "game" || !game || pending()) return;
+  const move = history[0];
+  const claimed = replay || scoreLedger.claim({ userId: user?.id, game, move, previousRevision });
+  const plan = claimed && scoreMotionPlan(game, move, config2);
+  if (!plan || document.hidden) return;
+  closeSheet();
+  $("toast").hidden = true;
+  $("board").classList.remove("enlarged");
+  $("zoom").setAttribute("aria-pressed", "false");
+  $("zoom").setAttribute("aria-label", "Enlarge board");
+  $("zoom").replaceChildren(icon("expand"));
+  $("game-table").scrollIntoView({ block: "start", behavior: "instant" });
+  void scoreMotion.play(plan, { seat: seatOf(game, user.id), names: game.names });
 }
 var pos = (t) => ({ x: t.q * 64, y: t.r * 64 });
 function myTurn() {
   return game?.status === "active" && game.players[game.state.player - 1] === user?.id;
 }
 function canPlay() {
-  return !preview && myTurn() && !busy && !pending();
+  return !preview && myTurn() && !busy && !pending() && !scoreMotion.active;
 }
 function drawBoard() {
   const board = $("board");
@@ -9836,16 +10139,16 @@ function renderSelection() {
   $("retry").disabled = busy;
 }
 function renderGame() {
+  scoreMotion.cancel(false);
   const totals = engine_default.scoreBreakdown(game.state, config2), seat = seatOf(game, user?.id) || 1;
   const active = game.status === "active", ownTurn = preview || myTurn(), unconfirmed = !!pending();
   const other = opponentName(game, user?.id);
   $("game-table").dataset.side = seat === 1 ? "sage" : "walnut";
+  $("game-table").dataset.seat = seat;
   [1, 2].forEach((p) => {
     const mine = p === seat, name = game.names?.[p - 1] || (mine ? "You" : "Your friend"), colour2 = p === 1 ? "Sage green" : "Walnut brown", card = $("player-score-" + p);
-    $("role-" + p).textContent = mine ? "You" : "Opponent";
-    $("name-" + p).textContent = name;
-    $("name-" + p).title = name;
-    $("colour-" + p).replaceChildren(node("span", colour2), ...config2.castleIncome && !isFinished(game) ? [node("span", `+${engine_default.castleIncomePerRound(game.state, config2)[p - 1]} each round`, "income-rate")] : []);
+    $("name-" + p).textContent = mine ? "You" : name;
+    $("name-" + p).title = mine ? "You" : name;
     $("score-" + p).textContent = totals[p - 1].total;
     card.style.order = mine ? 1 : 2;
     card.classList.toggle("is-you", mine);
@@ -9941,16 +10244,21 @@ async function sendPending() {
   try {
     const result = await api({ action: "turn", gameId: sentGame, command });
     localStorage.removeItem(storageKey);
-    if (user?.id === sentUser) {
-      status(result.replayed ? "Your earlier move was already saved." : "Move saved.");
-      if (game?.id === sentGame) {
-        game = result.game;
-        selection = [];
-        jokers = {};
-        if (command.action === "resign") {
-          await showHome();
-          status("You left the game.");
-        } else await openGame(sentGame, true);
+    if (user?.id === sentUser && game?.id === sentGame && result.game.revision >= game.revision) {
+      const previousRevision = game.revision;
+      game = result.game;
+      selection = [];
+      jokers = {};
+      if (result.recap && result.acceptedRevision === game.revision) history = [{ revision: result.acceptedRevision, recap: result.recap }, ...history.filter((m) => m.revision !== result.acceptedRevision)];
+      if (command.action === "resign") {
+        await showHome();
+        status("You left the game.");
+      } else if (currentView === "game") {
+        busy = false;
+        renderGame();
+        animateScore(previousRevision);
+        refreshQueued = true;
+        if (!scoreMotion.active) status(result.replayed ? "Your earlier move was already saved." : "Move saved.");
       }
     }
   } catch (e) {
@@ -9972,7 +10280,7 @@ async function sendPending() {
     }
   } finally {
     busy = false;
-    if (game && currentView === "game") renderGame();
+    if (game && currentView === "game" && !scoreMotion.active) renderGame();
     if (refreshQueued) void poll();
   }
 }
@@ -10042,9 +10350,11 @@ function showHistory() {
   showSheet("The story so far.", history.length ? list : emptyState("The first word is yours.", "Played words will appear here.", "history"));
 }
 function showRecap() {
+  scoreMotion.cancel();
   const r = history[0]?.recap;
   if (!r) return;
   const content = [node("div", r.word || "Game update", "recap-word"), node("div", `${game.names[r.player - 1]} \xB7 ${timeAgo(r.at)}`, "recap-byline")];
+  if (scoreMotionPlan(game, history[0], config2)) content.push(act("Replay points", () => animateScore(null, { replay: true }), "secondary full", "refresh"));
   if (r.score) content.push(scoreLines([["Word points", r.score.wordPoints], ["Territory gained", r.score.territoryGain], ...r.score.enemyLoss ? [["Opponent territory lost", r.score.enemyLoss]] : []]));
   if (r.roundComplete) content.push(node("h3", `Round ${r.round} castle income`), scoreLines([1, 2].map((p) => [game.names[p - 1], `+${r.income[p - 1]}`])));
   if (r.changed?.length) {
@@ -10155,6 +10465,7 @@ async function confirmAction(kind) {
   if (await ask(options[kind])) await action(kind);
 }
 function showGameMenu() {
+  scoreMotion.cancel();
   const list = node("div", void 0, "settings-list");
   list.append(row("Move history", "history", showHistory), row("How to play", "book", showRules, { note: rulesLabel(game.rules_version) }));
   if (game.status === "active" && !preview) {
@@ -10448,8 +10759,14 @@ $("game-menu").onclick = showGameMenu;
 $("share-invite").onclick = () => run(shareInvite);
 $("copy-invite").onclick = () => run(copyInvite);
 $("cancel-invite").onclick = () => run(quitGame);
-$("player-score-1").onclick = () => showScore(1);
-$("player-score-2").onclick = () => showScore(2);
+$("player-score-1").onclick = () => {
+  scoreMotion.cancel();
+  showScore(1);
+};
+$("player-score-2").onclick = () => {
+  scoreMotion.cancel();
+  showScore(2);
+};
 $("score-preview").onclick = showWordScore;
 $("recap").onclick = showRecap;
 $("accept-draw").onclick = () => run(() => confirmAction("accept_draw"));
@@ -10618,7 +10935,7 @@ if (native) {
       void poll();
       if (authReady) void push.restore().catch(() => {
       });
-    }
+    } else scoreMotion.cancel();
   });
   void App.addListener("backButton", () => {
     if (closeTopDialog()) return;

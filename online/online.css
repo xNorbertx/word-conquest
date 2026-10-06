@@ -2051,3 +2051,45 @@ input:read-only {
 @media(max-width:370px){.score{padding:9px;gap:5px}.score strong{font-size:29px}.player-colour{font-size:10px}.player-name{font-size:14px}.game-screen .turn-pill{font-size:16px}.turn{gap:8px}}
 
 .turn-copy{display:flex;min-width:0}.turn-player{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.turn-suffix{flex-shrink:0}
+
+/* Quiet identities; points remain the focus. Shape markers preserve seat identity. */
+.score{min-height:68px;padding:13px 15px;gap:12px}
+.score .player-identity{flex-direction:row;align-items:center;gap:8px;min-width:0}
+.score .player-name{font-size:16px;font-weight:650;line-height:1.25}
+.score strong{font-variant-numeric:tabular-nums;font-size:36px}
+.score.is-turn{border-color:#aab79f;box-shadow:none}
+.score.walnut.is-turn{border-color:#bba48e;box-shadow:none}
+@media(max-width:799px){.score{min-height:61px;padding:12px 11px;gap:9px}.score .player-name{font-size:15px}.score strong{font-size:33px}}
+@media(max-width:370px){.score{padding:10px 9px;gap:6px}.score .player-name{font-size:14px}.score strong{font-size:30px}.score .player-identity{gap:6px}}
+
+/* Saved-move animation: presentation only; the app already holds the final state. */
+#game-table.is-scoring{--motion-ink:#385340;--motion-target:#385340}
+#game-table.is-scoring[data-motion-player="2"]{--motion-ink:#72543e}
+#game-table.is-scoring[data-motion-target="2"]{--motion-target:#72543e}
+.is-scoring .game-aside>:not(#score-motion){display:none!important}
+.is-scoring #zoom{visibility:hidden}
+.is-scoring #board{pointer-events:none}
+.is-scoring #board .path{stroke:var(--motion-ink)}
+.is-scoring .tile.motion-word-tile>polygon:first-child{stroke:var(--motion-ink);stroke-width:2.8}
+.is-scoring .tile.motion-source>polygon:first-child{stroke:var(--motion-target);stroke-width:4}
+.is-scoring .tile.motion-castle>polygon:first-child{stroke:#a98235;stroke-width:4;fill:#ded4ae}
+.is-scoring .tile.motion-loss>polygon:first-child{stroke:var(--motion-target);stroke-width:4;stroke-dasharray:5 3}
+#score-motion{position:relative;text-align:center;min-height:210px;padding:21px 5px 7px;border-top:1px solid var(--line);color:var(--green)}
+#score-motion[data-side="walnut"]{color:#72543e}
+#motion-byline{font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#motion-word{font:38px/1.15 var(--serif);letter-spacing:1px;overflow-wrap:anywhere;margin:6px 0 28px;color:var(--ink)}
+.motion-caption{display:flex;align-items:center;justify-content:center;gap:9px;font-size:14px;font-weight:650}
+.motion-caption .icon{width:20px;height:20px}
+#motion-tally{font:32px/1 var(--serif);min-width:44px;font-variant-numeric:tabular-nums}
+#motion-recipient{font-size:11px;color:var(--muted);margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#motion-skip{font-size:11px;min-height:44px;display:inline-flex;align-items:center;gap:3px;margin-top:7px;padding:9px 15px;color:var(--muted)}
+#motion-skip .icon{width:14px;height:14px}
+.score-motion-layer{position:fixed;inset:0;z-index:45;pointer-events:none;overflow:hidden}
+.score-point{position:absolute;display:grid;place-items:center;min-width:31px;height:31px;padding:0 6px;transform:translate(-50%,-50%);border:1px solid #9dae8c;border-radius:50%;font:22px/1 var(--serif);color:var(--green);background:var(--paper);box-shadow:0 3px 10px #302d2614;will-change:transform,opacity}
+.score-point.side-2{color:#72543e;border-color:#b9a28d;background:#fcf6ef}
+.score-point.gold{border-color:#c3a669;color:#886427;background:#fff9e9;box-shadow:0 0 0 5px #b58a3d15}
+.score-point.bonus{border-radius:20px;min-width:76px;font-size:17px;padding:0 10px}
+.motion-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:799px){#score-motion{min-height:185px;padding-top:14px}#motion-word{font-size:34px;margin-bottom:24px}.score-point{min-width:29px;height:29px;font-size:20px}}
+@media(prefers-reduced-motion:reduce){.score-point{box-shadow:none}.is-scoring .tile>polygon:first-child{transition:none}}
+.is-scoring.score-reduced .tile>polygon:first-child{transition:none}
