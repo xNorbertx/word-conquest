@@ -34,7 +34,18 @@
   83/55 score appeared immediately when returning to Games. 320/390-wide views fit
   without horizontal overflow; console errors were absent.
 - Backend optimization deployed to the existing dedicated Supabase project.
-  Web/APK publication and artifact verification are recorded below when complete.
+  Hosted checks matched all seven summary scores/names to legacy full-board
+  responses, loaded saved game/history and confirmed statistics remain available.
+- Released source `72713e1` to the [web app](https://xnorbertx.github.io/word-conquest/online/).
+  Pages `818e90b` built successfully; all ten public assets match
+  the verified build after line-ending normalization. The root prototype is preserved.
+- [Android pipeline](https://github.com/xNorbertx/word-conquest/actions/runs/37538519588) passed at the same source.
+  Published [0.7.1-72713e1](https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-24098852), code `24098852`.
+  APK signature/package, new UI and icon resources, notification permission and
+  absence of test fixtures/private keys verified. Anonymous download matches
+  SHA-256 `2e8e1a423efd82c6520aec54632dbeccdd776165035c4f9cfad56e7725a36c64`. Local APK: `dist/word-conquest-0.7.1.apk`.
+  Remaining owner check: in-place Seeker upgrade, icon and responsiveness on device.
+  No new services, paid infrastructure or ongoing costs.
 
 ## Board score animation and simpler player cards - 6 October, 0.7.0
 

@@ -3,13 +3,20 @@
 Target test phone: Solana Seeker / Android 16. Package: `com.wordconquest.app`.
 The APK uses the same Supabase accounts and games as the web app.
 
-Verified pilot build: `0.7.0-f76456c` (version code `24092536`), from the successful
-[pipeline run](https://github.com/xNorbertx/word-conquest/actions/runs/37525868326).
+Verified pilot build: `0.7.1-72713e1` (version code `24098852`), from the successful
+[pipeline run](https://github.com/xNorbertx/word-conquest/actions/runs/37538519588).
 The public APK's signature matches the existing pilot signer; package/version,
 notification permission and bundled UI were verified. Anonymous download matches
-SHA-256 `bbf32b49bea92ca7e7c8f11b2e521e6aa5ef873c16705485c9392d6c742c8935`.
-Local APK: `dist/word-conquest-0.7.0.apk`. Earlier compilation-only artifacts are
+SHA-256 `2e8e1a423efd82c6520aec54632dbeccdd776165035c4f9cfad56e7725a36c64`.
+Local APK: `dist/word-conquest-0.7.1.apk`. Earlier compilation-only artifacts are
 superseded; use this build or a later successful build for the stable pilot signer.
+
+Version 0.7.1 removes the waiting-turn card, the Record section on You, and
+table-themed wording. Results/statistics remain stored on the backend. The WC
+monogram is shared by the header, launcher, splash and notification icon. Games
+shows its saved list immediately on return, with smaller requests in the background.
+First launch still depends on the network. The new API remains compatible with
+older APKs. No schema migration, scoring changes or new service costs.
 
 Version 0.7.0 animates saved scores from the board: word points, castle income,
 territory gained and opponent territory deductions. Both castle owners receive
@@ -47,7 +54,7 @@ statistics stay separate.
 On your Android phone, open the repository's [Releases page](https://github.com/xNorbertx/word-conquest/releases).
 Open the newest published Android pilot and, under **Assets**, download
 `word-conquest-android.apk`. No GitHub account or ZIP extraction is needed.
-[Direct verified APK download](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-24092536/word-conquest-android.apk).
+[Direct verified APK download](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-24098852/word-conquest-android.apk).
 Open the downloaded APK and allow installation from your browser if Android asks.
 Updates install over the existing pilot app; do not uninstall it, because that
 removes locally saved sessions and pending actions.
