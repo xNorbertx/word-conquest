@@ -2178,6 +2178,9 @@ var rulesLabel = (version6) => ({ "autumn-v1": "Classic \xB7 3 captures", "autum
 var captureRule = (rules2) => Number.isFinite(rules2.maxEnemyTilesPerWord) ? `Capture up to ${rules2.maxEnemyTilesPerWord} opponent tiles per word.` : "No capture limit: every opponent tile in your word becomes yours.";
 var castleRule = (rules2) => rules2.castleIncome ? `Side castles earn ${rules2.castleIncome.side} each round; the centre earns ${rules2.castleIncome.center}. Final castle values are ${rules2.castlePoints} and ${rules2.centerCastlePoints}.` : `Castles are worth ${rules2.castlePoints} territory points.`;
 
+// server/domain.mjs
+var uuid = (value) => typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+
 // server/game-summary.mjs
 function gameSummary(g) {
   const rules2 = configFor(g.rules_version);
@@ -2192,7 +2195,7 @@ function gameSummary(g) {
     result: g.result,
     updated_at: g.updated_at,
     state: { player: g.state.player },
-    scores: rules2 ? engine_default.scores(g.state, rules2) : null
+    scores: g.state.tiles ? rules2 ? engine_default.scores(g.state, rules2) : null : g.scores ?? null
   };
 }
 
@@ -2215,8 +2218,134 @@ function createHomeRequests(load) {
   };
 }
 
+// online/snapshot-cache.mjs
+var copy = (value) => JSON.parse(JSON.stringify(value));
+var emptySocial = () => ({ people: [], invitations: [], outgoing: [], blocked: [] });
+function createSnapshotCache(storage, { namespace = "", now = Date.now, ttl = 7 * 864e5, maxGames = 12, maxBytes = 1e6 } = {}) {
+  const key = "wc-snapshots:v1:" + namespace;
+  let memory = null, loaded = false;
+  const fresh = (at) => Number.isFinite(at) && at <= now() + 6e4 && now() - at < ttl;
+  const owned = (g, actor) => g && uuid(g.id) && Array.isArray(g.players) && g.players.includes(actor) && Number.isSafeInteger(g.revision) && g.revision >= 0;
+  function validGame(g, actor) {
+    if (!owned(g, actor) || !configFor(g.rules_version) || !Array.isArray(g.names) || g.names.length !== 2 || !g.names.every((n) => typeof n === "string")) return false;
+    const s = g.state;
+    if (!s || !Array.isArray(s.tiles) || s.tiles.length !== 69 || !Array.isArray(s.turns) || !Array.isArray(s.wordPoints) || ![1, 2].includes(s.player)) return false;
+    if (!s.tiles.every((t) => t && typeof t.id === "string" && /^[A-Z?]$/.test(t.letter) && [0, 1, 2].includes(t.owner) && Number.isFinite(t.q) && Number.isFinite(t.r))) return false;
+    try {
+      return engine_default.scores(s, configFor(g.rules_version)).every(Number.isFinite);
+    } catch {
+      return false;
+    }
+  }
+  function read(actor) {
+    if (!uuid(actor)) return null;
+    if (!loaded) {
+      loaded = true;
+      try {
+        const raw = storage?.getItem(key);
+        if (raw && raw.length <= maxBytes) memory = JSON.parse(raw);
+      } catch {
+      }
+    }
+    if (memory && (memory.actor !== actor || !fresh(memory.at))) {
+      clear();
+      return null;
+    }
+    if (memory?.schema !== 1 || memory.actor !== actor || !fresh(memory.at) || !Array.isArray(memory.games) || memory.games.some((item) => !item?.data?.game)) return null;
+    if (memory.home && (!Array.isArray(memory.home.data?.games) || memory.home.data.profile?.id !== actor)) return null;
+    return memory;
+  }
+  function clear() {
+    memory = null;
+    loaded = true;
+    try {
+      storage?.removeItem(key);
+    } catch {
+    }
+  }
+  function save(data) {
+    memory = data;
+    loaded = true;
+    while (data.games.length > maxGames) data.games.pop();
+    while (JSON.stringify(data).length > maxBytes && data.games.length) data.games.pop();
+    while (JSON.stringify(data).length > maxBytes && data.home?.data.games.length) data.home.data.games.pop();
+    if (JSON.stringify(data).length > maxBytes) {
+      clear();
+      return;
+    }
+    try {
+      while (true) {
+        try {
+          storage?.setItem(key, JSON.stringify(data));
+          break;
+        } catch (e) {
+          if (!data.games.length) {
+            try {
+              storage?.removeItem(key);
+            } catch {
+            }
+            break;
+          }
+          data.games.pop();
+        }
+      }
+    } catch {
+    }
+  }
+  function writable(actor) {
+    return read(actor) || { schema: 1, actor, at: now(), home: null, games: [] };
+  }
+  return {
+    home(actor) {
+      const h = read(actor)?.home;
+      if (!h || !fresh(h.at) || h.data?.profile?.id !== actor || typeof h.data.profile.username !== "string" || !h.data.profile.username || typeof h.data.profile.display_name !== "string" || !Array.isArray(h.data.games)) return null;
+      if (!h.data.games.every((g) => owned(g, actor) && g.state && [1, 2].includes(g.state.player) && Array.isArray(g.names) && g.names.every((n) => typeof n === "string"))) return null;
+      return copy({ ...h.data, notifications: [], social: emptySocial() });
+    },
+    game(actor, id) {
+      const item = read(actor)?.games?.find((g) => g.data?.game?.id === id);
+      return item && fresh(item.at) && validGame(item.data.game, actor) ? copy(item.data) : null;
+    },
+    saveHome(actor, result) {
+      if (!uuid(actor) || result?.profile?.id !== actor) return;
+      if (result.needsUsername || !result.profile.username) {
+        clear();
+        return;
+      }
+      const data = writable(actor), p = result.profile;
+      data.at = now();
+      data.home = { at: now(), data: { profile: { id: actor, username: p.username, display_name: p.display_name }, needsUsername: false, games: (result.games || []).filter((g) => owned(g, actor)).slice(0, 200).map((g) => gameSummary(g)) } };
+      save(data);
+    },
+    saveGame(actor, result) {
+      const g = result?.game;
+      if (!validGame(g, actor) || g.status === "invited") return;
+      const data = writable(actor);
+      if (data.games.some((item) => item.data.game.id === g.id && item.data.game.revision > g.revision)) return;
+      const latest = (result.history || []).filter((m) => Number.isSafeInteger(m.revision) && m.revision <= g.revision && m.recap).slice(0, 1);
+      data.games = data.games.filter((item) => item.data.game.id !== g.id);
+      data.games.unshift({ at: now(), data: { game: copy({ ...g, state: { ...g.state, log: [] } }), history: copy(latest), historyHasMore: result.historyHasMore !== false, invitation: null } });
+      data.at = now();
+      if (data.home) {
+        const games = data.home.data.games, index2 = games.findIndex((item) => item.id === g.id), summary = gameSummary(g);
+        if (index2 < 0) games.unshift(summary);
+        else if (games[index2].revision <= g.revision) games[index2] = summary;
+      }
+      save(data);
+    },
+    forgetGame(actor, id) {
+      const data = read(actor);
+      if (!data) return;
+      data.games = data.games.filter((item) => item.data.game.id !== id);
+      if (data.home) data.home.data.games = data.home.data.games.filter((g) => g.id !== id);
+      save(data);
+    },
+    clear
+  };
+}
+
 // package.json
-var version = "0.7.1";
+var version = "0.7.2";
 
 // online/app.js
 init_dist();
@@ -5702,7 +5831,7 @@ function expiresAt(expiresIn) {
   const timeNow = Math.round(Date.now() / 1e3);
   return timeNow + expiresIn;
 }
-function uuid() {
+function uuid2() {
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function(c) {
     const r = Math.random() * 16 | 0, v = c == "x" ? r : r & 3 | 8;
     return v.toString(16);
@@ -7741,7 +7870,7 @@ var GoTrueClient = class _GoTrueClient {
    * @param callback A callback function to be invoked when an auth event happens.
    */
   onAuthStateChange(callback) {
-    const id = uuid();
+    const id = uuid2();
     const subscription = {
       id,
       callback,
@@ -9108,9 +9237,9 @@ function button(label, handler, className = "secondary", symbol) {
 function setting(label, symbol, handler, { note, danger = false } = {}) {
   const n = button("", handler, "settings-row" + (danger ? " danger" : ""));
   n.replaceChildren(icon(symbol));
-  const copy = node("span", label);
-  if (note) copy.append(node("small", note));
-  n.append(copy, icon("chevron"));
+  const copy2 = node("span", label);
+  if (note) copy2.append(node("small", note));
+  n.append(copy2, icon("chevron"));
   return n;
 }
 var toastTimer;
@@ -9191,10 +9320,10 @@ function closeTopDialog() {
   }
   return false;
 }
-function emptyState(title, copy, symbol = "leaf") {
+function emptyState(title, copy2, symbol = "leaf") {
   const box = node("div", void 0, "empty-state"), art = node("div", void 0, "empty-art");
   art.append(icon(symbol));
-  box.append(art, node("h2", title), node("p", copy));
+  box.append(art, node("h2", title), node("p", copy2));
   return box;
 }
 
@@ -9251,11 +9380,11 @@ function createFriends({ api: api2, getUser, getData, setData, run: run2, status
     showSheet(person.display_name, content);
   }
   function personRow(person, search2 = false) {
-    const box = node("div", void 0, "friend-row"), copy = node("div", void 0, "friend-copy");
-    copy.append(node("strong", person.display_name));
+    const box = node("div", void 0, "friend-row"), copy2 = node("div", void 0, "friend-copy");
+    copy2.append(node("strong", person.display_name));
     const incoming = person.status === "pending" && person.requested_by !== getUser()?.id;
-    if (search2 || person.status !== "accepted") copy.append(node("small", search2 ? formatFriendCode(person.friend_code) : incoming ? "Wants to be your friend" : "Request sent"));
-    box.append(avatar2(person.display_name), copy);
+    if (search2 || person.status !== "accepted") copy2.append(node("small", search2 ? formatFriendCode(person.friend_code) : incoming ? "Wants to be your friend" : "Request sent"));
+    box.append(avatar2(person.display_name), copy2);
     let primary;
     if (person.status === "accepted") {
       const waiting = data().outgoing?.find((i) => i.recipient === person.id);
@@ -9767,6 +9896,9 @@ var authBusy = false;
 var lastRequestId = null;
 var lastProblem = null;
 var usernameSetupBusy = false;
+var gameFresh = false;
+var entering = false;
+var snapshots = createSnapshotCache(localStorage, { namespace: cfg.supabaseUrl + (cfg.cacheScope || "") });
 var native = Capacitor.isNativePlatform();
 var publicApp = "https://xnorbertx.github.io/word-conquest/online/";
 var authRedirect = () => native ? publicApp : location.origin + location.pathname;
@@ -9783,6 +9915,7 @@ var friends = createFriends({ api, getUser: () => user, getData: () => homeData,
 }, run, status, invite: (person) => createGame(person), openGame, editProfile });
 var screens = ["loading", "setup", "auth", "username-setup", "recovery", "home", "friends", "activity", "account", "game"];
 var homeRequests = createHomeRequests(() => api({ action: "home" }));
+var gameRequests = createHomeRequests((key) => api({ action: "game", gameId: key.split("/")[1] }));
 var scoreLedger = createScoreLedger(localStorage);
 var scoreMotion = createBoardScoreMotion({ onComplete: () => {
   if (game && currentView === "game") renderGame();
@@ -9831,11 +9964,35 @@ function apiError(message, code, statusCode, requestId) {
 async function api(body) {
   if (!db) throw new Error("Online play is not connected yet.");
   const { data: { session }, error } = await db.auth.getSession();
-  if (error || !session) throw apiError("Sign in to continue.", "unauthorized", 401);
-  const response = await fetch(`${cfg.supabaseUrl}/functions/v1/game-api`, { method: "POST", signal: AbortSignal.timeout(2e4), headers: { "Content-Type": "application/json", apikey: cfg.supabaseAnonKey, Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ ...body, supportedRules: SUPPORTED_RULES, supportsFriends: true, supportsUsernameOnboarding: true, supportsGameSummaries: true }) });
+  if (error || !session) {
+    snapshots.clear();
+    gameFresh = false;
+    authReady = false;
+    homeData = null;
+    game = null;
+    ++navigation;
+    ++gameLoad;
+    ++homeLoad;
+    screen("auth", { route: false });
+    throw apiError("Sign in to continue.", "unauthorized", 401);
+  }
+  const response = await fetch(`${cfg.supabaseUrl}/functions/v1/game-api`, { method: "POST", signal: AbortSignal.timeout(2e4), headers: { "Content-Type": "application/json", apikey: cfg.supabaseAnonKey, Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ ...body, supportedRules: SUPPORTED_RULES, supportsFriends: true, supportsUsernameOnboarding: true, supportsGameSummaries: true, supportsFastReads: true }) });
   const result = await response.json();
   if (!response.ok) {
-    if (result.code === "username_required" && user?.id === session.user.id) showUsernameSetup();
+    if (user?.id === session.user.id) {
+      if (result.code === "username_required") showUsernameSetup();
+      else if (["unauthorized", "account_deleting"].includes(result.code)) {
+        snapshots.clear();
+        gameFresh = false;
+        game = null;
+        homeData = null;
+        authReady = false;
+        ++navigation;
+        ++gameLoad;
+        ++homeLoad;
+        screen("auth", { route: false });
+      }
+    }
     throw apiError(result.error || "Request failed.", result.code, response.status, result.requestId);
   }
   return result;
@@ -9919,14 +10076,14 @@ function renderHome() {
     const name = opponentName(g, user.id), card = act("", () => openGame(g.id), "game-card" + (gameStatus(g, user.id) === "Your turn" ? " has-turn" : ""));
     card.replaceChildren();
     card.setAttribute("aria-label", `${name}. ${gameStatus(g, user.id)}. Open game`);
-    const top = node("div", void 0, "game-card-top"), copy = node("div");
-    copy.append(node("div", name, "game-card-name"));
+    const top = node("div", void 0, "game-card-top"), copy2 = node("div");
+    copy2.append(node("div", name, "game-card-name"));
     const meta = node("div", void 0, "game-card-meta"), dot = node("span", void 0, "status-dot" + (gameStatus(g, user.id) === "Your turn" ? " active" : ""));
     meta.append(dot, node("span", timeAgo(g.updated_at)));
-    copy.append(meta);
+    copy2.append(meta);
     const chevron = node("span", void 0, "card-chevron");
     chevron.append(icon("chevron"));
-    top.append(avatar(g.status === "invited" ? "+" : name, seatOf(g, user.id) === 2 ? "sage" : "walnut"), copy, chevron);
+    top.append(avatar(g.status === "invited" ? "+" : name, seatOf(g, user.id) === 2 ? "sage" : "walnut"), copy2, chevron);
     const bottom = node("div", void 0, "game-card-bottom");
     if (g.status === "invited") bottom.append(node("span", "Your invitation is ready to share", "small-note"));
     else {
@@ -9965,6 +10122,8 @@ function renderActivity() {
   if (!homeData.notifications.length) $("inbox").append(emptyState("All caught up.", "Game updates will appear here.", "bell"));
 }
 function showUsernameSetup() {
+  snapshots.clear();
+  gameFresh = false;
   authReady = false;
   if (currentView !== "username-setup") {
     $("setup-username-error").hidden = true;
@@ -9981,9 +10140,12 @@ async function fetchHome() {
     showUsernameSetup();
     return null;
   }
+  snapshots.saveHome(actor, result);
+  authReady = true;
   return result;
 }
 function rememberGame(saved) {
+  if (saved?.id === game?.id && gameFresh) snapshots.saveGame(user?.id, { game: saved, history });
   if (!homeData || !saved?.id || !saved.players?.includes(user?.id)) return;
   const index2 = homeData.games.findIndex((g) => g.id === saved.id), old = homeData.games[index2];
   if (old && old.revision > saved.revision) return;
@@ -10002,6 +10164,11 @@ async function showHome(quiet = false, { route = true, replace = false } = {}) {
     ++gameLoad;
     screen("home", { route, replace });
     renderHome();
+  } else if (!quiet) {
+    $("loading-message").textContent = "Loading your games\u2026";
+    $("retry-load").hidden = true;
+    $("loading").querySelector(".spinner").hidden = false;
+    screen("loading", { route: false });
   }
   const before = JSON.stringify(homeData);
   let result;
@@ -10080,19 +10247,61 @@ async function decideInvite(choice) {
 }
 async function openGame(id, quiet = false, { route = true } = {}) {
   const ticket = quiet ? navigation : ++navigation, request = quiet ? gameLoad : ++gameLoad, actor = user?.id;
-  const result = await api({ action: "game", gameId: id });
+  const cached = !quiet && snapshots.game(actor, id);
+  if (cached) {
+    preview = false;
+    config2 = configFor(cached.game.rules_version);
+    game = cached.game;
+    history = cached.history;
+    invite = null;
+    gameFresh = false;
+    selection = [];
+    jokers = {};
+    highlightLast = false;
+    focusTile = null;
+    screen("game", { route });
+    renderGame();
+  } else if (!quiet) {
+    gameFresh = false;
+    $("loading-message").textContent = "Opening game\u2026";
+    $("retry-load").hidden = true;
+    $("loading").querySelector(".spinner").hidden = false;
+    screen("loading", { route: false });
+  }
+  let result;
+  try {
+    result = await gameRequests.get(`${actor}/${id}`);
+  } catch (e) {
+    if (ticket === navigation && request === gameLoad && actor === user?.id) {
+      if (["not_found", "forbidden", "client_update_required"].includes(e.code)) {
+        snapshots.forgetGame(actor, id);
+        if (homeData) homeData.games = homeData.games.filter((g) => g.id !== id);
+        gameFresh = false;
+        game = null;
+        await showHome(false, { route }).catch(() => {
+        });
+      } else if (currentView === "game") {
+        gameFresh = false;
+        renderGame();
+        offlineNotice(true, "Could not refresh this board. Reconnect to play.");
+      }
+    }
+    throw e;
+  }
   if (ticket !== navigation || request !== gameLoad || actor !== user?.id) return;
   if (quiet && (currentView !== "game" || game?.id !== id)) return;
-  if (game?.id === id && game.revision > result.game.revision) return;
+  if (result.profile && !homeData) homeData = { profile: result.profile, games: [], notifications: [], social: { people: [], invitations: [], outgoing: [], blocked: [] } };
+  authReady = true;
   if (result.invitation && !result.game) {
     if (!quiet) {
       localStorage.setItem("wc-invitation", result.invitation.token);
       await showInvite();
     }
-    return;
+    return true;
   }
+  if (game?.id === id && game.revision > result.game.revision) return;
   const previousRevision = game?.id === id ? game.revision : null;
-  const changed = !game || game.id !== id || game.revision !== result.game.revision;
+  const changed = !game || game.id !== id || game.revision !== result.game.revision, wasFresh = gameFresh;
   const gameConfig = configFor(result.game.rules_version);
   if (!gameConfig) throw apiError("Update Word Conquest to play this game.", "client_update_required", 409);
   preview = false;
@@ -10100,6 +10309,7 @@ async function openGame(id, quiet = false, { route = true } = {}) {
   game = result.game;
   history = result.history;
   invite = result.invitation;
+  gameFresh = true;
   rememberGame(game);
   if (changed) {
     selection = [];
@@ -10110,15 +10320,17 @@ async function openGame(id, quiet = false, { route = true } = {}) {
   if (!quiet) {
     $("board").classList.remove("enlarged");
     $("zoom").setAttribute("aria-pressed", "false");
-    screen("game", { route });
+    if (!cached) screen("game", { route });
   }
-  if (changed || !quiet) {
+  if (changed || !quiet || !wasFresh) {
     renderGame();
     animateScore(previousRevision);
   }
+  offlineNotice(!navigator.onLine);
+  return true;
 }
 function animateScore(previousRevision = null, { replay = false } = {}) {
-  if (preview || currentView !== "game" || !game || pending()) return;
+  if (preview || !gameFresh || currentView !== "game" || !game || pending()) return;
   const move = history[0];
   const claimed = replay || scoreLedger.claim({ userId: user?.id, game, move, previousRevision });
   const plan = claimed && scoreMotionPlan(game, move, config2);
@@ -10137,7 +10349,7 @@ function myTurn() {
   return game?.status === "active" && game.players[game.state.player - 1] === user?.id;
 }
 function canPlay() {
-  return !preview && myTurn() && !busy && !pending() && !scoreMotion.active;
+  return !preview && gameFresh && myTurn() && !busy && !pending() && !scoreMotion.active;
 }
 function drawBoard() {
   const board = $("board");
@@ -10195,6 +10407,7 @@ function renderJokers() {
   }
 }
 function selectionHint(error) {
+  if (!gameFresh) return "Checking for updates\u2026";
   if (pending()) return "Your move is waiting to be confirmed.";
   if (!selection.length) return engine_default.canReenter(game.state, config2) ? "No territory left? Start on any tile." : `Start on one of your ${seatOf(game, user?.id) === 2 ? "brown" : "green"} tiles.`;
   if (selection.some((id) => game.state.tiles.find((t) => t.id === id).letter === "?" && !jokers[id])) return "Choose a letter for your joker.";
@@ -10243,14 +10456,14 @@ function renderGame() {
   document.querySelector(".turn").style.order = 3;
   $("game-heading-name").textContent = preview ? "Practice game" : other;
   $("game-heading-subtitle").textContent = game.status === "invited" ? "Invitation" : isFinished(game) ? "Finished game" : config2.castleIncome ? `Round ${Math.min(...game.state.turns) + 1} \xB7 Castle income 2 / 4` : `Turn ${game.state.turns.reduce((a, b) => a + b, 0) + 1}`;
-  const turnText = unconfirmed ? busy ? "Saving your turn..." : "Turn awaiting confirmation" : preview ? "Your turn" : active ? ownTurn ? "Your turn" : `${other}'s turn` : gameStatus(game, user?.id);
+  const turnText = !preview && !gameFresh ? "Updating\u2026" : unconfirmed ? busy ? "Saving your turn..." : "Turn awaiting confirmation" : preview ? "Your turn" : active ? ownTurn ? "Your turn" : `${other}'s turn` : gameStatus(game, user?.id);
   const turnIcon = unconfirmed ? "refresh" : !active ? "flag" : ownTurn ? "arrow" : "hourglass";
   if ($("turn").dataset.label !== turnText) {
-    const copy = node("span", void 0, "turn-copy");
-    if (active && !ownTurn && !unconfirmed) {
-      copy.append(node("span", other, "turn-player"), node("span", "'s turn", "turn-suffix"));
-    } else copy.textContent = turnText;
-    $("turn").replaceChildren(icon(turnIcon), copy);
+    const copy2 = node("span", void 0, "turn-copy");
+    if (active && !ownTurn && !unconfirmed && gameFresh) {
+      copy2.append(node("span", other, "turn-player"), node("span", "'s turn", "turn-suffix"));
+    } else copy2.textContent = turnText;
+    $("turn").replaceChildren(icon(turnIcon), copy2);
     $("turn").dataset.label = turnText;
   }
   $("turn").title = turnText;
@@ -10282,10 +10495,10 @@ function renderGame() {
   const last = history[0]?.recap;
   $("recap").hidden = !last;
   if (last) {
-    const copy = node("span"), symbol = node("span", void 0, "recap-symbol");
+    const copy2 = node("span"), symbol = node("span", void 0, "recap-symbol");
     symbol.append(icon("history"));
-    copy.append(node("small", "LAST MOVE"), node("strong", last.word ? `${game.names[last.player - 1]} played ${last.word}` : activityText(last.action, game.names[last.player - 1])));
-    $("recap").replaceChildren(symbol, copy, node("span", last.score ? `+${last.score.wordPoints}` : ""));
+    copy2.append(node("small", "LAST MOVE"), node("strong", last.word ? `${game.names[last.player - 1]} played ${last.word}` : activityText(last.action, game.names[last.player - 1])));
+    $("recap").replaceChildren(symbol, copy2, node("span", last.score ? `+${last.score.wordPoints}` : ""));
   }
   drawBoard();
   renderJokers();
@@ -10320,6 +10533,8 @@ async function sendPending() {
   if (!command || busy) return;
   const sentGame = game.id, sentUser = user.id, storageKey = pendingKey();
   busy = true;
+  ++gameLoad;
+  gameRequests.reset();
   renderGame();
   try {
     const result = await api({ action: "turn", gameId: sentGame, command });
@@ -10327,10 +10542,11 @@ async function sendPending() {
     if (user?.id === sentUser && game?.id === sentGame && result.game.revision >= game.revision) {
       const previousRevision = game.revision;
       game = result.game;
-      rememberGame(game);
+      gameFresh = true;
       selection = [];
       jokers = {};
       if (result.recap && result.acceptedRevision === game.revision) history = [{ revision: result.acceptedRevision, recap: result.recap }, ...history.filter((m) => m.revision !== result.acceptedRevision)];
+      rememberGame(game);
       if (command.action === "resign") {
         await showHome();
         status("You left the game.");
@@ -10366,7 +10582,7 @@ async function sendPending() {
   }
 }
 async function action(kind) {
-  if (preview || busy || pending() || game?.status !== "active") return;
+  if (preview || !gameFresh || busy || pending() || game?.status !== "active") return;
   if (["word", "refresh"].includes(kind) && !canPlay()) return;
   const command = { operationId: crypto.randomUUID(), revision: game.revision, action: kind, ...kind === "word" ? { path: [...selection], jokers: { ...jokers } } : {} };
   localStorage.setItem(pendingKey(), JSON.stringify(command));
@@ -10398,9 +10614,9 @@ function showRules() {
   const config3 = currentView === "game" && game ? configFor(game.rules_version) || config : config;
   const steps = [["Find a word", `Start on a tile you own. Connect at least ${config3.minimumWordLength} letters in any of the eight directions. Use each tile once. No territory left? Start anywhere.`], ["Make it yours", `${captureRule(config3)} Neutral tiles in your word become yours too. Ordinary tiles score ${config3.normalTerritoryPoints} for territory. ${castleRule(config3)}`], ["Every letter counts", "Small numbers are letter points. Longer words earn a bonus. Jokers can be any letter. Ordinary letters in a played word are replaced; jokers stay wild."], ["Take your time", `Both players share ${config3.letterBudget} letters. When they run out, the player who went second gets a final reply if needed. The highest final score wins. Refreshing your letters uses your turn.`]];
   if (config3.castleIncome) steps.splice(2, 0, ["Hold your castles", "The starting player is chosen at random. A round ends after both players move. Castles pay whoever owns them then, including the final round. Earned income stays yours even if a castle is captured later."]);
-  const content = steps.map(([title, copy], i) => {
+  const content = steps.map(([title, copy2], i) => {
     const row2 = node("div", void 0, "rule-step"), text = node("div");
-    text.append(node("h3", title), node("p", copy));
+    text.append(node("h3", title), node("p", copy2));
     row2.append(node("span", i + 1, "step-number"), text);
     return row2;
   });
@@ -10421,14 +10637,53 @@ function showDictionary() {
   showSheet("Words we play.", [node("p", "English words are checked against a fixed Letterpress-derived word list. Listed inflections, slang and repeated words are allowed."), node("p", "The list includes some uncommon, archaic and offensive words. A game keeps the dictionary it started with."), link]);
 }
 function showHistory() {
-  const list = node("ol", void 0, "move-list");
-  for (const [index2, move] of history.entries()) {
-    const r = move.recap, item = node("li"), copy = node("div", void 0, "move-copy");
-    copy.append(node("strong", r.word || ({ refresh: "Letters refreshed", resign: "Resigned", offer_draw: "Draw offered", accept_draw: "Draw accepted", abandon: "Game abandoned" }[r.action] || "Game update")), node("small", `${game.names[r.player - 1]} \xB7 ${timeAgo(r.at)}`));
-    item.append(node("span", history.length - index2, "move-number"), copy, node("span", r.score ? `+${r.score.wordPoints}` : "", "move-points"));
-    list.append(item);
+  const actor = user?.id, id = game.id, names = [...game.names], content = node("div"), list = node("ol", void 0, "move-list"), note = node("p", "Loading moves\u2026", "menu-note");
+  let moves = [...history], cursor, loading = false;
+  const more = act("Older moves", () => loadPage(), "secondary full", "history");
+  more.hidden = true;
+  function render() {
+    list.replaceChildren();
+    for (const move of moves) {
+      const r = move.recap, item = node("li"), copy2 = node("div", void 0, "move-copy");
+      copy2.append(node("strong", r.word || ({ refresh: "Letters refreshed", resign: "Resigned", offer_draw: "Draw offered", accept_draw: "Draw accepted", abandon: "Game abandoned" }[r.action] || "Game update")), node("small", `${names[r.player - 1]} \xB7 ${timeAgo(r.at)}`));
+      item.append(node("span", move.revision, "move-number"), copy2, node("span", r.score ? `+${r.score.wordPoints}` : "", "move-points"));
+      list.append(item);
+    }
   }
-  showSheet("The story so far.", history.length ? list : emptyState("The first word is yours.", "Played words will appear here.", "history"));
+  async function loadPage() {
+    if (loading) return;
+    loading = true;
+    more.disabled = true;
+    note.textContent = "Loading moves\u2026";
+    note.hidden = false;
+    try {
+      const result = await api({ action: "game_history", gameId: id, ...cursor ? { beforeRevision: cursor } : {} });
+      if (!content.isConnected || actor !== user?.id || game?.id !== id) return;
+      moves = cursor ? [...moves, ...result.history.filter((m) => !moves.some((old) => old.revision === m.revision))] : result.history;
+      cursor = result.nextBefore;
+      render();
+      more.hidden = !result.hasMore;
+      more.textContent = "Older moves";
+      note.hidden = !!moves.length;
+      note.textContent = "The first word is yours.";
+    } catch (e) {
+      if (content.isConnected && actor === user?.id) {
+        note.textContent = "Could not load moves.";
+        more.hidden = false;
+        more.textContent = "Retry";
+      }
+    } finally {
+      loading = false;
+      more.disabled = false;
+    }
+  }
+  render();
+  content.append(list, note, more);
+  showSheet("The story so far.", content);
+  if (!preview) void loadPage();
+  else {
+    note.textContent = "Played words will appear here.";
+  }
 }
 function showRecap() {
   scoreMotion.cancel();
@@ -10459,7 +10714,7 @@ function showRecap() {
   showSheet("The last move.", content);
 }
 function showNewGame() {
-  showSheet("Pull up a chair.", [node("p", castleRule(config)), node("p", "Starting player is chosen at random.", "field-hint"), act("Choose a friend", () => showFriends(), "primary full", "friends"), act("Share an invitation link", () => createGame(), "secondary full", "share"), act("I have an invitation", showJoin, "text-button full", "mail")]);
+  showSheet("Start a game.", [node("p", castleRule(config)), node("p", "Starting player is chosen at random.", "field-hint"), act("Choose a friend", () => showFriends(), "primary full", "friends"), act("Share an invitation link", () => createGame(), "secondary full", "share"), act("I have an invitation", showJoin, "text-button full", "mail")]);
 }
 function showJoin() {
   const form = node("form", void 0, "stack-form"), label = node("label", "Invitation link or code"), input = node("input");
@@ -10527,7 +10782,7 @@ async function shareInvite() {
   } else await copyInvite();
 }
 async function quitGame() {
-  if (preview || busy || pending()) return;
+  if (preview || !gameFresh || busy || pending()) return;
   if (game.status === "invited") {
     if (!invite || !await ask({ title: "Cancel this invitation?", message: "The link will stop working. You can invite someone again whenever you like.", label: "Cancel invitation", cancel: "Keep it", symbol: "mail" })) return;
     busy = true;
@@ -10918,17 +11173,31 @@ $("preview-button").onclick = () => {
 async function enterApp() {
   if (recovering || !user) return;
   const actor = user.id;
-  if (!await showHome(false, { route: false }) || actor !== user?.id) return;
-  authReady = true;
-  const invited = await showInvite();
-  if (actor !== user?.id) return;
-  if (notificationGame) await openNotification();
-  else if (launchGame && !invited) await openGame(launchGame, false, { route: false });
-  else if (!invited && params.get("view") === "friends") await showFriends({ route: false });
-  else if (!invited && params.get("view") === "account") await account({ route: false });
-  else if (!invited && params.get("view") === "activity") await showActivity({ route: false });
-  void push.restore().catch(() => {
-  });
+  entering = true;
+  homeData ??= snapshots.home(actor);
+  try {
+    const target = notificationGame || launchGame;
+    if (target && !localStorage.getItem("wc-invitation")) {
+      notificationGame = null;
+      if (!await openGame(target, false, { route: false }) || actor !== user?.id) return;
+      void fetchHome().then((result) => {
+        if (result && currentView === "home") renderHome();
+      }).catch(() => {
+      });
+    } else {
+      if (!await showHome(false, { route: false }) || actor !== user?.id) return;
+      const invited = await showInvite();
+      if (actor !== user?.id) return;
+      if (notificationGame) await openNotification();
+      else if (!invited && params.get("view") === "friends") await showFriends({ route: false });
+      else if (!invited && params.get("view") === "account") await account({ route: false });
+      else if (!invited && params.get("view") === "activity") await showActivity({ route: false });
+    }
+    void push.restore().catch(() => {
+    });
+  } finally {
+    entering = false;
+  }
 }
 async function usernameSetup(randomize = false) {
   if (usernameSetupBusy || !user) return;
@@ -10967,7 +11236,7 @@ $("setup-username").oninput = () => {
   $("setup-username").removeAttribute("aria-invalid");
 };
 async function poll() {
-  if (polling || busy || usernameSetupBusy || !user || document.hidden || recovering) return;
+  if (polling || entering || busy || usernameSetupBusy || !user || document.hidden || recovering) return;
   polling = true;
   refreshQueued = false;
   try {
@@ -10988,12 +11257,19 @@ async function poll() {
     if (refreshQueued) void poll();
   }
 }
+function resume() {
+  if (game && currentView === "game" && !preview && !busy) {
+    gameFresh = false;
+    renderGame();
+  }
+  void poll();
+}
 if (native) {
   void push.initialize().catch(() => {
   });
   void App.addListener("appStateChange", ({ isActive }) => {
     if (isActive) {
-      void poll();
+      resume();
       if (authReady) void push.restore().catch(() => {
       });
     } else scoreMotion.cancel();
@@ -11015,14 +11291,14 @@ window.addEventListener("popstate", () => run(async () => {
   else await showHome(false, { route: false });
 }));
 window.addEventListener("online", () => {
-  void run(poll);
+  resume();
   if (authReady) void push.restore().catch(() => {
   });
 });
 window.addEventListener("offline", () => offlineNotice());
-window.addEventListener("focus", () => run(poll));
+window.addEventListener("focus", resume);
 document.addEventListener("visibilitychange", () => {
-  if (!document.hidden) void run(poll);
+  if (!document.hidden) resume();
 });
 setInterval(poll, 2e4);
 if (!db) screen("setup", { route: false });
@@ -11037,6 +11313,10 @@ else db.auth.onAuthStateChange((event, session) => {
     return;
   }
   if (!user) {
+    snapshots.clear();
+    gameRequests.reset();
+    gameFresh = false;
+    game = null;
     homeRequests.reset();
     authReady = false;
     homeData = null;
@@ -11051,8 +11331,14 @@ else db.auth.onAuthStateChange((event, session) => {
   }
   if (recovering || !["SIGNED_IN", "INITIAL_SESSION"].includes(event) || previousUser === user.id && currentView !== "auth") return;
   if (previousUser !== user.id) {
+    if (previousUser) snapshots.clear();
+    gameRequests.reset();
+    gameFresh = false;
+    game = null;
     homeRequests.reset();
     ++homeLoad;
+    ++gameLoad;
+    ++navigation;
     authReady = false;
     homeData = null;
     $("setup-username").value = "";
