@@ -10131,6 +10131,12 @@ function showUsernameSetup() {
     screen("username-setup", { route: false });
   }
 }
+function accountReady() {
+  const first = !authReady;
+  authReady = true;
+  if (first) void push.restore().catch(() => {
+  });
+}
 async function fetchHome() {
   const request = homeLoad, actor = user?.id;
   const result = await homeRequests.get(actor);
@@ -10141,7 +10147,7 @@ async function fetchHome() {
     return null;
   }
   snapshots.saveHome(actor, result);
-  authReady = true;
+  accountReady();
   return result;
 }
 function rememberGame(saved) {
@@ -10200,7 +10206,7 @@ async function showActivity({ route = true } = {}) {
 async function showFriends({ route = true } = {}) {
   if (!user) return;
   const ticket = ++navigation, actor = user.id;
-  if (!homeData) await fetchHome();
+  if (!homeData?.profile.friend_code) await fetchHome();
   if (ticket !== navigation || actor !== user?.id || !homeData) return;
   if (homeData.profile.username === null) return showUsernameSetup();
   ++gameLoad;
@@ -10291,7 +10297,7 @@ async function openGame(id, quiet = false, { route = true } = {}) {
   if (ticket !== navigation || request !== gameLoad || actor !== user?.id) return;
   if (quiet && (currentView !== "game" || game?.id !== id)) return;
   if (result.profile && !homeData) homeData = { profile: result.profile, games: [], notifications: [], social: { people: [], invitations: [], outgoing: [], blocked: [] } };
-  authReady = true;
+  accountReady();
   if (result.invitation && !result.game) {
     if (!quiet) {
       localStorage.setItem("wc-invitation", result.invitation.token);
@@ -10824,7 +10830,7 @@ function showGameMenu() {
 async function account({ route = true } = {}) {
   if (!user) return;
   const ticket = ++navigation, actor = user.id;
-  if (!homeData) await fetchHome();
+  if (typeof homeData?.profile.email_notifications !== "boolean") await fetchHome();
   if (ticket !== navigation || actor !== user?.id || !homeData) return;
   if (homeData.profile.username === null) return showUsernameSetup();
   ++gameLoad;
@@ -11193,8 +11199,6 @@ async function enterApp() {
       else if (!invited && params.get("view") === "account") await account({ route: false });
       else if (!invited && params.get("view") === "activity") await showActivity({ route: false });
     }
-    void push.restore().catch(() => {
-    });
   } finally {
     entering = false;
   }
