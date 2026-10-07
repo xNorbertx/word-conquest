@@ -46,9 +46,20 @@
   production browser/function bundles build successfully. New SQL/API/cache tests
   cover access gates, legacy invitations, pagination, corruption/quota/expiry,
   owner isolation, bounded storage, score equivalence and preflight authentication.
-  Source, web and signed Android release verification is recorded below after
-  publishing. Physical Seeker upgrade/reopening responsiveness remains acceptance.
+  Physical Seeker upgrade/reopening responsiveness remains acceptance.
   No new infrastructure, scheduled keep-alive, paid plan or scoring-rule change.
+- Released final source `f86c1df` (main implementation `069b43f`) to the
+  [web app](https://xnorbertx.github.io/word-conquest/online/). Pages `592f274` built;
+  all ten checked public assets match the final build after line-ending normalization,
+  including the preserved original prototype.
+- [Android pipeline](https://github.com/xNorbertx/word-conquest/actions/runs/37687076619)
+  passed all tests/build/signing checks at that source. Published
+  [0.7.2-f86c1df](https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-24181646),
+  version code `24181646`. Package, version, stable signing certificate, native WC
+  icons, notification permission and new client bundle were verified; no fixtures
+  or private-key material are packaged. Anonymous download matches SHA-256
+  `701523db37ca2185b05e65c2dca072a5bd9faf8be7563b51a74c04f3afe448bf`.
+  Local artifact: `dist/word-conquest-0.7.2.apk` (4,959,222 bytes).
 
 ## Games performance and UI refinements - 7 October, 0.7.1
 
