@@ -109,7 +109,8 @@ function renderActivity(){
   if(!homeData.notifications.length)$('inbox').append(emptyState('All caught up.','Game updates will appear here.','bell'));
 }
 function showUsernameSetup(){snapshots.clear();gameFresh=false;authReady=false;if(currentView!=='username-setup'){$('setup-username-error').hidden=true;$('setup-username').removeAttribute('aria-invalid');screen('username-setup',{route:false});}}
-async function fetchHome(){const request=homeLoad,actor=user?.id;const result=await homeRequests.get(actor);if(user?.id!==actor||request!==homeLoad)return null;homeData=result;if(result.needsUsername||result.profile.username===null){showUsernameSetup();return null;}snapshots.saveHome(actor,result);authReady=true;return result;}
+function accountReady(){const first=!authReady;authReady=true;if(first)void push.restore().catch(()=>{});}
+async function fetchHome(){const request=homeLoad,actor=user?.id;const result=await homeRequests.get(actor);if(user?.id!==actor||request!==homeLoad)return null;homeData=result;if(result.needsUsername||result.profile.username===null){showUsernameSetup();return null;}snapshots.saveHome(actor,result);accountReady();return result;}
 function rememberGame(saved){
   if(saved?.id===game?.id&&gameFresh)snapshots.saveGame(user?.id,{game:saved,history});
   if(!homeData||!saved?.id||!saved.players?.includes(user?.id))return;
@@ -134,7 +135,7 @@ async function showHome(quiet=false,{route=true,replace=false}={}){
   offlineNotice(!navigator.onLine);return true;
 }
 async function showActivity({route=true}={}){if(!user)return;const ticket=++navigation,actor=user.id;if(!homeData)await fetchHome();if(ticket!==navigation||actor!==user?.id||!homeData)return;if(homeData.profile.username===null)return showUsernameSetup();++gameLoad;screen('activity',{route});renderActivity();}
-async function showFriends({route=true}={}){if(!user)return;const ticket=++navigation,actor=user.id;if(!homeData)await fetchHome();if(ticket!==navigation||actor!==user?.id||!homeData)return;if(homeData.profile.username===null)return showUsernameSetup();++gameLoad;screen('friends',{route});friends.render();await friends.refresh();}
+async function showFriends({route=true}={}){if(!user)return;const ticket=++navigation,actor=user.id;if(!homeData?.profile.friend_code)await fetchHome();if(ticket!==navigation||actor!==user?.id||!homeData)return;if(homeData.profile.username===null)return showUsernameSetup();++gameLoad;screen('friends',{route});friends.render();await friends.refresh();}
 async function showInvite(){
   const raw=localStorage.getItem('wc-invitation');if(!raw||!user||homeData?.profile.username===null)return false;const token=invitationToken(raw);if(!token){localStorage.removeItem('wc-invitation');throw Error('That invitation code does not look right.');}
   const {invitation:i}=await api({action:'invitation',choice:'preview',token});
@@ -160,7 +161,7 @@ async function openGame(id,quiet=false,{route=true}={}){
   }
   if(ticket!==navigation||request!==gameLoad||actor!==user?.id)return;if(quiet&&(currentView!=='game'||game?.id!==id))return;
   if(result.profile&&!homeData)homeData={profile:result.profile,games:[],notifications:[],social:{people:[],invitations:[],outgoing:[],blocked:[]}};
-  authReady=true;
+  accountReady();
   if(result.invitation&&!result.game){if(!quiet){localStorage.setItem('wc-invitation',result.invitation.token);await showInvite();}return true;}
   if(game?.id===id&&game.revision>result.game.revision)return;
   const previousRevision=game?.id===id?game.revision:null;
@@ -350,7 +351,7 @@ function showGameMenu(){
   if(game.status==='invited')list.append(row('Cancel invitation','close',quitGame));showSheet('Game options.',list);
 }
 async function account({route=true}={}){
-  if(!user)return;const ticket=++navigation,actor=user.id;if(!homeData)await fetchHome();if(ticket!==navigation||actor!==user?.id||!homeData)return;if(homeData.profile.username===null)return showUsernameSetup();++gameLoad;screen('account',{route});
+  if(!user)return;const ticket=++navigation,actor=user.id;if(typeof homeData?.profile.email_notifications!=='boolean')await fetchHome();if(ticket!==navigation||actor!==user?.id||!homeData)return;if(homeData.profile.username===null)return showUsernameSetup();++gameLoad;screen('account',{route});
   const profile=homeData.profile;$('profile-name').textContent=profile.display_name;$('profile-email').textContent=user.email||'';$('profile-avatar').textContent=profile.display_name.slice(0,1).toUpperCase();renderPush();
 }
 function editProfile(){
@@ -454,7 +455,6 @@ async function enterApp(){
       if(notificationGame)await openNotification();
       else if(!invited&&params.get('view')==='friends')await showFriends({route:false});else if(!invited&&params.get('view')==='account')await account({route:false});else if(!invited&&params.get('view')==='activity')await showActivity({route:false});
     }
-    void push.restore().catch(()=>{});
   }finally{entering=false;}
 }
 async function usernameSetup(randomize=false){

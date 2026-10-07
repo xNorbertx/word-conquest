@@ -13,6 +13,10 @@
   game reply includes the caller's profile; Games refreshes separately. Overlapping
   board reads share a request, and navigation/account/revision checks discard late
   responses. Confirmed moves update both cached board and list before returning.
+  Account/Friends controls wait for complete profile fields omitted from the cache;
+  early navigation cannot overwrite preferences or copy a missing friend code.
+  Push reconnection starts after identity verification even when startup navigation
+  changes before the original loading request completes.
 - Service-only `wc_read_home` and `wc_read_game` combine the remaining data reads.
   Auth, rate limits, profile/onboarding checks, participant filtering and rules
   compatibility still run. Latest recap only on open; Move history loads fifty
