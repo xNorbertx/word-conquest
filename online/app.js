@@ -1,6 +1,7 @@
 import monogram from '../assets/monogram.json';
 import {gameSummary} from '../server/game-summary.mjs';
 import {createHomeRequests} from './home-requests.mjs';
+import {createSnapshotCache} from './snapshot-cache.mjs';
 import {version as appVersion} from '../package.json';
 import {Capacitor} from '@capacitor/core';
 import {App} from '@capacitor/app';
@@ -27,6 +28,8 @@ let user=null,game=null,history=[],invite=null,selection=[],jokers={},busy=false
 let currentView='loading',homeData=null,filter='active',polling=false,gameLoad=0,homeLoad=0,notificationGame=null,authReady=false,navigation=0;
 let liveChannel=null,liveUser=null,refreshQueued=false,highlightLast=false,focusTile=null,authMode='signin',authBusy=false;
 let lastRequestId=null,lastProblem=null,usernameSetupBusy=false;
+let gameFresh=false,entering=false;
+const snapshots=createSnapshotCache(localStorage,{namespace:cfg.supabaseUrl+(cfg.cacheScope||'')});
 const native=Capacitor.isNativePlatform();
 const publicApp='https://xnorbertx.github.io/word-conquest/online/';
 const authRedirect=()=>native?publicApp:location.origin+location.pathname;
@@ -35,6 +38,7 @@ const push=createPushControls({api,getUser:()=>user,onStatus:message=>{status(me
 const friends=createFriends({api,getUser:()=>user,getData:()=>homeData,setData:partial=>{if(homeData)Object.assign(homeData,partial);},run,status,invite:person=>createGame(person),openGame,editProfile});
 const screens=['loading','setup','auth','username-setup','recovery','home','friends','activity','account','game'];
 const homeRequests=createHomeRequests(()=>api({action:'home'}));
+const gameRequests=createHomeRequests(key=>api({action:'game',gameId:key.split('/')[1]}));
 const scoreLedger=createScoreLedger(localStorage);
 const scoreMotion=createBoardScoreMotion({onComplete:()=>{if(game&&currentView==='game')renderGame();}});
 function screen(name,{route=true,replace=false}={}){
@@ -54,9 +58,9 @@ function pending(){if(preview)return null;try{return JSON.parse(localStorage.get
 function apiError(message,code,statusCode,requestId){const e=new Error(message);Object.assign(e,{code,status:statusCode,requestId});return e;}
 async function api(body){
   if(!db)throw new Error('Online play is not connected yet.');
-  const {data:{session},error}=await db.auth.getSession();if(error||!session)throw apiError('Sign in to continue.','unauthorized',401);
-  const response=await fetch(`${cfg.supabaseUrl}/functions/v1/game-api`,{method:'POST',signal:AbortSignal.timeout(20000),headers:{'Content-Type':'application/json',apikey:cfg.supabaseAnonKey,Authorization:`Bearer ${session.access_token}`},body:JSON.stringify({...body,supportedRules:SUPPORTED_RULES,supportsFriends:true,supportsUsernameOnboarding:true,supportsGameSummaries:true})});
-  const result=await response.json();if(!response.ok){if(result.code==='username_required'&&user?.id===session.user.id)showUsernameSetup();throw apiError(result.error||'Request failed.',result.code,response.status,result.requestId);}return result;
+  const {data:{session},error}=await db.auth.getSession();if(error||!session){snapshots.clear();gameFresh=false;authReady=false;homeData=null;game=null;++navigation;++gameLoad;++homeLoad;screen('auth',{route:false});throw apiError('Sign in to continue.','unauthorized',401);}
+  const response=await fetch(`${cfg.supabaseUrl}/functions/v1/game-api`,{method:'POST',signal:AbortSignal.timeout(20000),headers:{'Content-Type':'application/json',apikey:cfg.supabaseAnonKey,Authorization:`Bearer ${session.access_token}`},body:JSON.stringify({...body,supportedRules:SUPPORTED_RULES,supportsFriends:true,supportsUsernameOnboarding:true,supportsGameSummaries:true,supportsFastReads:true})});
+  const result=await response.json();if(!response.ok){if(user?.id===session.user.id){if(result.code==='username_required')showUsernameSetup();else if(['unauthorized','account_deleting'].includes(result.code)){snapshots.clear();gameFresh=false;game=null;homeData=null;authReady=false;++navigation;++gameLoad;++homeLoad;screen('auth',{route:false});}}throw apiError(result.error||'Request failed.',result.code,response.status,result.requestId);}return result;
 }
 async function run(fn){try{return await fn();}catch(e){lastProblem=friendlyError(e);lastRequestId=e.requestId||null;status(lastProblem,true);if(currentView==='loading'){$('loading-message').textContent='Your games could not load.';$('retry-load').hidden=false;$('loading').querySelector('.spinner').hidden=true;}}}
 const act=(label,fn,className='secondary',symbol)=>button(label,()=>run(fn),className,symbol);
@@ -104,9 +108,10 @@ function renderActivity(){
   $('inbox').replaceChildren();for(const n of homeData.notifications){const g=homeData.games.find(g=>g.id===n.game_id),name=g?opponentName(g,user.id):'Your friend';const item=act('',()=>openGame(n.game_id),'activity-item'+(n.read_at?'':' unread'));item.replaceChildren(avatar(name),node('span'),icon('chevron'));item.children[1].append(node('strong',activityText(n.kind,name)),node('small',timeAgo(n.created_at)));$('inbox').append(item);}
   if(!homeData.notifications.length)$('inbox').append(emptyState('All caught up.','Game updates will appear here.','bell'));
 }
-function showUsernameSetup(){authReady=false;if(currentView!=='username-setup'){$('setup-username-error').hidden=true;$('setup-username').removeAttribute('aria-invalid');screen('username-setup',{route:false});}}
-async function fetchHome(){const request=homeLoad,actor=user?.id;const result=await homeRequests.get(actor);if(user?.id!==actor||request!==homeLoad)return null;homeData=result;if(result.needsUsername||result.profile.username===null){showUsernameSetup();return null;}return result;}
+function showUsernameSetup(){snapshots.clear();gameFresh=false;authReady=false;if(currentView!=='username-setup'){$('setup-username-error').hidden=true;$('setup-username').removeAttribute('aria-invalid');screen('username-setup',{route:false});}}
+async function fetchHome(){const request=homeLoad,actor=user?.id;const result=await homeRequests.get(actor);if(user?.id!==actor||request!==homeLoad)return null;homeData=result;if(result.needsUsername||result.profile.username===null){showUsernameSetup();return null;}snapshots.saveHome(actor,result);authReady=true;return result;}
 function rememberGame(saved){
+  if(saved?.id===game?.id&&gameFresh)snapshots.saveGame(user?.id,{game:saved,history});
   if(!homeData||!saved?.id||!saved.players?.includes(user?.id))return;
   const index=homeData.games.findIndex(g=>g.id===saved.id),old=homeData.games[index];
   if(old&&old.revision>saved.revision)return;
@@ -117,6 +122,7 @@ async function showHome(quiet=false,{route=true,replace=false}={}){
   if(!user)return;
   const ticket=quiet?navigation:++navigation,cached=!!homeData;
   if(!quiet&&cached){++gameLoad;screen('home',{route,replace});renderHome();}
+  else if(!quiet){$('loading-message').textContent='Loading your games…';$('retry-load').hidden=true;$('loading').querySelector('.spinner').hidden=false;screen('loading',{route:false});}
   const before=JSON.stringify(homeData);let result;
   try{result=await fetchHome();}catch(e){
     if(cached&&ticket===navigation)offlineNotice(true,'Could not refresh games. Showing the last saved list.');
@@ -141,19 +147,33 @@ async function showInvite(){
 }
 async function decideInvite(choice){const token=invitationToken(localStorage.getItem('wc-invitation')||'');const result=await api({action:'invitation',choice,token});localStorage.removeItem('wc-invitation');closeSheet();if(choice==='accept'&&result.game.status==='active')await openGame(result.game.id);else {await showHome();status('Invitation declined.');}}
 async function openGame(id,quiet=false,{route=true}={}){
-  const ticket=quiet?navigation:++navigation,request=quiet?gameLoad:++gameLoad,actor=user?.id;const result=await api({action:'game',gameId:id});
-  if(ticket!==navigation||request!==gameLoad||actor!==user?.id)return;if(quiet&&(currentView!=='game'||game?.id!==id))return;if(game?.id===id&&game.revision>result.game.revision)return;
-  if(result.invitation&&!result.game){if(!quiet){localStorage.setItem('wc-invitation',result.invitation.token);await showInvite();}return;}
+  const ticket=quiet?navigation:++navigation,request=quiet?gameLoad:++gameLoad,actor=user?.id;
+  const cached=!quiet&&snapshots.game(actor,id);
+  if(cached){preview=false;config=configFor(cached.game.rules_version);game=cached.game;history=cached.history;invite=null;gameFresh=false;selection=[];jokers={};highlightLast=false;focusTile=null;screen('game',{route});renderGame();}
+  else if(!quiet){gameFresh=false;$('loading-message').textContent='Opening game…';$('retry-load').hidden=true;$('loading').querySelector('.spinner').hidden=false;screen('loading',{route:false});}
+  let result;
+  try{result=await gameRequests.get(`${actor}/${id}`);}catch(e){
+    if(ticket===navigation&&request===gameLoad&&actor===user?.id){
+      if(['not_found','forbidden','client_update_required'].includes(e.code)){snapshots.forgetGame(actor,id);if(homeData)homeData.games=homeData.games.filter(g=>g.id!==id);gameFresh=false;game=null;await showHome(false,{route}).catch(()=>{});}
+      else if(currentView==='game'){gameFresh=false;renderGame();offlineNotice(true,'Could not refresh this board. Reconnect to play.');}
+    }throw e;
+  }
+  if(ticket!==navigation||request!==gameLoad||actor!==user?.id)return;if(quiet&&(currentView!=='game'||game?.id!==id))return;
+  if(result.profile&&!homeData)homeData={profile:result.profile,games:[],notifications:[],social:{people:[],invitations:[],outgoing:[],blocked:[]}};
+  authReady=true;
+  if(result.invitation&&!result.game){if(!quiet){localStorage.setItem('wc-invitation',result.invitation.token);await showInvite();}return true;}
+  if(game?.id===id&&game.revision>result.game.revision)return;
   const previousRevision=game?.id===id?game.revision:null;
-  const changed=!game||game.id!==id||game.revision!==result.game.revision;
+  const changed=!game||game.id!==id||game.revision!==result.game.revision,wasFresh=gameFresh;
   const gameConfig=configFor(result.game.rules_version);if(!gameConfig)throw apiError('Update Word Conquest to play this game.','client_update_required',409);
-  preview=false;config=gameConfig;game=result.game;history=result.history;invite=result.invitation;rememberGame(game);
+  preview=false;config=gameConfig;game=result.game;history=result.history;invite=result.invitation;gameFresh=true;rememberGame(game);
   if(changed){selection=[];jokers={};highlightLast=false;focusTile=null;}
-  if(!quiet){$('board').classList.remove('enlarged');$('zoom').setAttribute('aria-pressed','false');screen('game',{route});}
-  if(changed||!quiet){renderGame();animateScore(previousRevision);}
+  if(!quiet){$('board').classList.remove('enlarged');$('zoom').setAttribute('aria-pressed','false');if(!cached)screen('game',{route});}
+  if(changed||!quiet||!wasFresh){renderGame();animateScore(previousRevision);}
+  offlineNotice(!navigator.onLine);return true;
 }
 function animateScore(previousRevision=null,{replay=false}={}){
-  if(preview||currentView!=='game'||!game||pending())return;
+  if(preview||!gameFresh||currentView!=='game'||!game||pending())return;
   const move=history[0];
   const claimed=replay||scoreLedger.claim({userId:user?.id,game,move,previousRevision});
   const plan=claimed&&scoreMotionPlan(game,move,config);
@@ -166,7 +186,7 @@ function animateScore(previousRevision=null,{replay=false}={}){
 }
 const pos=t=>({x:t.q*64,y:t.r*64});
 function myTurn(){return game?.status==='active'&&game.players[game.state.player-1]===user?.id;}
-function canPlay(){return !preview&&myTurn()&&!busy&&!pending()&&!scoreMotion.active;}
+function canPlay(){return !preview&&gameFresh&&myTurn()&&!busy&&!pending()&&!scoreMotion.active;}
 function drawBoard(){
   const board=$('board');board.replaceChildren();board.setAttribute('viewBox','-295 -295 590 590');
   const last=history[0]?.recap,seat=seatOf(game,user?.id)||1;if(!focusTile)focusTile=game.state.tiles.find(t=>t.owner===seat)?.id||game.state.tiles[0].id;
@@ -184,6 +204,7 @@ function renderJokers(){
   $('jokers').replaceChildren();for(const id of selection){if(game.state.tiles.find(t=>t.id===id).letter!=='?')continue;const label=node('label',`Joker ${selection.indexOf(id)+1}`),input=node('input');input.maxLength=1;input.pattern='[A-Za-z]';input.autocomplete='off';input.autocapitalize='characters';input.value=jokers[id]||'';input.setAttribute('aria-label',`Joker at position ${selection.indexOf(id)+1}`);input.oninput=()=>{input.value=input.value.replace(/[^a-z]/gi,'').toUpperCase();jokers[id]=input.value;drawBoard();renderSelection();};label.append(input);$('jokers').append(label);}
 }
 function selectionHint(error){
+  if(!gameFresh)return 'Checking for updates…';
   if(pending())return 'Your move is waiting to be confirmed.';if(!selection.length)return Engine.canReenter(game.state,config)?'No territory left? Start on any tile.':`Start on one of your ${seatOf(game,user?.id)===2?'brown':'green'} tiles.`;
   if(selection.some(id=>game.state.tiles.find(t=>t.id===id).letter==='?'&&!jokers[id]))return 'Choose a letter for your joker.';
   if(selection.length<config.minimumWordLength)return `Add ${config.minimumWordLength-selection.length} more ${config.minimumWordLength-selection.length===1?'letter':'letters'}.`;
@@ -215,9 +236,9 @@ function renderGame(){
   const scoreboard=document.querySelector('.scoreboard'),ownCard=$('player-score-'+seat);if(scoreboard.firstElementChild!==ownCard)scoreboard.prepend(ownCard);
   document.querySelector('.turn').style.order=3;
   $('game-heading-name').textContent=preview?'Practice game':other;$('game-heading-subtitle').textContent=game.status==='invited'?'Invitation':isFinished(game)?'Finished game':config.castleIncome?`Round ${Math.min(...game.state.turns)+1} · Castle income 2 / 4`:`Turn ${game.state.turns.reduce((a,b)=>a+b,0)+1}`;
-  const turnText=unconfirmed?(busy?'Saving your turn...':'Turn awaiting confirmation'):preview?'Your turn':active?(ownTurn?'Your turn':`${other}'s turn`):gameStatus(game,user?.id);
+  const turnText=!preview&&!gameFresh?'Updating…':unconfirmed?(busy?'Saving your turn...':'Turn awaiting confirmation'):preview?'Your turn':active?(ownTurn?'Your turn':`${other}'s turn`):gameStatus(game,user?.id);
   const turnIcon=unconfirmed?'refresh':!active?'flag':ownTurn?'arrow':'hourglass';
-  if($('turn').dataset.label!==turnText){const copy=node('span',undefined,'turn-copy');if(active&&!ownTurn&&!unconfirmed){copy.append(node('span',other,'turn-player'),node('span',"'s turn",'turn-suffix'));}else copy.textContent=turnText;$('turn').replaceChildren(icon(turnIcon),copy);$('turn').dataset.label=turnText;}
+  if($('turn').dataset.label!==turnText){const copy=node('span',undefined,'turn-copy');if(active&&!ownTurn&&!unconfirmed&&gameFresh){copy.append(node('span',other,'turn-player'),node('span',"'s turn",'turn-suffix'));}else copy.textContent=turnText;$('turn').replaceChildren(icon(turnIcon),copy);$('turn').dataset.label=turnText;}
   $('turn').title=turnText;$('turn').classList.toggle('waiting',!ownTurn||unconfirmed);$('turn').dataset.side=active&&!unconfirmed?(game.state.player===1?'sage':'walnut'):'none';
   const left=Engine.lettersRemaining(game.state,config);$('supply').textContent=isFinished(game)?'Final score':left===0?'Final reply':`${left} letters left`;$('supply-fill').style.width=`${Math.max(0,Math.min(100,left/config.letterBudget*100))}%`;
   $('share').hidden=!invite;$('game-table').hidden=!!invite;
@@ -240,12 +261,13 @@ function choose(id){
 }
 function clearWord(){if(busy||pending())return;selection=[];jokers={};highlightLast=false;renderGame();}
 async function sendPending(){
-  const command=pending();if(!command||busy)return;const sentGame=game.id,sentUser=user.id,storageKey=pendingKey();busy=true;renderGame();
+  const command=pending();if(!command||busy)return;const sentGame=game.id,sentUser=user.id,storageKey=pendingKey();busy=true;++gameLoad;gameRequests.reset();renderGame();
   try{
     const result=await api({action:'turn',gameId:sentGame,command});localStorage.removeItem(storageKey);
     if(user?.id===sentUser&&game?.id===sentGame&&result.game.revision>=game.revision){
-      const previousRevision=game.revision;game=result.game;rememberGame(game);selection=[];jokers={};
+      const previousRevision=game.revision;game=result.game;gameFresh=true;selection=[];jokers={};
       if(result.recap&&result.acceptedRevision===game.revision)history=[{revision:result.acceptedRevision,recap:result.recap},...history.filter(m=>m.revision!==result.acceptedRevision)];
+      rememberGame(game);
       if(command.action==='resign'){await showHome();status('You left the game.');}
       else if(currentView==='game'){
         // The accepted receipt is enough to render, even if a history refresh fails.
@@ -258,7 +280,7 @@ async function sendPending(){
   finally{busy=false;if(game&&currentView==='game'&&!scoreMotion.active)renderGame();if(refreshQueued)void poll();}
 }
 async function action(kind){
-  if(preview||busy||pending()||game?.status!=='active')return;if(['word','refresh'].includes(kind)&&!canPlay())return;
+  if(preview||!gameFresh||busy||pending()||game?.status!=='active')return;if(['word','refresh'].includes(kind)&&!canPlay())return;
   const command={operationId:crypto.randomUUID(),revision:game.revision,action:kind,...(kind==='word'?{path:[...selection],jokers:{...jokers}}:{})};
   localStorage.setItem(pendingKey(),JSON.stringify(command));closeSheet();await sendPending();
 }
@@ -273,7 +295,19 @@ function showRules(){
   const legend=node('div',undefined,'rule-legend');for(const [className,label]of [['owner-dot','Sage player'],['owner-ring','Walnut player']]){const item=node('span');item.append(node('span',undefined,className),node('span',label));legend.append(item);}content.push(legend,act('About the dictionary',showDictionary,'text-button'));showSheet('A little word. A little world.',content);
 }
 function showDictionary(){const link=node('a','Dictionary license','text-link');link.href='dictionary-license.txt';link.target='_blank';link.rel='noopener';showSheet('Words we play.',[node('p','English words are checked against a fixed Letterpress-derived word list. Listed inflections, slang and repeated words are allowed.'),node('p','The list includes some uncommon, archaic and offensive words. A game keeps the dictionary it started with.'),link]);}
-function showHistory(){const list=node('ol',undefined,'move-list');for(const [index,move]of history.entries()){const r=move.recap,item=node('li'),copy=node('div',undefined,'move-copy');copy.append(node('strong',r.word||({refresh:'Letters refreshed',resign:'Resigned',offer_draw:'Draw offered',accept_draw:'Draw accepted',abandon:'Game abandoned'}[r.action]||'Game update')),node('small',`${game.names[r.player-1]} · ${timeAgo(r.at)}`));item.append(node('span',history.length-index,'move-number'),copy,node('span',r.score?`+${r.score.wordPoints}`:'','move-points'));list.append(item);}showSheet('The story so far.',history.length?list:emptyState('The first word is yours.','Played words will appear here.','history'));}
+function showHistory(){
+  const actor=user?.id,id=game.id,names=[...game.names],content=node('div'),list=node('ol',undefined,'move-list'),note=node('p','Loading moves…','menu-note');
+  let moves=[...history],cursor,loading=false;
+  const more=act('Older moves',()=>loadPage(),'secondary full','history');more.hidden=true;
+  function render(){list.replaceChildren();for(const move of moves){const r=move.recap,item=node('li'),copy=node('div',undefined,'move-copy');copy.append(node('strong',r.word||({refresh:'Letters refreshed',resign:'Resigned',offer_draw:'Draw offered',accept_draw:'Draw accepted',abandon:'Game abandoned'}[r.action]||'Game update')),node('small',`${names[r.player-1]} · ${timeAgo(r.at)}`));item.append(node('span',move.revision,'move-number'),copy,node('span',r.score?`+${r.score.wordPoints}`:'','move-points'));list.append(item);}}
+  async function loadPage(){
+    if(loading)return;loading=true;more.disabled=true;note.textContent='Loading moves…';note.hidden=false;
+    try{const result=await api({action:'game_history',gameId:id,...(cursor?{beforeRevision:cursor}:{})});if(!content.isConnected||actor!==user?.id||game?.id!==id)return;
+      moves=cursor?[...moves,...result.history.filter(m=>!moves.some(old=>old.revision===m.revision))]:result.history;cursor=result.nextBefore;render();more.hidden=!result.hasMore;more.textContent='Older moves';note.hidden=!!moves.length;note.textContent='The first word is yours.';
+    }catch(e){if(content.isConnected&&actor===user?.id){note.textContent='Could not load moves.';more.hidden=false;more.textContent='Retry';}}finally{loading=false;more.disabled=false;}
+  }
+  render();content.append(list,note,more);showSheet('The story so far.',content);if(!preview)void loadPage();else {note.textContent='Played words will appear here.';}
+}
 function showRecap(){
   scoreMotion.cancel();
   const r=history[0]?.recap;if(!r)return;const content=[node('div',r.word||'Game update','recap-word'),node('div',`${game.names[r.player-1]} · ${timeAgo(r.at)}`,'recap-byline')];
@@ -284,7 +318,7 @@ function showRecap(){
   if(r.path?.length)content.push(act('Show word on the board',()=>{highlightLast=true;closeSheet();renderGame();$('board').scrollIntoView({block:'center',behavior:'smooth'});},'secondary full','eye'));
   content.push(act('All moves',showHistory,'text-button full'));showSheet('The last move.',content);
 }
-function showNewGame(){showSheet('Pull up a chair.',[node('p',castleRule(defaultConfig)),node('p','Starting player is chosen at random.','field-hint'),act('Choose a friend',()=>showFriends(),'primary full','friends'),act('Share an invitation link',()=>createGame(),'secondary full','share'),act('I have an invitation',showJoin,'text-button full','mail')]);}
+function showNewGame(){showSheet('Start a game.',[node('p',castleRule(defaultConfig)),node('p','Starting player is chosen at random.','field-hint'),act('Choose a friend',()=>showFriends(),'primary full','friends'),act('Share an invitation link',()=>createGame(),'secondary full','share'),act('I have an invitation',showJoin,'text-button full','mail')]);}
 function showJoin(){const form=node('form',undefined,'stack-form'),label=node('label','Invitation link or code'),input=node('input');input.id='invite-code';input.autocomplete='off';input.required=true;input.placeholder='Paste your invitation here';label.htmlFor=input.id;const submit=button('Open invitation',null,'primary full','arrow');submit.type='submit';form.append(label,input,submit);form.onsubmit=e=>{e.preventDefault();void run(async()=>{const token=invitationToken(input.value);if(!token)throw Error('Paste a complete invitation link or code.');submit.disabled=true;try{localStorage.setItem('wc-invitation',token);await showInvite();}finally{submit.disabled=false;}});};showSheet('Join a friend.',form);}
 async function createGame(person){
   if(creating||!user)return;creating=true;$('new-game').disabled=true;closeSheet();
@@ -293,7 +327,7 @@ async function createGame(person){
 async function copyInvite(){try{await navigator.clipboard.writeText($('share-link').value);status('Invitation copied. Send it to a friend.');}catch{$('share-link').focus();$('share-link').select();status('Select and copy the invitation link.',true);}}
 async function shareInvite(){if(navigator.share){try{await navigator.share({title:'A game of Word Conquest',text:'Join me for a game of words.',url:$('share-link').value});}catch(e){if(e.name!=='AbortError')await copyInvite();}}else await copyInvite();}
 async function quitGame(){
-  if(preview||busy||pending())return;
+  if(preview||!gameFresh||busy||pending())return;
   if(game.status==='invited'){
     if(!invite||!await ask({title:'Cancel this invitation?',message:'The link will stop working. You can invite someone again whenever you like.',label:'Cancel invitation',cancel:'Keep it',symbol:'mail'}))return;
     busy=true;try{const result=await api({action:'invitation',choice:'cancel',token:invite.token});rememberGame(result.game);await showHome();status('Invitation cancelled.');}finally{busy=false;}
@@ -405,12 +439,23 @@ $('board').onkeydown=e=>{
 };
 $('preview-button').onclick=()=>{preview=true;config=defaultConfig;game={id:'preview',rules_version:RULES_VERSION,state:{...Engine.newGame(config),player:1,startingPlayer:1},status:'active',players:[],names:['You','Alex'],revision:0};history=[];invite=null;selection=[];jokers={};screen('game',{route:false});renderGame();};
 async function enterApp(){
-  if(recovering||!user)return;const actor=user.id;
-  if(!await showHome(false,{route:false})||actor!==user?.id)return;
-  authReady=true;const invited=await showInvite();if(actor!==user?.id)return;
-  if(notificationGame)await openNotification();else if(launchGame&&!invited)await openGame(launchGame,false,{route:false});
-  else if(!invited&&params.get('view')==='friends')await showFriends({route:false});else if(!invited&&params.get('view')==='account')await account({route:false});else if(!invited&&params.get('view')==='activity')await showActivity({route:false});
-  void push.restore().catch(()=>{});
+  if(recovering||!user)return;const actor=user.id;entering=true;
+  homeData??=snapshots.home(actor);
+  try{
+    const target=notificationGame||launchGame;
+    if(target&&!localStorage.getItem('wc-invitation')){
+      notificationGame=null;
+      if(!await openGame(target,false,{route:false})||actor!==user?.id)return;
+      // The game response has already checked identity and username. Games can refresh independently.
+      void fetchHome().then(result=>{if(result&&currentView==='home')renderHome();}).catch(()=>{});
+    }else {
+      if(!await showHome(false,{route:false})||actor!==user?.id)return;
+      const invited=await showInvite();if(actor!==user?.id)return;
+      if(notificationGame)await openNotification();
+      else if(!invited&&params.get('view')==='friends')await showFriends({route:false});else if(!invited&&params.get('view')==='account')await account({route:false});else if(!invited&&params.get('view')==='activity')await showActivity({route:false});
+    }
+    void push.restore().catch(()=>{});
+  }finally{entering=false;}
 }
 async function usernameSetup(randomize=false){
   if(usernameSetupBusy||!user)return;usernameSetupBusy=true;const actor=user.id,input=$('setup-username'),error=$('setup-username-error');
@@ -424,19 +469,20 @@ async function usernameSetup(randomize=false){
 $('username-form').onsubmit=e=>{e.preventDefault();void usernameSetup();};$('randomize-username').onclick=()=>usernameSetup(true);
 $('setup-username').oninput=()=>{$('setup-username-error').hidden=true;$('setup-username').removeAttribute('aria-invalid');};
 async function poll(){
-  if(polling||busy||usernameSetupBusy||!user||document.hidden||recovering)return;polling=true;refreshQueued=false;
+  if(polling||entering||busy||usernameSetupBusy||!user||document.hidden||recovering)return;polling=true;refreshQueued=false;
   try{if(currentView==='username-setup'){if(await fetchHome())await enterApp();}else if(currentView==='game'&&!preview)await openGame(game.id,true);else if(currentView==='home')await showHome(true);else if(currentView==='friends')await friends.refresh();else if(currentView==='activity'){await fetchHome();renderActivity();}offlineNotice(!navigator.onLine);}
   catch{offlineNotice(true,'Could not refresh. Reconnect to get the latest turn.');}
   finally{polling=false;if(refreshQueued)void poll();}
 }
-if(native){void push.initialize().catch(()=>{});void App.addListener('appStateChange',({isActive})=>{if(isActive){void poll();if(authReady)void push.restore().catch(()=>{});}else scoreMotion.cancel();});void App.addListener('backButton',()=>{if(closeTopDialog())return;if(currentView!=='home'&&currentView!=='username-setup'&&user)void run(()=>showHome());else void App.minimizeApp();});}
+function resume(){if(game&&currentView==='game'&&!preview&&!busy){gameFresh=false;renderGame();}void poll();}
+if(native){void push.initialize().catch(()=>{});void App.addListener('appStateChange',({isActive})=>{if(isActive){resume();if(authReady)void push.restore().catch(()=>{});}else scoreMotion.cancel();});void App.addListener('backButton',()=>{if(closeTopDialog())return;if(currentView!=='home'&&currentView!=='username-setup'&&user)void run(()=>showHome());else void App.minimizeApp();});}
 window.addEventListener('popstate',()=>run(async()=>{if(!user)return;closeSheet();const route=new URLSearchParams(location.search);if(route.get('game'))await openGame(route.get('game'),false,{route:false});else if(route.get('view')==='friends')await showFriends({route:false});else if(route.get('view')==='account')await account({route:false});else if(route.get('view')==='activity')await showActivity({route:false});else await showHome(false,{route:false});}));
-window.addEventListener('online',()=>{void run(poll);if(authReady)void push.restore().catch(()=>{});});window.addEventListener('offline',()=>offlineNotice());window.addEventListener('focus',()=>run(poll));document.addEventListener('visibilitychange',()=>{if(!document.hidden)void run(poll);});setInterval(poll,20000);
+window.addEventListener('online',()=>{resume();if(authReady)void push.restore().catch(()=>{});});window.addEventListener('offline',()=>offlineNotice());window.addEventListener('focus',resume);document.addEventListener('visibilitychange',()=>{if(!document.hidden)resume();});setInterval(poll,20000);
 if(!db)screen('setup',{route:false});else db.auth.onAuthStateChange((event,session)=>{
   const previousUser=user?.id;user=session?.user||null;setTimeout(()=>run(()=>connectLiveUpdates(session)),0);
   if(event==='PASSWORD_RECOVERY'){authReady=false;recovering=true;screen('recovery',{route:false});return;}
-  if(!user){homeRequests.reset();authReady=false;homeData=null;$('setup-username').value='';friends.reset();renderPush();++navigation;++gameLoad;++homeLoad;screen('auth',{route:false});return;}
+  if(!user){snapshots.clear();gameRequests.reset();gameFresh=false;game=null;homeRequests.reset();authReady=false;homeData=null;$('setup-username').value='';friends.reset();renderPush();++navigation;++gameLoad;++homeLoad;screen('auth',{route:false});return;}
   if(recovering||!['SIGNED_IN','INITIAL_SESSION'].includes(event)||(previousUser===user.id&&currentView!=='auth'))return;
-  if(previousUser!==user.id){homeRequests.reset();++homeLoad;authReady=false;homeData=null;$('setup-username').value='';}
+  if(previousUser!==user.id){if(previousUser)snapshots.clear();gameRequests.reset();gameFresh=false;game=null;homeRequests.reset();++homeLoad;++gameLoad;++navigation;authReady=false;homeData=null;$('setup-username').value='';}
   setTimeout(()=>run(enterApp),0);
 });

@@ -1,5 +1,51 @@
 # Implementation and verification - updated 7 October 2026
 
+## Saved screens and faster reads - 7 October, 0.7.2
+
+- Games and the twelve most recently viewed boards survive reopening. A bounded,
+  seven-day local cache is scoped to the current account and backend. It contains
+  minimal profile/list data, boards and one recap, excluding emails, friend lists,
+  inboxes, invitation tokens and full move logs. Sign-out, account change,
+  unfinished username setup and lost access invalidate it. Storage failure falls
+  back to memory. Cached boards are visibly Updating and cannot submit new turns
+  until refreshed; existing saved operations retain their idempotent retry path.
+- Opening a game link or Android notification loads that game first. The validated
+  game reply includes the caller's profile; Games refreshes separately. Overlapping
+  board reads share a request, and navigation/account/revision checks discard late
+  responses. Confirmed moves update both cached board and list before returning.
+- Service-only `wc_read_home` and `wc_read_game` combine the remaining data reads.
+  Auth, rate limits, profile/onboarding checks, participant filtering and rules
+  compatibility still run. Latest recap only on open; Move history loads fifty
+  records at a time. Full logs, receipts and statistics remain on the backend.
+  Old clients keep their original response, including single-player invitations.
+- Allowed CORS preflights may be cached for ten minutes. Every actual request
+  still authenticates. Server-Timing now separates auth, guards and data reads;
+  dictionary Set construction is deferred until a turn actually needs it.
+- Hosted comparison alternated four old/new read pairs on the existing isolated
+  test identity, with no emails or game changes. Mean Games latency: 676 -> 542 ms
+  (20% less); game open: 743 -> 555 ms (25% less). Ranges: Games 646-734 vs 514-594 ms;
+  game 671-878 vs 482-599 ms. A 36-move game's initial response fell 44,219 -> 6,537
+  bytes (85%); separately fetched history, boards, scores and stats matched exactly.
+  Successful preflight returned max-age 600. Timing samples are observations,
+  not a guarantee: network/edge overhead remains roughly 250-385 ms in this run,
+  on top of 213-281 ms measured inside the optimized request handler.
+- Browser checks with four-second response delays: cached boards appeared in
+  217-266 ms from local fixture navigation; cached Games in 216-238 ms. No home
+  or history request blocked the first board. Cached input remained disabled until
+  verification. Rapid navigation, failure/recovery, logout/cleared-cache sign-in,
+  pagination through 62 moves, and a lost turn response retried with one commit
+  passed. Updated totals immediately appeared in Games. 320/390-wide checks fit;
+  browser warnings/errors were absent. These are desktop browser fixtures, not
+  measured Seeker startup times. Web still needs its application files to load.
+- Additive read migrations and compatible API deployed to the dedicated project.
+  All 102 automated tests and the three original engine/scoring/supply suites pass;
+  production browser/function bundles build successfully. New SQL/API/cache tests
+  cover access gates, legacy invitations, pagination, corruption/quota/expiry,
+  owner isolation, bounded storage, score equivalence and preflight authentication.
+  Source, web and signed Android release verification is recorded below after
+  publishing. Physical Seeker upgrade/reopening responsiveness remains acceptance.
+  No new infrastructure, scheduled keep-alive, paid plan or scoring-rule change.
+
 ## Games performance and UI refinements - 7 October, 0.7.1
 
 - Removed the redundant opponent-waiting card and the Record section on You.

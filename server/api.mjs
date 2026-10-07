@@ -4,14 +4,14 @@ import words from './versions/dictionary-v1.json' with {type:'json'};
 import metadata from './versions/dictionary-v1.meta.json' with {type:'json'};
 import {normalizeUsername,validUsername,usernameHint} from '../online/username.mjs';
 import {suggestUsername} from './usernames.mjs';
-const dictionary = new Set(words);
+let dictionary;
 const serverRandom=()=>crypto.getRandomValues(new Uint32Array(1))[0]/4294967296;
 function unwrap(result) {
   if (result.error) {
     if(result.error.code==='23505'&&result.error.message.includes('profiles_username_key'))throw new Fault('username_taken','That username is already taken. Try another.',409);
-    const code = ['username_required','invalid_username','friend_stale','friend_unavailable','friend_cooldown','friend_limit','invitation_pending','stale','idempotency_conflict','ended','forbidden','invitation_unavailable','cannot_accept_own_invitation','game_limit','account_deleting']
+    const code = ['not_found','username_required','invalid_username','friend_stale','friend_unavailable','friend_cooldown','friend_limit','invitation_pending','stale','idempotency_conflict','ended','forbidden','invitation_unavailable','cannot_accept_own_invitation','game_limit','account_deleting']
       .find(c => result.error.message.includes(c));
-    if (code) throw new Fault(code, code.replaceAll('_',' '), code==='forbidden'?403:409);
+    if (code) throw new Fault(code, code.replaceAll('_',' '), code==='not_found'?404:code==='forbidden'?403:409);
     throw new Fault('service_unavailable','The service could not complete this request. Retry with the same operation.',503);
   }
   return result.data;
@@ -30,18 +30,20 @@ async function readBody(req) {
 }
 export function createHandler(db, settings={}) {
   return async req => {
+    const started=performance.now(),timings=[];
+    const measure=async(name,fn)=>{const start=performance.now();try{return await fn();}finally{timings.push(`${name};dur=${(performance.now()-start).toFixed(1)}`);}};
     const requestId=crypto.randomUUID(), origin=req.headers.get('origin');
     const allowed=(settings.origins || []).includes(origin);
     const headers={'Content-Type':'application/json','Cache-Control':'no-store','X-Request-Id':requestId,'Vary':'Origin',
-      ...(allowed?{'Access-Control-Allow-Origin':origin,'Access-Control-Allow-Headers':'authorization, apikey, content-type, x-client-info','Access-Control-Allow-Methods':'POST, OPTIONS'}:{})};
-    const reply=(body,status=200)=>new Response(JSON.stringify(body),{status,headers});
+      ...(allowed?{'Access-Control-Allow-Origin':origin,'Access-Control-Allow-Headers':'authorization, apikey, content-type, x-client-info','Access-Control-Allow-Methods':'POST, OPTIONS','Access-Control-Max-Age':'600','Access-Control-Expose-Headers':'Server-Timing, X-Request-Id'}:{})};
+    const reply=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:{...headers,'Server-Timing':[...timings,`total;dur=${(performance.now()-started).toFixed(1)}`].join(', ')}});
     try {
       if (origin && !allowed) throw new Fault('origin','This app origin is not enabled.',403);
       if(req.method==='OPTIONS') return new Response(null,{status:204,headers});
       if(req.method!=='POST') throw new Fault('method','Use POST.',405);
       const token=req.headers.get('Authorization')?.match(/^Bearer (.+)$/)?.[1];
       if(!token)throw new Fault('unauthorized','Sign in to continue.',401);
-      const {data:auth,error:authError}=await db.auth.getUser(token);
+      const {data:auth,error:authError}=await measure('auth',()=>db.auth.getUser(token));
       if(authError || !auth?.user)throw new Fault('unauthorized','Sign in again to continue.',401);
       const actor=auth.user.id;
       const input=await readBody(req);
@@ -51,10 +53,11 @@ export function createHandler(db, settings={}) {
         if(!configFor(game.rules_version))throw new Fault('version_unavailable','This game needs its original rules and dictionary.',503);
         if(!supported.includes(game.rules_version))throw new Fault('client_update_required','Update Word Conquest or open the latest web app to play this game.',409);
       };
+      const clientGame=g=>input.supportsFastReads===true?{...g,state:{...g.state,log:[]}}:g;
       const wakePush=()=>{try{settings.wakePush?.();}catch{/* Cron retries the durable queue. */}};
-      const [rate,profileResult]=await Promise.all([
+      const [rate,profileResult]=await measure('guards',()=>Promise.all([
         db.rpc('wc_rate_limit',{p_actor:actor}),db.from('profiles').select('*').eq('id',actor).single()
-      ]);
+      ]));
       if(!unwrap(rate))throw new Fault('rate_limit','Please wait a minute before trying again.',429);
       const profile=unwrap(profileResult);
       if(profile.deleting && input.action!=='delete_account')throw new Fault('account_deleting','Account deletion is in progress. Retry deletion.',409);
@@ -76,6 +79,10 @@ export function createHandler(db, settings={}) {
             if(input.supportsUsernameOnboarding!==true)throw new Fault('client_update_required','Update Word Conquest or open the web app to choose your username.',409);
             return reply({profile,needsUsername:true,games:[],notifications:[],social:{people:[],invitations:[],outgoing:[],blocked:[]}});
           }
+          if(input.supportsFastReads===true){
+            const result=unwrap(await measure('data',()=>db.rpc('wc_read_home',{p_actor:actor})));
+            return reply({...result,profile,needsUsername:false,games:result.games.map(g=>input.supportsGameSummaries===true?gameSummary(g):g)});
+          }
           const gamesRequest=(async()=>{
             const rows=unwrap(await db.from('games').select('*').contains('players',[actor]).order('updated_at',{ascending:false}).limit(200));
             const ids=[...new Set(rows.flatMap(g=>g.players).filter(id=>id&&id!==actor))];
@@ -91,6 +98,13 @@ export function createHandler(db, settings={}) {
           return reply({profile,needsUsername:false,games,notifications,social});
         }
         case 'game': {
+          if(input.supportsFastReads===true){
+            if(!uuid(input.gameId))throw new Fault('invalid_game','Invalid game link.');
+            const result=unwrap(await measure('data',()=>db.rpc('wc_read_game',{p_actor:actor,p_game:input.gameId})));
+            if(result.game)requireRules(result.game);
+            else if(input.supportsFriends!==true)throw new Fault('client_update_required','Update Word Conquest to open this friend invitation.',409);
+            return reply({...result,profile});
+          }
           if(uuid(input.gameId)){
             const addressed=unwrap(await db.from('invitations').select('token').eq('game_id',input.gameId).eq('recipient',actor).maybeSingle());
             if(addressed){
@@ -107,6 +121,14 @@ export function createHandler(db, settings={}) {
             ? unwrap(await db.from('invitations').select('token,expires_at,recipient').eq('game_id',game.id).maybeSingle()) : null;
           if(invitation?.recipient){const p=unwrap(await db.from('profiles').select('display_name').eq('id',invitation.recipient).maybeSingle());invitation.recipient_name=p?.display_name||'Your friend';}
           return reply({game:await decorate(game),history,invitation});
+        }
+        case 'game_history': {
+          if(input.beforeRevision!==undefined&&(!Number.isSafeInteger(input.beforeRevision)||input.beforeRevision<1))throw new Fault('invalid_revision','Invalid history page.');
+          const game=await gameForActor(input.gameId);requireRules(game);
+          const before=Math.min(input.beforeRevision??game.revision+1,game.revision+1);
+          const rows=unwrap(await db.from('operations').select('revision,recap').eq('game_id',game.id).lt('revision',before).order('revision',{ascending:false}).limit(51));
+          const history=rows.slice(0,50);
+          return reply({history,hasMore:rows.length>50,nextBefore:history.at(-1)?.revision??null});
         }
         case 'create': {
           if(!uuid(input.gameId))throw new Fault('invalid_id','A saved game ID is required.');
@@ -138,12 +160,13 @@ export function createHandler(db, settings={}) {
           const receipt=unwrap(await db.from('operations').select('*').eq('game_id',game.id).eq('operation_id',input.command.operationId).maybeSingle());
           if(receipt) {
             if(receipt.actor!==actor || receipt.fingerprint!==fingerprint)throw new Fault('idempotency_conflict','This retry ID belongs to a different action.',409);
-            return reply({game:await decorate(game),acceptedRevision:receipt.revision,replayed:true,recap:receipt.recap});
+            return reply({game:clientGame(await decorate(game)),acceptedRevision:receipt.revision,replayed:true,recap:receipt.recap});
           }
+          dictionary??=new Set(words);
           const {next,recap}=applyCommand(game,actor,input.command,dictionary,metadata.version,serverRandom);
           const result=unwrap(await db.rpc('wc_commit',{p_actor:actor,p_game:game.id,p_operation:input.command.operationId,
             p_fingerprint:fingerprint,p_expected:input.command.revision,p_next:next,p_recap:recap}));
-          wakePush();result.game=await decorate(result.game);return reply(result);
+          wakePush();result.game=clientGame(await decorate(result.game));return reply(result);
         }
         case 'push_device': {
           if(!uuid(input.deviceId) || typeof input.enabled!=='boolean')throw new Fault('invalid_device','Invalid device registration.');

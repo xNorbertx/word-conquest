@@ -3,6 +3,13 @@
 Target test phone: Solana Seeker / Android 16. Package: `com.wordconquest.app`.
 The APK uses the same Supabase accounts and games as the web app.
 
+Version 0.7.2 adds saved Games/boards across reopening, background verification,
+faster combined backend reads, direct game-link opening and paged move history.
+Saved boards show Updating until current; new moves always require server validation.
+Install the new APK to receive client changes. Backend improvements are already
+compatible with older APKs. First visits still need network access; physical Seeker
+startup/resume timing remains a device acceptance check. No paid service was added.
+
 Verified pilot build: `0.7.1-72713e1` (version code `24098852`), from the successful
 [pipeline run](https://github.com/xNorbertx/word-conquest/actions/runs/37538519588).
 The public APK's signature matches the existing pilot signer; package/version,

@@ -61,6 +61,34 @@ GitHub Pages publishes built files from `gh-pages` at `/`. For updates: run test
 
 ## Authentication mail and deferred turn-email worker
 
+### Faster reads and saved screens (0.7.2)
+
+Apply `202610070001_fast_reads.sql` and `202610070002_fast_read_names.sql` before
+deploying game-api and then the client. These add/replace service-only read RPCs;
+they do not rewrite or delete saved games. The second preserves the one-player
+shape of older invitations. Old APKs keep their previous response contract.
+
+Clients advertise `supportsFastReads`; open-game replies include the profile and
+latest receipt. `game_history` uses an exclusive `beforeRevision` cursor, fifty
+rows per page, limited to the authenticated participant's captured game revision.
+Full stored state/logs and exports remain intact. The new clients omit old logs
+from read/turn replies and load them through history when requested.
+
+Inspect the `Server-Timing` response header for `auth`, `guards`, `data` and `total`
+durations. Total covers the handler, not all network/gateway/cold-start time; compare
+with time to first byte. Allowed preflight responses use max-age 600; POST replies
+remain no-store and always authenticate. Do not add a scheduled warmer or paid tier
+to improve these numbers without owner approval.
+
+The optional localStorage key `wc-snapshots:v1:<backend URL>` retains the last list
+and at most twelve boards for seven days, with bounded size and no invitation
+capabilities. It is presentation data only. Clearing it forces a normal fresh read;
+never clear `wc-pending:*` as a performance fix, as those keys protect turn retries.
+Sign-out/account changes/unfinished onboarding clear snapshots automatically.
+Web first load still requires the application files; native APK bundles them.
+No cache migration is needed for upgrades. Rollback: republish the previous client
+and function bundle. The additive read functions may remain unused safely.
+
 ### Friends (0.6.0)
 
 Migration `202610040001_friends.sql` adds friendship/request receipts, blocks,

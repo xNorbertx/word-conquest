@@ -10,6 +10,13 @@ advertising, chat or analytics scripts are included. Optional Android push store
 a random installation ID and FCM registration token, linked to the signed-in account.
 Firebase messaging auto-initialization is off until the user enables notifications.
 
+For faster reopening, the device/browser can retain its signed-in player's last
+Games list and up to twelve viewed boards with one recap for seven days. This
+bounded local cache excludes email, friends/inbox data and invitation tokens.
+It is shown only for the matching signed-in account, refreshed before play, and
+cleared on sign-out, account switch or rejected account access. Clearing app/site
+data also removes it. It does not introduce a third-party analytics service.
+
 Only participants can read their game records. Owner decision, 4 October: signed-in
 players can search usernames without an opt-in step. Results contain a name,
 friend code, opaque ID and the caller's own friendship state; no email, game record,
