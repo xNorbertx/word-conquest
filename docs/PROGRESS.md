@@ -22,7 +22,16 @@
   exact score balances, reduced motion and cancellation during capture.
   Browser automation is unavailable in this session; visual inspection at phone
   sizes and the physical Seeker capture/upgrade check remain open.
-  Release verification follows.
+- Released source `08cb0df` to the [web app](https://xnorbertx.github.io/word-conquest/online/).
+  Pages `6e6d770` built successfully; all ten public assets match the local
+  build after line-ending normalization, including the unchanged root prototype.
+- [Android pipeline](https://github.com/xNorbertx/word-conquest/actions/runs/38314206227) passed all 108 tests, compilation and stable
+  pilot signing. Published [0.7.3-08cb0df](https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-24616906), version code
+  `24616906`. APK package/version, notification permission, WC icons,
+  castle capture bundle and absence of fixture/private-key material were verified.
+  Anonymous download matches SHA-256 `a3c1a2af9fb1cb07ba09e5f2118346034da75bf07ead01201d64beddc2b87ad5`.
+  Local APK: `dist/word-conquest-0.7.3.apk` (4,960,124 bytes).
+  Install over the existing pilot; no additional cost or backend deployment.
 
 ## Saved screens and faster reads - 7 October, 0.7.2
 

@@ -3,6 +3,13 @@
 Target test phone: Solana Seeker / Android 16. Package: `com.wordconquest.app`.
 The APK uses the same Supabase accounts and games as the web app.
 
+Version 0.7.3 makes castles distinctive with gold battlement outlines and a stronger
+centre tower. Confirmed captures play a brief lift, ownership-colour change and
+ripple before the existing castle-income/territory points. Existing games retain
+their rules. Reduced motion and Skip are supported. All 108 tests and Android
+build/signing checks pass; browser visual inspection was unavailable this session,
+and Seeker appearance, animation feel and upgrade remain acceptance checks.
+
 Version 0.7.2 adds saved Games/boards across reopening, background verification,
 faster combined backend reads, direct game-link opening and paged move history.
 Saved boards show Updating until current; new moves always require server validation.
@@ -10,13 +17,12 @@ Install the new APK to receive client changes. Backend improvements are already
 compatible with older APKs. First visits still need network access; physical Seeker
 startup/resume timing remains a device acceptance check. No paid service was added.
 
-Verified pilot build: `0.7.2-f86c1df` (version code `24181646`), from the successful
-[pipeline run](https://github.com/xNorbertx/word-conquest/actions/runs/37687076619).
-The public APK's signature matches the existing pilot signer; package/version,
-notification permission and bundled UI were verified. Anonymous download matches
-SHA-256 `701523db37ca2185b05e65c2dca072a5bd9faf8be7563b51a74c04f3afe448bf`.
-Local APK: `dist/word-conquest-0.7.2.apk`. Earlier compilation-only artifacts are
-superseded; use this build or a later successful build for the stable pilot signer.
+Verified pilot build: `0.7.3-08cb0df` (version code `24616906`), from the successful
+[pipeline run](https://github.com/xNorbertx/word-conquest/actions/runs/38314206227).
+The signature matches the existing pilot signer; package/version, notification
+permission, WC icons and castle capture bundle were verified. Anonymous download
+matches SHA-256 `a3c1a2af9fb1cb07ba09e5f2118346034da75bf07ead01201d64beddc2b87ad5`.
+Local APK: `dist/word-conquest-0.7.3.apk`. Install over the existing pilot.
 
 Version 0.7.1 removes the waiting-turn card, the Record section on You, and
 table-themed wording. Results/statistics remain stored on the backend. The WC
@@ -61,7 +67,7 @@ statistics stay separate.
 On your Android phone, open the repository's [Releases page](https://github.com/xNorbertx/word-conquest/releases).
 Open the newest published Android pilot and, under **Assets**, download
 `word-conquest-android.apk`. No GitHub account or ZIP extraction is needed.
-[Direct verified APK download](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-24181646/word-conquest-android.apk).
+[Direct verified APK download](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-24616906/word-conquest-android.apk).
 Open the downloaded APK and allow installation from your browser if Android asks.
 Updates install over the existing pilot app; do not uninstall it, because that
 removes locally saved sessions and pending actions.
