@@ -1,4 +1,28 @@
-# Implementation and verification - updated 7 October 2026
+# Implementation and verification - updated 13 October 2026
+
+## Fortified castle territories - 13 October, 0.7.3
+
+- Approved Fortified edges replaces small stars with gold battlement outlines.
+  The centre has a taller middle tower and stronger border. Player fills, ownership
+  dots/rings, letters and selection/focus feedback remain visible. Accessible tile
+  labels include castle type, income and current territory value.
+- A saved word's actual castle ownership changes animate together in 560 ms:
+  lift, colour change, settle and one fading ripple. Playback happens after word
+  points and before castle income/territory; no extra points are invented.
+  Already-owned castles and refreshes do not play capture effects. Opponent moves,
+  final replies and explicit recap replay share the same receipt-driven flow.
+  Existing duplicate suppression, Skip, navigation/background cancellation and
+  reduced motion apply. Reduced motion changes ownership without an added delay.
+- This is a client update only: no backend, database, rules, dictionary or service
+  changes. The original prototype remains available.
+- All 108 tests pass (104 regression/receipt tests plus four controller tests),
+  as do the three original engine/scoring/supply suites and production/fixture
+  builds. New checks cover steals/neutral captures for both players and all rules
+  versions, no animation on retained castles, multiple castles, final replies,
+  exact score balances, reduced motion and cancellation during capture.
+  Browser automation is unavailable in this session; visual inspection at phone
+  sizes and the physical Seeker capture/upgrade check remain open.
+  Release verification follows.
 
 ## Saved screens and faster reads - 7 October, 0.7.2
 

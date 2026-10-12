@@ -35,7 +35,8 @@ export function scoreMotionPlan(game,move,config){
     }
     const totals=[...r.totalsBefore];for(const e of events)totals[e.player-1]+=e.amount;
     if(!totals.every((n,i)=>n===r.totalsAfter[i])||!events.length)return null;
-    return {gameId:game.id,revision:game.revision,player:actor,word:r.word||'',path:r.path||[],round:r.round,
+    const castleCaptures=r.action==='word'?after.filter(t=>t.castle&&r.path.includes(t.id)&&t.owner===actor&&before.get(t.id).owner!==actor).map(t=>t.id):[];
+    return {gameId:game.id,revision:game.revision,player:actor,word:r.word||'',path:r.path||[],round:r.round,castleCaptures,
       beforeTiles,afterTiles:after,totalsBefore:r.totalsBefore,totalsAfter:r.totalsAfter,events};
   }catch{return null;}
 }

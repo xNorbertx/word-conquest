@@ -31,19 +31,40 @@ export function createBoardScoreMotion({onComplete}){
   const centre=el=>{const r=el.getBoundingClientRect();return{x:r.left+r.width/2,y:r.top+r.height/2};};
   const tile=id=>$('board').querySelector(`[data-id="${id}"]`);
   const sourcePoint=s=>s.bonus?centre($('motion-word')):centre(tile(s.id).querySelector('polygon'));
+  function owner(el,t){
+    el.classList.remove('owner0','owner1','owner2','your-tile');el.classList.add(`owner${t.owner}`);
+    el.classList.toggle('your-tile',t.owner===Number($('game-table').dataset.seat));
+    el.querySelector('.marker')?.remove();
+    if(t.owner)el.append(svg('circle',{cx:t.q*64+20,cy:t.r*64-19,r:4.3,class:'marker'}));
+  }
   function paint(tiles,plan){
     const path=plan.path;
     for(const t of tiles){const el=tile(t.id);if(!el)continue;
-      el.classList.remove('owner0','owner1','owner2','your-tile','selected','last-move','motion-source','motion-castle','motion-loss');el.classList.add(`owner${t.owner}`);
-      if(t.owner===Number($('game-table').dataset.seat))el.classList.add('your-tile');
+      el.classList.remove('selected','last-move','motion-source','motion-castle','motion-loss');owner(el,t);
       el.classList.toggle('motion-word-tile',path.includes(t.id));
       el.querySelector('text:not(.value)').textContent=t.letter==='?'&&path.includes(t.id)?plan.word[path.indexOf(t.id)]||'?':t.letter;
       el.querySelector('.value').textContent=plan.beforeTiles.find(b=>b.id===t.id).value;
-      el.querySelector('.step')?.remove();el.querySelector('.marker')?.remove();
-      if(t.owner)el.append(svg('circle',{cx:t.q*64+20,cy:t.r*64-19,r:4.3,class:'marker'}));
+      el.querySelector('.step')?.remove();
     }
     const points=path.map(id=>tiles.find(t=>t.id===id)).filter(Boolean);
     $('board').querySelector('.path')?.setAttribute('d',points.slice(1).map((b,i)=>{const a=points[i],d=Math.hypot(b.q-a.q,b.r-a.r),dx=(b.q-a.q)/d*15,dy=(b.r-a.r)/d*15;return `M${a.q*64+dx},${a.r*64+dy}L${b.q*64-dx},${b.r*64-dy}`;}).join(' '));
+  }
+  async function captureCastles(plan,signal){
+    const captures=(plan.castleCaptures||[]).map(id=>({el:tile(id),after:plan.afterTiles.find(t=>t.id===id)})).filter(c=>c.el&&c.after);
+    if(!captures.length)return;
+    // Reduced motion changes ownership immediately, without an extra delay.
+    if(media.matches){for(const c of captures)owner(c.el,c.after);return;}
+    $('score-motion').dataset.phase='capture';$('motion-label').textContent=captures.length===1?'Castle captured':'Castles captured';
+    $('motion-symbol').replaceChildren(icon('castle'));$('motion-tally').textContent='';
+    for(const el of $('board').querySelectorAll('.tile'))el.classList.remove('motion-source','motion-castle','motion-loss');
+    await Promise.all(captures.map(async c=>{
+      const ripple=c.el.querySelector('.castle-pulse');
+      await Promise.all([
+        animate(c.el,[{transform:'translateY(0) scale(1)'},{transform:'translateY(-3px) scale(1.08)',offset:.35},{transform:'translateY(1px) scale(.98)',offset:.75},{transform:'translateY(0) scale(1)'}],560,signal),
+        ...(ripple?[animate(ripple,[{opacity:0,transform:'scale(.85)'},{opacity:.65,offset:.25},{opacity:0,transform:'scale(1.23)'}],560,signal)]:[]),
+        (async()=>{await wait(165,signal);owner(c.el,c.after);})()
+      ]);
+    }));
   }
   function cancel(restore=true){
     const wasActive=active;active=false;controller?.abort();controller=null;layer?.remove();layer=null;
@@ -69,7 +90,9 @@ export function createBoardScoreMotion({onComplete}){
     paint(plan.beforeTiles,plan);
     try{
       await wait(100,signal);
+      let captured=false;
       for(const e of plan.events){
+        if(!captured&&e.kind!=='word'){captured=true;await captureCastles(plan,signal);}
         check(signal);$('score-motion').dataset.phase=e.kind;$('score-motion').dataset.player=e.player;
         $('game-table').dataset.motionTarget=e.player;
         if(e.kind==='castles'||e.kind==='territory')paint(plan.afterTiles.map(t=>{const old=plan.beforeTiles.find(b=>b.id===t.id);return{...t,letter:old.letter,owner:e.kind==='castles'&&!t.castle?old.owner:t.owner};}),plan);

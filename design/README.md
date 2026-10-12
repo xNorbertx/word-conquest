@@ -28,6 +28,14 @@ The game waiting card and You-page Record section have been removed.
 
 The [local score animation gallery](score-animations/index.html) has four offline HTML/CSS/JS prototypes: a score ribbon, a persistent receipt, board-origin points, and a round-end reveal. Each uses the same engine-verified round and has replay, speed, and reduced-motion controls. Option 3 was selected on 6 October and is implemented in the 0.7.0 client; the gallery remains a design reference. See the [prototype notes](score-animations/README.md) and [implementation progress](../docs/PROGRESS.md).
 
+## Fortified castles - 12 October 2026
+
+The owner approved Fortified edges: gold battlement silhouettes, with a taller
+middle tower on the centre castle. Retain sage/walnut ownership fills and markers,
+clear letters, and selection/focus feedback. Captured castles lift and settle with
+a single quiet ripple, then continue the score sequence. Only confirmed ownership
+changes trigger capture motion; reduced motion changes the colour immediately.
+
 ## Reference source
 
 Created with the built-in image generation tool, refining the Paper & Ink concept.

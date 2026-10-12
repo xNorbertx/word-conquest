@@ -1,6 +1,6 @@
 # Word Conquest — app roadmap
 
-Updated: 7 October 2026
+Updated: 13 October 2026
 
 This is an acceptance checklist. The original local two-player prototype remains
 available; a separate online implementation now exists. Rules remain experimental.
@@ -40,6 +40,7 @@ First milestone: invite a friend and reliably finish a game over several days.
 
 - [ ] Product design: a coherent visual identity, readable board, clear score breakdown, selection feedback, loading/error states, and a short introduction to the rules.
 - [ ] Visual scoring feedback: option 3 (points from the board) selected and implemented in 0.7.0. Confirmed word points, round castle income for both players, territory gains and opponent losses animate into the totals. Skip, recap replay, reduced motion and interruption handling verified locally; real Seeker acceptance remains open.
+- [ ] Castle clarity: approved Fortified edges design in 0.7.3 replaces tiny stars with gold battlement outlines, a stronger centre castle, and a brief capture lift/ripple within confirmed score playback. Validate the appearance and feel on the Seeker; rules and income stay unchanged.
 - [ ] Mobile and accessible interaction: comfortable touch targets, different screen sizes, clear joker entry, and ownership indicators that do not rely only on color.
 - [ ] Persistent player identity: sign-in, a simple profile/name, account recovery, and access to the same games across devices.
 - [x] Persistent game service: save the board, letters, ownership, scores, remaining letter budget, current player, rules, and move history so games survive closing the app.

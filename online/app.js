@@ -11,6 +11,7 @@ import {createFriends} from './friends.js';
 import {requireUsername,signUpAccount} from './username.mjs';
 import {scoreMotionPlan,createScoreLedger} from './score-motion.mjs';
 import {createBoardScoreMotion} from './score-motion.js';
+import {tilePoints,castleLabel} from './board-geometry.mjs';
 import {Engine,config as defaultConfig,configFor,RULES_VERSION,SUPPORTED_RULES,rulesLabel,captureRule,castleRule} from '../server/domain.mjs';
 let config=defaultConfig;
 import {$,svg,icon,node,button,setting,notify,showSheet,closeSheet,ask,initUI,closeTopDialog,emptyState} from './ui.js';
@@ -192,11 +193,10 @@ function drawBoard(){
   const board=$('board');board.replaceChildren();board.setAttribute('viewBox','-295 -295 590 590');
   const last=history[0]?.recap,seat=seatOf(game,user?.id)||1;if(!focusTile)focusTile=game.state.tiles.find(t=>t.owner===seat)?.id||game.state.tiles[0].id;
   for(const t of game.state.tiles){const p=pos(t),step=selection.indexOf(t.id),letter=t.letter==='?'&&step>=0?(jokers[t.id]||'?'):t.letter;
-    const g=svg('g',{'data-id':t.id,role:'button',tabindex:t.id===focusTile?0:-1,'aria-pressed':step>=0,'aria-disabled':!canPlay()&&!preview,'aria-label':`${letter==='?'?'Joker':letter}, ${t.owner===seat?'yours':t.owner?'opponent':'neutral'}, ${Engine.letterValue(t.letter,config)} points${t.castle?', castle':''}`,class:`tile owner${t.owner}${t.owner===seat?' your-tile':''}${step>=0?' selected':''}${highlightLast&&last?.path?.includes(t.id)?' last-move':''}`});
-    const points=Array.from({length:8},(_,i)=>{const a=(45*i+22.5)*Math.PI/180;return `${p.x+32*Math.cos(a)},${p.y+32*Math.sin(a)}`;}).join(' ');
-    g.append(svg('polygon',{points}),svg('text',{x:p.x,y:p.y-2},letter),svg('text',{x:p.x,y:p.y+19,class:'value'},Engine.letterValue(t.letter,config)));
+    const g=svg('g',{'data-id':t.id,role:'button',tabindex:t.id===focusTile?0:-1,'aria-pressed':step>=0,'aria-disabled':!canPlay()&&!preview,'aria-label':`${letter==='?'?'Joker':letter}, ${t.owner===seat?'yours':t.owner?'opponent':'neutral'}, ${Engine.letterValue(t.letter,config)} letter points${t.castle?', '+castleLabel(t,config):''}`,class:`tile owner${t.owner}${t.castle?' castle-tile'+(t.q===0&&t.r===0?' centre-castle':''):''}${t.owner===seat?' your-tile':''}${step>=0?' selected':''}${highlightLast&&last?.path?.includes(t.id)?' last-move':''}`});
+    g.append(svg('polygon',{points:tilePoints(t)}),svg('text',{x:p.x,y:p.y+(t.castle?1:-2)},letter),svg('text',{x:p.x,y:p.y+19,class:'value'},Engine.letterValue(t.letter,config)));
     if(t.owner)g.append(svg('circle',{cx:p.x+20,cy:p.y-19,r:4.3,class:'marker'}));
-    if(t.castle){const title=svg('title',{},config.castleIncome?`${t.q===0&&t.r===0?'Centre':'Side'} castle: +${t.q===0&&t.r===0?config.castleIncome.center:config.castleIncome.side} each round, ${t.q===0&&t.r===0?config.centerCastlePoints:config.castlePoints} final points`:`Castle: ${config.castlePoints} territory points`);g.append(title);const points=Array.from({length:10},(_,i)=>{const a=(i*36-90)*Math.PI/180,r=i%2?2.7:6;return `${p.x+19+r*Math.cos(a)},${p.y+18+r*Math.sin(a)}`;}).join(' ');g.append(svg('polygon',{points,class:'castle'}));}
+    if(t.castle)g.append(svg('title',{},castleLabel(t,config)),svg('circle',{cx:p.x,cy:p.y,r:34,class:'castle-pulse','aria-hidden':'true'}));
     if(step>=0)g.append(svg('text',{x:p.x-19,y:p.y-18,class:'step'},step+1));board.append(g);
   }
   const centers=selection.map(id=>pos(game.state.tiles.find(t=>t.id===id)));const segments=centers.slice(1).map((b,i)=>{const a=centers[i],length=Math.hypot(b.x-a.x,b.y-a.y),dx=(b.x-a.x)/length*15,dy=(b.y-a.y)/length*15;return `M${a.x+dx},${a.y+dy} L${b.x-dx},${b.y-dy}`;}).join(' ');board.append(svg('path',{class:'path',d:segments}));
