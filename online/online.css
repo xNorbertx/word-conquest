@@ -947,10 +947,8 @@ input:read-only {
   font: 11px sans-serif;
   fill: #686252;
 }
-.tile .castle {
-  fill: #b18435;
-  stroke: none;
-}
+.tile .castle-pulse {fill:none;stroke:#a98235;stroke-width:1.8;opacity:0;pointer-events:none;transform-box:fill-box;transform-origin:center}
+.tile.castle-tile {transform-box:fill-box;transform-origin:center}
 .tile .marker {
   fill: #526747;
   stroke: none;
@@ -1978,7 +1976,7 @@ input:read-only {
 .is-scoring #board .path{stroke:var(--motion-ink)}
 .is-scoring .tile.motion-word-tile>polygon:first-child{stroke:var(--motion-ink);stroke-width:2.8}
 .is-scoring .tile.motion-source>polygon:first-child{stroke:var(--motion-target);stroke-width:4}
-.is-scoring .tile.motion-castle>polygon:first-child{stroke:#a98235;stroke-width:4;fill:#ded4ae}
+.is-scoring .tile.motion-castle>polygon:first-child{stroke:#a98235;stroke-width:4}
 .is-scoring .tile.motion-loss>polygon:first-child{stroke:var(--motion-target);stroke-width:4;stroke-dasharray:5 3}
 #score-motion{position:relative;text-align:center;min-height:210px;padding:21px 5px 7px;border-top:1px solid var(--line);color:var(--green)}
 #score-motion[data-side="walnut"]{color:#72543e}
@@ -1999,6 +1997,16 @@ input:read-only {
 @media(max-width:799px){#score-motion{min-height:185px;padding-top:14px}#motion-word{font-size:34px;margin-bottom:24px}.score-point{min-width:29px;height:29px;font-size:20px}}
 @media(prefers-reduced-motion:reduce){.score-point{box-shadow:none}.is-scoring .tile>polygon:first-child{transition:none}}
 .is-scoring.score-reduced .tile>polygon:first-child{transition:none}
+
+/* Fortified castles retain player fills and ownership markers at every stage. */
+#board .tile.castle-tile>polygon:first-child{stroke:#9a712e;stroke-width:2.7;stroke-linejoin:round}
+#board .tile.centre-castle>polygon:first-child{stroke-width:3.3}
+#board .tile.castle-tile.owner0>polygon:first-child{fill:#f2e8d1}
+#board .tile.castle-tile.selected>polygon:first-child{stroke:var(--own-ink);stroke-width:3.5;fill:var(--own-fill)}
+#board .tile.castle-tile:focus-visible>polygon:first-child{stroke:var(--own-ink);stroke-width:4}
+.is-scoring #board .tile.castle-tile.motion-castle>polygon:first-child{stroke:#a98235;stroke-width:4}
+.is-scoring #board .tile.castle-tile.motion-loss>polygon:first-child{stroke:var(--motion-target);stroke-dasharray:5 3}
+#score-motion[data-phase="capture"] #motion-tally{display:none}
 
 /* Linked WC monogram; the same paths are used by the Android launcher. */
 .brand-mark{width:38px;height:38px;flex-shrink:0;border-radius:11px}

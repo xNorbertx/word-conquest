@@ -2345,7 +2345,7 @@ function createSnapshotCache(storage, { namespace = "", now = Date.now, ttl = 7 
 }
 
 // package.json
-var version = "0.7.2";
+var version = "0.7.3";
 
 // online/app.js
 init_dist();
@@ -9557,6 +9557,7 @@ function scoreMotionPlan(game2, move, config3) {
     const totals = [...r.totalsBefore];
     for (const e of events) totals[e.player - 1] += e.amount;
     if (!totals.every((n, i) => n === r.totalsAfter[i]) || !events.length) return null;
+    const castleCaptures = r.action === "word" ? after.filter((t) => t.castle && r.path.includes(t.id) && t.owner === actor && before.get(t.id).owner !== actor).map((t) => t.id) : [];
     return {
       gameId: game2.id,
       revision: game2.revision,
@@ -9564,6 +9565,7 @@ function scoreMotionPlan(game2, move, config3) {
       word: r.word || "",
       path: r.path || [],
       round: r.round,
+      castleCaptures,
       beforeTiles,
       afterTiles: after,
       totalsBefore: r.totalsBefore,
@@ -9663,26 +9665,54 @@ function createBoardScoreMotion({ onComplete }) {
   };
   const tile = (id) => $("board").querySelector(`[data-id="${id}"]`);
   const sourcePoint = (s) => s.bonus ? centre($("motion-word")) : centre(tile(s.id).querySelector("polygon"));
+  function owner(el, t) {
+    el.classList.remove("owner0", "owner1", "owner2", "your-tile");
+    el.classList.add(`owner${t.owner}`);
+    el.classList.toggle("your-tile", t.owner === Number($("game-table").dataset.seat));
+    el.querySelector(".marker")?.remove();
+    if (t.owner) el.append(svg("circle", { cx: t.q * 64 + 20, cy: t.r * 64 - 19, r: 4.3, class: "marker" }));
+  }
   function paint(tiles, plan) {
     const path = plan.path;
     for (const t of tiles) {
       const el = tile(t.id);
       if (!el) continue;
-      el.classList.remove("owner0", "owner1", "owner2", "your-tile", "selected", "last-move", "motion-source", "motion-castle", "motion-loss");
-      el.classList.add(`owner${t.owner}`);
-      if (t.owner === Number($("game-table").dataset.seat)) el.classList.add("your-tile");
+      el.classList.remove("selected", "last-move", "motion-source", "motion-castle", "motion-loss");
+      owner(el, t);
       el.classList.toggle("motion-word-tile", path.includes(t.id));
       el.querySelector("text:not(.value)").textContent = t.letter === "?" && path.includes(t.id) ? plan.word[path.indexOf(t.id)] || "?" : t.letter;
       el.querySelector(".value").textContent = plan.beforeTiles.find((b) => b.id === t.id).value;
       el.querySelector(".step")?.remove();
-      el.querySelector(".marker")?.remove();
-      if (t.owner) el.append(svg("circle", { cx: t.q * 64 + 20, cy: t.r * 64 - 19, r: 4.3, class: "marker" }));
     }
     const points = path.map((id) => tiles.find((t) => t.id === id)).filter(Boolean);
     $("board").querySelector(".path")?.setAttribute("d", points.slice(1).map((b, i) => {
       const a = points[i], d = Math.hypot(b.q - a.q, b.r - a.r), dx = (b.q - a.q) / d * 15, dy = (b.r - a.r) / d * 15;
       return `M${a.q * 64 + dx},${a.r * 64 + dy}L${b.q * 64 - dx},${b.r * 64 - dy}`;
     }).join(" "));
+  }
+  async function captureCastles(plan, signal) {
+    const captures = (plan.castleCaptures || []).map((id) => ({ el: tile(id), after: plan.afterTiles.find((t) => t.id === id) })).filter((c) => c.el && c.after);
+    if (!captures.length) return;
+    if (media.matches) {
+      for (const c of captures) owner(c.el, c.after);
+      return;
+    }
+    $("score-motion").dataset.phase = "capture";
+    $("motion-label").textContent = captures.length === 1 ? "Castle captured" : "Castles captured";
+    $("motion-symbol").replaceChildren(icon("castle"));
+    $("motion-tally").textContent = "";
+    for (const el of $("board").querySelectorAll(".tile")) el.classList.remove("motion-source", "motion-castle", "motion-loss");
+    await Promise.all(captures.map(async (c) => {
+      const ripple = c.el.querySelector(".castle-pulse");
+      await Promise.all([
+        animate(c.el, [{ transform: "translateY(0) scale(1)" }, { transform: "translateY(-3px) scale(1.08)", offset: 0.35 }, { transform: "translateY(1px) scale(.98)", offset: 0.75 }, { transform: "translateY(0) scale(1)" }], 560, signal),
+        ...ripple ? [animate(ripple, [{ opacity: 0, transform: "scale(.85)" }, { opacity: 0.65, offset: 0.25 }, { opacity: 0, transform: "scale(1.23)" }], 560, signal)] : [],
+        (async () => {
+          await wait(165, signal);
+          owner(c.el, c.after);
+        })()
+      ]);
+    }));
   }
   function cancel(restore = true) {
     const wasActive = active;
@@ -9729,7 +9759,12 @@ function createBoardScoreMotion({ onComplete }) {
     paint(plan.beforeTiles, plan);
     try {
       await wait(100, signal);
+      let captured = false;
       for (const e of plan.events) {
+        if (!captured && e.kind !== "word") {
+          captured = true;
+          await captureCastles(plan, signal);
+        }
         check(signal);
         $("score-motion").dataset.phase = e.kind;
         $("score-motion").dataset.player = e.player;
@@ -9793,6 +9828,22 @@ function createBoardScoreMotion({ onComplete }) {
   return { play, cancel, get active() {
     return active;
   } };
+}
+
+// online/board-geometry.mjs
+function tilePoints(tile) {
+  const x = tile.q * 64, y = tile.r * 64;
+  if (!tile.castle) return Array.from({ length: 8 }, (_, i) => {
+    const a = (45 * i + 22.5) * Math.PI / 180;
+    return `${x + 32 * Math.cos(a)},${y + 32 * Math.sin(a)}`;
+  }).join(" ");
+  const crown = tile.q === 0 && tile.r === 0 ? 0 : 9;
+  return [[0, 0], [23, 0], [23, 16], [38, 16], [38, crown], [62, crown], [62, 16], [77, 16], [77, 0], [100, 0], [100, 76], [76, 100], [24, 100], [0, 76]].map(([u, v]) => `${x + (u - 50) * 0.58},${y + (v - 50) * 0.58}`).join(" ");
+}
+function castleLabel(tile, config3) {
+  const centre = tile.q === 0 && tile.r === 0, name = centre ? "Centre castle" : "Side castle";
+  const value = centre ? config3.centerCastlePoints ?? config3.castlePoints : config3.castlePoints;
+  return `${name}: ${config3.castleIncome ? `+${centre ? config3.castleIncome.center : config3.castleIncome.side} each round, ` : ""}${value} territory points`;
 }
 
 // online/presentation.mjs
@@ -10365,22 +10416,10 @@ function drawBoard() {
   if (!focusTile) focusTile = game.state.tiles.find((t) => t.owner === seat)?.id || game.state.tiles[0].id;
   for (const t of game.state.tiles) {
     const p = pos(t), step = selection.indexOf(t.id), letter = t.letter === "?" && step >= 0 ? jokers[t.id] || "?" : t.letter;
-    const g = svg("g", { "data-id": t.id, role: "button", tabindex: t.id === focusTile ? 0 : -1, "aria-pressed": step >= 0, "aria-disabled": !canPlay() && !preview, "aria-label": `${letter === "?" ? "Joker" : letter}, ${t.owner === seat ? "yours" : t.owner ? "opponent" : "neutral"}, ${engine_default.letterValue(t.letter, config2)} points${t.castle ? ", castle" : ""}`, class: `tile owner${t.owner}${t.owner === seat ? " your-tile" : ""}${step >= 0 ? " selected" : ""}${highlightLast && last?.path?.includes(t.id) ? " last-move" : ""}` });
-    const points = Array.from({ length: 8 }, (_, i) => {
-      const a = (45 * i + 22.5) * Math.PI / 180;
-      return `${p.x + 32 * Math.cos(a)},${p.y + 32 * Math.sin(a)}`;
-    }).join(" ");
-    g.append(svg("polygon", { points }), svg("text", { x: p.x, y: p.y - 2 }, letter), svg("text", { x: p.x, y: p.y + 19, class: "value" }, engine_default.letterValue(t.letter, config2)));
+    const g = svg("g", { "data-id": t.id, role: "button", tabindex: t.id === focusTile ? 0 : -1, "aria-pressed": step >= 0, "aria-disabled": !canPlay() && !preview, "aria-label": `${letter === "?" ? "Joker" : letter}, ${t.owner === seat ? "yours" : t.owner ? "opponent" : "neutral"}, ${engine_default.letterValue(t.letter, config2)} letter points${t.castle ? ", " + castleLabel(t, config2) : ""}`, class: `tile owner${t.owner}${t.castle ? " castle-tile" + (t.q === 0 && t.r === 0 ? " centre-castle" : "") : ""}${t.owner === seat ? " your-tile" : ""}${step >= 0 ? " selected" : ""}${highlightLast && last?.path?.includes(t.id) ? " last-move" : ""}` });
+    g.append(svg("polygon", { points: tilePoints(t) }), svg("text", { x: p.x, y: p.y + (t.castle ? 1 : -2) }, letter), svg("text", { x: p.x, y: p.y + 19, class: "value" }, engine_default.letterValue(t.letter, config2)));
     if (t.owner) g.append(svg("circle", { cx: p.x + 20, cy: p.y - 19, r: 4.3, class: "marker" }));
-    if (t.castle) {
-      const title = svg("title", {}, config2.castleIncome ? `${t.q === 0 && t.r === 0 ? "Centre" : "Side"} castle: +${t.q === 0 && t.r === 0 ? config2.castleIncome.center : config2.castleIncome.side} each round, ${t.q === 0 && t.r === 0 ? config2.centerCastlePoints : config2.castlePoints} final points` : `Castle: ${config2.castlePoints} territory points`);
-      g.append(title);
-      const points2 = Array.from({ length: 10 }, (_, i) => {
-        const a = (i * 36 - 90) * Math.PI / 180, r = i % 2 ? 2.7 : 6;
-        return `${p.x + 19 + r * Math.cos(a)},${p.y + 18 + r * Math.sin(a)}`;
-      }).join(" ");
-      g.append(svg("polygon", { points: points2, class: "castle" }));
-    }
+    if (t.castle) g.append(svg("title", {}, castleLabel(t, config2)), svg("circle", { cx: p.x, cy: p.y, r: 34, class: "castle-pulse", "aria-hidden": "true" }));
     if (step >= 0) g.append(svg("text", { x: p.x - 19, y: p.y - 18, class: "step" }, step + 1));
     board.append(g);
   }
