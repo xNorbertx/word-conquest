@@ -10,7 +10,8 @@ export function createSnapshotCache(storage,{namespace='',now=Date.now,ttl=7*864
  function validGame(g,actor){
   if(!owned(g,actor)||!configFor(g.rules_version)||!Array.isArray(g.names)||g.names.length!==2||!g.names.every(n=>typeof n==='string'))return false;
   const s=g.state;if(!s||!Array.isArray(s.tiles)||s.tiles.length!==69||!Array.isArray(s.turns)||!Array.isArray(s.wordPoints)||![1,2].includes(s.player))return false;
-  if(!s.tiles.every(t=>t&&typeof t.id==='string'&&/^[A-Z?]$/.test(t.letter)&&[0,1,2].includes(t.owner)&&Number.isFinite(t.q)&&Number.isFinite(t.r)))return false;
+  const alphabet=configFor(g.rules_version).alphabet||'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  if(!s.tiles.every(t=>t&&typeof t.id==='string'&&typeof t.letter==='string'&&t.letter.length===1&&(t.letter==='?'||alphabet.includes(t.letter))&&[0,1,2].includes(t.owner)&&Number.isFinite(t.q)&&Number.isFinite(t.r)))return false;
   try{return Engine.scores(s,configFor(g.rules_version)).every(Number.isFinite);}catch{return false;}
  }
  function read(actor){

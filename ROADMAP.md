@@ -53,6 +53,7 @@ First milestone: invite a friend and reliably finish a game over several days.
 - [x] Web pilot notifications: in-app inbox and live game updates, with participant-only access. Turn-alert email is out of scope by owner decision.
 - [ ] Mobile notifications: native push for turns/invitations, preferences, and links to the relevant game; verify permissions, background delivery and logout/token cleanup on devices.
 - [ ] Opponent-move recap: show the word, traced path, captures, score changes, and replaced letters when returning to a game.
+- [ ] Swedish games (0.8.0): choose English/Svenska before link or friend invitations, show language on game cards, use a pinned Swedish dictionary and 29-letter board/jokers. Automated gameplay and save/retry checks pass; hosted verification and physical Swedish playtest acceptance are recorded in PROGRESS.md. See [language policy](docs/LANGUAGES.md).
 - [ ] English dictionary validation: choose a word list with suitable usage rights. Define treatment of inflections, slang, proper nouns, abbreviations, and offensive words. Explain rejected words clearly.
 - [ ] Game lifecycle rules: define resignation, draws, inactive opponents, and abandonment, including their effect on statistics. Make the ending and final-reply rule clear.
 - [ ] Results for future analytics: preserve wins, losses, draws, highest final score and best word/turn in backend records without duplicate results. Owner removed the Record UI from You in 0.7.1; a separate analytics experience is deferred.
@@ -72,7 +73,7 @@ First milestone: invite a friend and reliably finish a game over several days.
 - [ ] Matchmaking with similarly skilled opponents; ratings once the player population supports useful matching.
 - [ ] One-tap rematches with alternating starting players.
 - [ ] Simple messaging; preset reactions can be an initial smaller version of this feature.
-- [ ] Multiple languages, each with its own dictionary, letter distribution, scoring balance, and records. Interface translation is a separate task.
+- [ ] Further languages beyond English/Swedish, each with its own dictionary, letter distribution, scoring balance and records. Interface translation is a separate task.
 - [ ] Practice mode and a computer opponent.
 - [ ] Full game replays and shareable results or best-word cards.
 - [ ] Postgame word exploration: discover missed opportunities after the game is finished.

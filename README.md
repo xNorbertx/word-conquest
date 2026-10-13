@@ -30,6 +30,14 @@ See [Android installation](docs/ANDROID.md) and [0.3.0 UX review](docs/UX.md). H
 36-turn and owner playtests passed; multi-day/device acceptance, backup restoration
 and operational monitoring remain open. The local prototype below is unchanged.
 
+### Game languages (0.8.0)
+
+Choose English or Svenska before sharing an invitation or inviting from Friends.
+Game cards, invitations and game headers identify the language. Swedish uses its
+own pinned dictionary, letter distribution and Å/Ä/Ö-capable boards/jokers. Both
+players need 0.8.0 or the latest web app; existing English games stay unchanged.
+The interface remains English. See [language and dictionary policy](docs/LANGUAGES.md).
+
 ### Usernames and Friends (0.6.2)
 
 Friends replaces Activity in the bottom navigation. Search by username, send

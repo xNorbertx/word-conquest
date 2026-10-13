@@ -1,5 +1,43 @@
 # Implementation and verification - updated 13 October 2026
 
+## Swedish games — 13 October, 0.8.0
+
+- New game and direct friend invites now ask for English or Svenska first, remembering
+  the last selection on the device. Invitations, game-card footers and game headers
+  identify the language. The interface stays English.
+- Added a pinned, MIT-licensed Martin Lindhe word-list snapshot: 400,901 lowercase
+  words, listed inflections/compounds only. Å/Ä/Ö are distinct letters in generation,
+  replacement, scoring and jokers; input normalizes decomposed Unicode. Swedish
+  weights and letter-point groups are separate, while castle income, unlimited
+  captures, random starter, six jokers and equal final turns are preserved.
+- Rules/dictionary versions bind the language permanently. English games and frozen
+  historical versions are unchanged; old clients must update to play Swedish games.
+  Stats already separate versions. No schema migration or new service is required.
+  Both dictionaries are server-only and lazily constructed for turn requests.
+- Added automated coverage for pinned dictionary integrity/policy, 100 seeded boards
+  and replacements, Å/Ä/Ö words and jokers for both seats, server score/animation
+  agreement, rejected wrong-language dictionaries, saved mixed-language lists and
+  boards, create retries, old-client guards, stale turns and a complete saved Swedish
+  game with duplicate receipts and final scoring. Local Swedish board/list/invitation
+  fixtures are available. Browser automation is unavailable in this session; visual,
+  Seeker keyboard and Swedish vocabulary/balance acceptance remain open.
+- All 116 tests and the three original engine/scoring/supply suites pass; production
+  and fixture builds pass. The initial 10.56 MB API upload exceeded the service limit;
+  gzip/base64 deployment payloads reduce it to 2.40 MB. Exact round-trip dictionary
+  checks pass, and the browser bundle is 485 KB without either word list.
+- Deployed game-api to the dedicated existing project, with no SQL migration.
+  Existing isolated test accounts completed a fresh, unseeded Swedish friend game:
+  30 words (all containing Å/Ä/Ö), 15 turns each, final scores 91–94. Verified link
+  preview/cancellation, addressed invitation labels, old-client join/play gates,
+  creation/turn retries, stale rejection, opponent reload, list totals and separate
+  statistics. An English link game also accepted a dictionary word and completed
+  through resignation. No real-player games or accounts were changed.
+- Observed Swedish turns averaged 1,002 ms (first 1,033 ms); subsequent Games reads
+  took 377 ms (Swedish test) and 530 ms (English test). These are individual hosted
+  smoke measurements, not a performance guarantee or a controlled comparison.
+- Web/APK release verification follows below. See
+  [dictionary, balance and maintenance policy](LANGUAGES.md).
+
 ## Fortified castle territories - 13 October, 0.7.3
 
 - Approved Fortified edges replaces small stars with gold battlement outlines.

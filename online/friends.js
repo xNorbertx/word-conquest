@@ -34,7 +34,7 @@ export function createFriends({api,getUser,getData,setData,run,status,invite,ope
     box.append(avatar(person.display_name),copy);let primary;
     if(person.status==='accepted'){
       const waiting=data().outgoing?.find(i=>i.recipient===person.id);
-      primary=act(waiting?'Invited':'Invite',async()=>{if(waiting)await openGame(waiting.id);else {await invite(person);await refresh();}},waiting?'secondary friend-action':'primary friend-action',waiting?'check':'plus');
+      primary=act(waiting?'Invited':'Invite',async()=>{if(waiting)await openGame(waiting.id);else await invite(person);},waiting?'secondary friend-action':'primary friend-action',waiting?'check':'plus');
     }else if(incoming){
       primary=act('Accept',()=>action(person,'accept'),'primary friend-action','check');
       const decline=act('',()=>action(person,'decline'),'icon-button','close');decline.setAttribute('aria-label',`Decline ${person.display_name}'s friend request`);decline.disabled=mutating;box.append(decline);

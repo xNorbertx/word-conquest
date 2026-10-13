@@ -1,5 +1,6 @@
 import Engine from './engine.mjs';
 import {configFor} from './rules.mjs';
+import {languageForRules} from './languages.mjs';
 export {config,configFor,RULES_VERSION,LEGACY_RULES_VERSION,SUPPORTED_RULES,rulesLabel,captureRule,castleRule} from './rules.mjs';
 export { Engine };
 export class Fault extends Error {
@@ -16,8 +17,8 @@ export function checkCommand(input) {
     if (!Array.isArray(input.path) || input.path.length > 69 || input.path.some(id => typeof id !== 'string' || id.length > 12))
       fail('invalid_path', 'Choose a path on the board.');
     if (input.jokers && (typeof input.jokers !== 'object' || Array.isArray(input.jokers) ||
-      Object.entries(input.jokers).some(([k,v]) => k.length > 12 || typeof v !== 'string' || !/^[A-Z]$/.test(v))))
-      fail('invalid_joker', 'Each joker needs one A–Z letter.');
+      Object.entries(input.jokers).some(([k,v]) => k.length > 12 || typeof v !== 'string' || !/^[A-ZÅÄÖ]$/.test(v))))
+      fail('invalid_joker', 'Each joker needs one letter from the game alphabet.');
   }
 }
 // Stable receipt fingerprint excludes all untrusted fields that cannot affect a move.
@@ -33,7 +34,7 @@ export function applyCommand(game, actor, input, dictionary, dictionaryVersion, 
   if (game.revision !== input.revision) fail('stale', 'A newer turn is available. Reload the board before choosing a move.', 409);
   if (game.status !== 'active' || game.state.over) fail('ended', 'This game is not active.', 409);
   const config=configFor(game.rules_version);
-  if (!config || game.dictionary_version !== dictionaryVersion)
+  if (!config || game.dictionary_version !== dictionaryVersion || dictionaryVersion!==languageForRules(game.rules_version)?.dictionary.version)
     fail('version_unavailable', 'This game needs its original rules and dictionary. Contact support.', 503);
   const next = {...game, state: structuredClone(game.state), draw_by: game.draw_by || null};
   const before = game.state;

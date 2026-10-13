@@ -3,6 +3,12 @@
 Target test phone: Solana Seeker / Android 16. Package: `com.wordconquest.app`.
 The APK uses the same Supabase accounts and games as the web app.
 
+Version 0.8.0 adds English/Svenska selection before inviting a friend, language
+labels on games, a pinned Swedish dictionary and Å/Ä/Ö board letters/jokers. Both
+players need this update or the latest web client for Swedish games. Existing
+English games remain unchanged. Interface translation is not part of this update.
+Physical Seeker keyboard/layout and Swedish play balance remain acceptance checks.
+
 Version 0.7.3 makes castles distinctive with gold battlement outlines and a stronger
 centre tower. Confirmed captures play a brief lift, ownership-colour change and
 ripple before the existing castle-income/territory points. Existing games retain

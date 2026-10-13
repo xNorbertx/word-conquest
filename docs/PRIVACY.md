@@ -81,9 +81,18 @@ encrypted backups retained 7 days, with deletions re-applied after restoration b
 opening access. These retention jobs are not yet scheduled. The owner must confirm
 and operate retention before public release. Do not describe backup erasure as instant.
 
-Dictionary: exact membership in the pinned Letterpress-derived ASCII list. Inflections,
+English dictionary: exact membership in the pinned Letterpress-derived ASCII list. Inflections,
 slang and archaic words count only when listed; no stemming or spellchecker guesses.
 Punctuation and spaces are excluded. Proper names/acronyms are not added separately;
 the inherited lowercased list may include ambiguous entries. Offensive words are not
 filtered in this private adult pilot. Public/family positioning would require a reviewed,
 versioned policy/list and abuse controls. No public opponents or free-text messages ship.
+
+Swedish games use exact membership in a pinned MIT-licensed Martin Lindhe list,
+filtered to lowercase A–Z/Å/Ä/Ö forms of 3–69 letters. Listed inflections and
+compounds count; no generated compounds or accent folding. The author excludes
+names, but the list is not a curated tournament/moderation dictionary. Each game
+retains its original language/rules/dictionary. No words are sent to an external
+dictionary provider; validation remains inside the existing backend. The last
+game-language choice is stored locally for the signed-in account and removed on
+account deletion. See [source, filtering and balance details](LANGUAGES.md).

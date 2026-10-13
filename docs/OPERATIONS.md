@@ -30,6 +30,14 @@ No runtime CDN scripts are used. Build bundles the client SDK and engine locally
 update v1. New dictionary/rule changes need a new engine/config/list registry entry,
 hash, migration plan and separate stats group. The build checks dictionary integrity.
 
+## Game languages (0.8.0)
+
+See [LANGUAGES.md](LANGUAGES.md) for the frozen Swedish source, filtering, scoring,
+reproduction and compatibility policy. Build and deploy game-api before the web/APK
+client. No SQL migration or new environment variable is required. Keep all published
+dictionary/rule versions for existing games; never repin a live version. Dictionaries
+load lazily on the server for turns and are not shipped to the client. No new costs.
+
 ## Supabase deployment — dedicated project only
 
 After the owner provisions and authenticates access, install the official Supabase

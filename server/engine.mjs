@@ -1,8 +1,10 @@
 import legacy from './versions/engine-v1.mjs';
 import castles from './versions/engine-v2.mjs';
-const engine=config=>config.castleIncome?castles:legacy;
+import swedish from './versions/engine-sv-v2.mjs';
+const engine=config=>config.language==='sv'?swedish:config.castleIncome?castles:legacy;
 export default {...legacy,
   newGame:(config,random)=>engine(config).newGame(config,random),
+  validatePath:(state,ids,config,...args)=>engine(config).validatePath(state,ids,config,...args),
   scoreMove:(state,ids,config)=>engine(config).scoreMove(state,ids,config),
   scoreBreakdown:(state,config)=>engine(config).scoreBreakdown(state,config),
   scores:(state,config)=>engine(config).scores(state,config),

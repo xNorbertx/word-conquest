@@ -1,10 +1,9 @@
 import {gameSummary} from './game-summary.mjs';
 import {applyCommand,checkCommand,commandKey,configFor,Engine,Fault,LEGACY_RULES_VERSION,statistics,uuid} from './domain.mjs';
-import words from './versions/dictionary-v1.json' with {type:'json'};
-import metadata from './versions/dictionary-v1.meta.json' with {type:'json'};
+import {dictionaryFor} from './dictionaries.mjs';
+import {languageFor,languageForRules} from './languages.mjs';
 import {normalizeUsername,validUsername,usernameHint} from '../online/username.mjs';
 import {suggestUsername} from './usernames.mjs';
-let dictionary;
 const serverRandom=()=>crypto.getRandomValues(new Uint32Array(1))[0]/4294967296;
 function unwrap(result) {
   if (result.error) {
@@ -134,11 +133,13 @@ export function createHandler(db, settings={}) {
           if(!uuid(input.gameId))throw new Fault('invalid_id','A saved game ID is required.');
           const version=input.rulesVersion??LEGACY_RULES_VERSION,config=configFor(version);
           if(!config)throw new Fault('invalid_rules','Choose a supported game ruleset.');
+          const language=languageForRules(version);
+          if(input.language!==undefined&&(!languageFor(input.language)||input.language!==language.code))throw new Fault('invalid_language','Choose the language before creating this game.');
           requireRules({rules_version:version});
           // New board is computed here; a retried create returns its original stored board.
           if(input.friendId!==undefined&&!uuid(input.friendId))throw new Fault('invalid_friend','Choose a friend.');
           const game=unwrap(await db.rpc(input.friendId?'wc_create_friend':'wc_create',{p_actor:actor,...(input.friendId?{p_friend:input.friendId}:{}),p_id:input.gameId,p_token:crypto.randomUUID(),
-            p_state:Engine.newGame(config,serverRandom),p_rules:version,p_dictionary:metadata.version}));
+            p_state:Engine.newGame(config,serverRandom),p_rules:version,p_dictionary:language.dictionary.version}));
           requireRules(game);if(input.friendId)wakePush();return reply({game:await decorate(game)});
         }
         case 'invitation': {
@@ -162,8 +163,7 @@ export function createHandler(db, settings={}) {
             if(receipt.actor!==actor || receipt.fingerprint!==fingerprint)throw new Fault('idempotency_conflict','This retry ID belongs to a different action.',409);
             return reply({game:clientGame(await decorate(game)),acceptedRevision:receipt.revision,replayed:true,recap:receipt.recap});
           }
-          dictionary??=new Set(words);
-          const {next,recap}=applyCommand(game,actor,input.command,dictionary,metadata.version,serverRandom);
+          const {next,recap}=applyCommand(game,actor,input.command,await dictionaryFor(game.dictionary_version),game.dictionary_version,serverRandom);
           const result=unwrap(await db.rpc('wc_commit',{p_actor:actor,p_game:game.id,p_operation:input.command.operationId,
             p_fingerprint:fingerprint,p_expected:input.command.revision,p_next:next,p_recap:recap}));
           wakePush();result.game=clientGame(await decorate(result.game));return reply(result);

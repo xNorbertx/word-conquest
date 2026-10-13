@@ -3,5 +3,8 @@
   "rules-v1.mjs": "a85a9a61ad70e932bc92d6d3f4201551a4fcef556de28e6fe265add2c8a91842",
   "rules-v2.mjs": "2bad26264f44445e2c1422134def0179b4b53ce92b4f0bd065a20f4b4eb397aa",
   "engine-v2.mjs": "c2b1993dce5b923ff43c09228b08396cd045d22f4aee648bba00365ca98267b7",
-  "rules-v3.mjs": "2c12f3fa48b213e6f2c8409f25f877139bdcf59be878ed48370b6b593b5a4ff6"
+  "rules-v3.mjs": "2c12f3fa48b213e6f2c8409f25f877139bdcf59be878ed48370b6b593b5a4ff6",
+  "rules-sv-v1.mjs": "cd84ba9b1b3797b6dd246e468f308080d7c3bcddc6c5da3d502bda2962c42803",
+  "engine-sv-v1.mjs": "ceb7e2c98d4a884c836002cc6c7a7625a9b18d6a8c65d74a0d5fb5453dae0b12",
+  "engine-sv-v2.mjs": "fc72a93de945c2cd23760fd013ef8e01e87d120ac5f98cd7f25c701dab782fb1"
 }
