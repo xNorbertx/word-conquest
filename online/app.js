@@ -73,7 +73,9 @@ function renderPush(){
   $('push-settings').hidden=!push.available;$('push-state').textContent=labels[info.state];
   $('push-prompt').hidden=!push.shouldPrompt();
   $('push-prompt-copy').textContent=info.state==='error'?'Notifications could not connect. Let us fix that.':info.state==='blocked'?'Allow notifications in Android settings to hear about your turn.':'A quiet nudge when it is your turn.';
-  $('push-prompt-enable').textContent=info.state==='blocked'?'Open settings':info.state==='error'?'Connect notifications':'Enable notifications';
+  $('push-prompt-copy').hidden=!['error','blocked'].includes(info.state);
+  $('push-prompt-enable').textContent=info.state==='blocked'?'Settings':info.state==='error'?'Retry':'Enable';
+  $('push-prompt-enable').setAttribute('aria-label',info.state==='blocked'?'Open Android notification settings':info.state==='error'?'Retry connecting notifications':'Enable notifications');
   if($('sheet').open&&$('sheet-title').textContent==='Game notifications.')showPush();
 }
 async function connectLiveUpdates(session){
@@ -90,19 +92,23 @@ function renderHome(){
   $('active-count').textContent=active||'';$('turn-count').textContent=turns?`${turns} ${turns===1?'turn':'turns'} waiting`:'';
   $('active-games').setAttribute('aria-pressed',filter==='active');$('finished-games').setAttribute('aria-pressed',filter==='finished');
   const invitations=$('game-invitations');invitations.replaceChildren();
-  if(filter==='active')for(const i of homeData.social?.invitations||[]){const card=act('',()=>openGame(i.id),'friend-game-invite');card.replaceChildren(avatar(i.host,'sage'),node('span'),icon('arrow'));card.children[1].append(node('strong',`${i.host} invited you`),node('small',`${languageLabel(i.rules_version)} · View invitation`));invitations.append(card);}
+  if(filter==='active')for(const i of homeData.social?.invitations||[]){const card=act('',()=>openGame(i.id),'friend-game-invite');card.replaceChildren(avatar(i.host,'sage'),node('span'),icon('arrow'));card.children[1].append(node('strong',i.host),node('small',`Invitation · ${languageLabel(i.rules_version)}`));invitations.append(card);}
   const list=$('game-list');list.replaceChildren();
   for(const g of visibleGames(games,user.id,filter)){
-    const name=opponentName(g,user.id),card=act('',()=>openGame(g.id),'game-card'+(gameStatus(g,user.id)==='Your turn'?' has-turn':''));card.replaceChildren();card.setAttribute('aria-label',`${name}. ${languageLabel(g.rules_version)}. ${gameStatus(g,user.id)}. Open game`);
-    const top=node('div',undefined,'game-card-top'),copy=node('div');copy.append(node('div',name,'game-card-name'));
-    const meta=node('div',undefined,'game-card-meta'),dot=node('span',undefined,'status-dot'+(gameStatus(g,user.id)==='Your turn'?' active':''));meta.append(dot,node('span',timeAgo(g.updated_at)));copy.append(meta);
-    const chevron=node('span',undefined,'card-chevron');chevron.append(icon('chevron'));top.append(avatar(g.status==='invited'?'+':name,seatOf(g,user.id)===2?'sage':'walnut'),copy,chevron);
-    const bottom=node('div',undefined,'game-card-bottom');
-    if(g.status==='invited')bottom.append(node('span','Your invitation is ready to share','small-note'));
-    else {const scores=g.scores||(g.state.tiles?Engine.scores(g.state,configFor(g.rules_version)||defaultConfig):['—','—']),seat=seatOf(g,user.id)-1,score=node('span',undefined,'card-score');score.append(node('strong',scores[seat]),node('span','  :  '),node('strong',scores[1-seat]));bottom.append(score);}
-    bottom.append(node('span',gameStatus(g,user.id),'card-status'+(gameStatus(g,user.id)==='Your turn'?'':' waiting')));card.append(top,bottom,node('span',languageLabel(g.rules_version),'game-language'));list.append(card);
+    const name=opponentName(g,user.id),state=gameStatus(g,user.id),language=languageLabel(g.rules_version),updated=timeAgo(g.updated_at);
+    const card=act('',()=>openGame(g.id),'game-card'+(state==='Your turn'?' has-turn':''));card.replaceChildren();card.title=name;
+    const top=node('div',undefined,'game-card-top'),identity=node('div',name,'game-card-name');top.append(identity);
+    let scoreLabel='';
+    if(!['invited','cancelled','declined'].includes(g.status)){
+      const scores=g.scores||(g.state.tiles?Engine.scores(g.state,configFor(g.rules_version)||defaultConfig):['—','—']),seat=seatOf(g,user.id)-1,score=node('span',undefined,'card-score');
+      scoreLabel=`You ${scores[seat]}, ${name} ${scores[1-seat]}.`;score.title=scoreLabel;score.setAttribute('aria-hidden','true');score.append(node('strong',scores[seat]),node('span',':'),node('strong',scores[1-seat]));top.append(score);
+    }else top.append(icon('chevron'));
+    const meta=node('div',undefined,'game-card-meta'),labels=node('span',undefined,'game-card-labels');
+    labels.append(node('span',g.status==='invited'?'Invitation':state,'card-status'+(state==='Your turn'?'':' waiting')),node('span',language,'game-language'));meta.append(labels);
+    if(updated){const time=node('time',updated,'game-card-time');time.dateTime=g.updated_at;time.title=new Date(g.updated_at).toLocaleString();meta.append(time);}
+    card.setAttribute('aria-label',`${name}. ${scoreLabel} ${g.status==='invited'?'Invitation':state}. ${language}. ${updated}. Open game`);card.append(top,meta);list.append(card);
   }
-  if(!list.childElementCount){const blank=emptyState(filter==='finished'?'Your story starts here.':'A little friendly competition?',filter==='finished'?'Finished games will find a home here.':'Invite someone. Take your time. Find a great word.',filter==='finished'?'award':'leaf');if(filter==='active')blank.append(act('Invite a friend',()=>showNewGame(),'primary','plus'));list.append(blank);}
+  if(!list.childElementCount&&!invitations.childElementCount){const blank=emptyState(filter==='finished'?'Your story starts here.':'A little friendly competition?',filter==='finished'?'Finished games will find a home here.':'Invite someone. Take your time. Find a great word.',filter==='finished'?'award':'leaf');if(filter==='active')blank.append(act('Invite a friend',()=>showNewGame(),'primary','plus'));list.append(blank);}
   renderActivity();renderPush();friends.render();
 }
 function renderActivity(){
@@ -145,8 +151,8 @@ async function showInvite(){
   if(own){localStorage.removeItem('wc-invitation');await openGame(own.id);return true;}
   const available=i.status==='invited'&&Date.parse(i.expires_at)>Date.now();
   if(!available){localStorage.removeItem('wc-invitation');showSheet('This invitation is no longer available.',[node('p','Ask your friend for a new invitation.'),act('Back to games',closeSheet,'primary full')]);return true;}
-  const heading=node('div',undefined,'invitation-summary');heading.append(avatar(i.host,'avatar-large'),node('h3',`${i.host} invited you to play.`));
-  showSheet('You are invited.',[heading,node('p',languageLabel(i.rulesVersion),'invitation-language'),node('p',captureRule(configFor(i.rulesVersion)||configFor('autumn-v1'))),node('p',castleRule(configFor(i.rulesVersion)||configFor('autumn-v1'))),act('Join game',()=>decideInvite('accept'),'primary full','arrow'),act('Not this time',()=>decideInvite('decline'),'text-button full')]);return true;
+  const heading=node('div',undefined,'invitation-summary'),identity=node('div',undefined,'invitation-summary-copy'),rules=configFor(i.rulesVersion)||configFor('autumn-v1');identity.append(node('h3',i.host),node('span',languageLabel(i.rulesVersion),'invitation-language'));heading.append(avatar(i.host),identity);
+  showSheet('Game invitation.',[heading,node('p',`${captureRule(rules)} ${castleRule(rules)}`,'invitation-rules'),act('Join game',()=>decideInvite('accept'),'primary full','arrow'),act('Not this time',()=>decideInvite('decline'),'text-button full')]);return true;
 }
 async function decideInvite(choice){const token=invitationToken(localStorage.getItem('wc-invitation')||'');const result=await api({action:'invitation',choice,token});localStorage.removeItem('wc-invitation');closeSheet();if(choice==='accept'&&result.game.status==='active')await openGame(result.game.id);else {await showHome();status('Invitation declined.');}}
 async function openGame(id,quiet=false,{route=true}={}){

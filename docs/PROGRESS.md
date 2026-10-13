@@ -1,5 +1,32 @@
 # Implementation and verification - updated 13 October 2026
 
+## Compact overview and supporting screens — 0.8.1
+
+- Games use two rows: opponent and scores, followed by status, language and updated
+  time. Removed the separate language footer, divided score section, redundant
+  avatar/status dot and invitation helper sentence. Scores remain prominent and
+  always put You first. Long names truncate visually but remain complete in the
+  button's accessible label and title; that label also identifies each score.
+- Cards have smaller padding/gaps and fluid height; metadata can wrap at enlarged
+  text sizes. Invitations/cancelled/declined invites omit misleading zero scores.
+  An incoming invitation no longer sits above a redundant empty-games illustration.
+- Incoming invitations show name plus Invitation/language. The acceptance sheet
+  groups inviter and language in one summary row and keeps rules in a single short
+  paragraph. Friends/activity rows and page headings have less excess space;
+  an unused friend-search status strip collapses until needed. Account setting
+  notes share their label row where space permits.
+- Notification enablement is a compact inline banner with an explicit Enable
+  control. Blocked/error explanations remain visible, with Settings/Retry and full
+  accessible button labels. Enable/dismiss controls retain 44 px targets. Board,
+  gameplay, backend, scoring, dictionaries and stored games are unchanged.
+- Added a compact fixture with English/Swedish, long names, four-digit scores,
+  incoming/outgoing invitations and completed results. Production/fixture builds
+  pass. Browser inventory is empty and opening the in-app browser is unavailable;
+  rendered 320/390 px, enlarged-text and physical Seeker acceptance remain open.
+  All 116 regression tests and the three original engine/scoring/supply suites
+  pass. CSS parses without warnings and production bundles exclude fixture/key
+  material. Web/APK release verification follows below.
+
 ## Swedish games — 13 October, 0.8.0
 
 - New game and direct friend invites now ask for English or Svenska first, remembering

@@ -89,3 +89,26 @@ retry, the resulting named opponent turn, no-territory reentry, and finished gam
 without an active-turn highlight. Browser warnings/errors absent in checked flows.
 All three original rule suites and 35 service/integration/controller tests pass.
 No changes to rules, scoring, territory ownership or board orientation.
+
+## Compact metadata and lists — 0.8.1
+
+Game cards use two rows: name/score, then status/language/time. New metadata should
+join an existing row where it fits; do not add a full-width footer for each new
+field. Remove repeated information and decorative separation before shrinking text.
+Scores stay readable and You comes first. A full card is the tap target. Long names
+can truncate in a summary if their full text remains accessible and in the game.
+Metadata wraps naturally with large text; do not enforce fixed heights or hide the
+language/turn state to meet a size target.
+
+Applied the same approach to incoming invitation cards, the invitation summary,
+account notes and the notification prompt. Friends/activity rows and page headings
+use less padding; empty friend-search status space collapses. Essential explanations
+remain when notifications are blocked or registration fails. Enable/dismiss targets
+are at least 44 px. Game interaction, server operations and acceptance confirmations
+remain unchanged.
+
+Use the local fixture's compact scenario for mixed languages, a long opponent name,
+four-digit scores, incoming/outgoing invitations and finished results. Existing
+push_off/push_blocked/push_error scenarios cover notification banner states.
+Source/build verification is complete; no browser surface is available in this
+session, so rendered phone widths, large text and physical Seeker checks are pending.

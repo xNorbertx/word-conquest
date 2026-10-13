@@ -3,6 +3,11 @@
 Target test phone: Solana Seeker / Android 16. Package: `com.wordconquest.app`.
 The APK uses the same Supabase accounts and games as the web app.
 
+Version 0.8.1 compacts game cards into two rows, with language beside turn/status.
+Invitations, Friends, Activity, account notes and the notification enablement prompt
+also use less space. Full card tap targets and readable scores remain; no backend,
+gameplay or dictionary changes. Rendered phone/large-text acceptance remains open.
+
 Version 0.8.0 adds English/Svenska selection before inviting a friend, language
 labels on games, a pinned Swedish dictionary and Å/Ä/Ö board letters/jokers. Both
 players need this update or the latest web client for Swedish games. Existing
