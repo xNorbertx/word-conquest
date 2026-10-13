@@ -35,8 +35,20 @@
 - Observed Swedish turns averaged 1,002 ms (first 1,033 ms); subsequent Games reads
   took 377 ms (Swedish test) and 530 ms (English test). These are individual hosted
   smoke measurements, not a performance guarantee or a controlled comparison.
-- Web/APK release verification follows below. See
-  [dictionary, balance and maintenance policy](LANGUAGES.md).
+- Released source `e30c641` (feature `b563faa`) to the
+  [web app](https://xnorbertx.github.io/word-conquest/online/). Pages `4974c27`
+  built successfully; all ten public assets match the tested build after newline
+  normalization, including the unchanged root prototype. The final source change
+  pins letter-weight metadata and does not change these runtime assets.
+- [Android pipeline](https://github.com/xNorbertx/word-conquest/actions/runs/38469352948) passed all 116 tests, compilation and stable signing.
+  Published [0.8.0-e30c641](https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-24700666), code `24700666`.
+  Package/version, notification permission, WC icons, Swedish language support,
+  fixture/private-key exclusion and the unchanged pilot certificate were verified.
+  Anonymous APK download matches SHA-256 `cfb8b79e28df561a630f583a84a8754ce581f588ca2616aa53d20342a2ae1982`.
+  Local APK: `dist/word-conquest-0.8.0.apk` (4,964,344 bytes).
+  Install over the current pilot. Both players need 0.8.0 or the current web app
+  for Swedish games. No new recurring costs or owner setup actions.
+  See [dictionary, balance and maintenance policy](LANGUAGES.md).
 
 ## Fortified castle territories - 13 October, 0.7.3
 

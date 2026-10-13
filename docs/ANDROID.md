@@ -23,12 +23,16 @@ Install the new APK to receive client changes. Backend improvements are already
 compatible with older APKs. First visits still need network access; physical Seeker
 startup/resume timing remains a device acceptance check. No paid service was added.
 
-Verified pilot build: `0.7.3-08cb0df` (version code `24616906`), from the successful
-[pipeline run](https://github.com/xNorbertx/word-conquest/actions/runs/38314206227).
+Verified pilot build: [0.8.0-e30c641](https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-24700666) (version code `24700666`),
+from the successful [pipeline run](https://github.com/xNorbertx/word-conquest/actions/runs/38469352948).
 The signature matches the existing pilot signer; package/version, notification
-permission, WC icons and castle capture bundle were verified. Anonymous download
-matches SHA-256 `a3c1a2af9fb1cb07ba09e5f2118346034da75bf07ead01201d64beddc2b87ad5`.
-Local APK: `dist/word-conquest-0.7.3.apk`. Install over the existing pilot.
+permission, WC icons and Swedish support were verified. Anonymous download matches
+SHA-256 `cfb8b79e28df561a630f583a84a8754ce581f588ca2616aa53d20342a2ae1982`.
+Local APK: `dist/word-conquest-0.8.0.apk`. Install over the existing pilot.
+[Download the APK directly](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-24700666/word-conquest-android.apk); no GitHub sign-in is needed.
+All 116 automated tests and the original suites pass, with a complete hosted Swedish
+game verified. Phone layout, Swedish keyboard and vocabulary/balance remain playtest
+acceptance. No public app-store release or new costs.
 
 Version 0.7.1 removes the waiting-turn card, the Record section on You, and
 table-themed wording. Results/statistics remain stored on the backend. The WC
