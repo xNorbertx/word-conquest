@@ -1,6 +1,6 @@
-# Implementation and verification - updated 13 October 2026
+# Implementation and verification - updated 14 October 2026
 
-## Compact overview and supporting screens — 0.8.1
+## Compact overview and supporting screens — 14 October, 0.8.1
 
 - Games use two rows: opponent and scores, followed by status, language and updated
   time. Removed the separate language footer, divided score section, redundant
@@ -25,7 +25,18 @@
   rendered 320/390 px, enlarged-text and physical Seeker acceptance remain open.
   All 116 regression tests and the three original engine/scoring/supply suites
   pass. CSS parses without warnings and production bundles exclude fixture/key
-  material. Web/APK release verification follows below.
+  material.
+- Released source `86dc572` to the
+  [web app](https://xnorbertx.github.io/word-conquest/online/). Pages `7c58370`
+  built successfully; all ten public assets match the tested build after newline
+  normalization. The original root prototype is unchanged. No backend deployment.
+- [Android pipeline](https://github.com/xNorbertx/word-conquest/actions/runs/38472419346) passed all 116 tests, compilation and stable signing.
+  Published [0.8.1-86dc572](https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-24702098), version code `24702098`.
+  Verified package/version, existing certificate, notification permission, WC icons,
+  compact card/Swedish support, matching CSS and fixture/private-key exclusion.
+  Anonymous download matches SHA-256 `1e2d3a07ae122389554480e94b22b8aee8cf5ef943ed115a4edaa74c1a29814f`.
+  Local APK: `dist/word-conquest-0.8.1.apk` (4,964,665 bytes).
+  Install over the current pilot. No new service costs or owner setup actions.
 
 ## Swedish games — 13 October, 0.8.0
 

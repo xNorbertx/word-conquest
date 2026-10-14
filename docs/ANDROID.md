@@ -28,16 +28,15 @@ Install the new APK to receive client changes. Backend improvements are already
 compatible with older APKs. First visits still need network access; physical Seeker
 startup/resume timing remains a device acceptance check. No paid service was added.
 
-Verified pilot build: [0.8.0-e30c641](https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-24700666) (version code `24700666`),
-from the successful [pipeline run](https://github.com/xNorbertx/word-conquest/actions/runs/38469352948).
-The signature matches the existing pilot signer; package/version, notification
-permission, WC icons and Swedish support were verified. Anonymous download matches
-SHA-256 `cfb8b79e28df561a630f583a84a8754ce581f588ca2616aa53d20342a2ae1982`.
-Local APK: `dist/word-conquest-0.8.0.apk`. Install over the existing pilot.
-[Download the APK directly](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-24700666/word-conquest-android.apk); no GitHub sign-in is needed.
-All 116 automated tests and the original suites pass, with a complete hosted Swedish
-game verified. Phone layout, Swedish keyboard and vocabulary/balance remain playtest
-acceptance. No public app-store release or new costs.
+Verified pilot build: [0.8.1-86dc572](https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-24702098) (version code `24702098`),
+from the successful [pipeline run](https://github.com/xNorbertx/word-conquest/actions/runs/38472419346). The signature matches the installed
+pilot. Package/version, notification permission, WC icons, compact card support,
+matching CSS and Swedish support were verified. Anonymous download matches SHA-256
+`1e2d3a07ae122389554480e94b22b8aee8cf5ef943ed115a4edaa74c1a29814f`.
+Local APK: `dist/word-conquest-0.8.1.apk`. Install over the existing pilot.
+[Download the APK directly](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-24702098/word-conquest-android.apk); no GitHub sign-in is needed.
+All 116 regression tests and the original suites pass. Browser/physical Seeker
+visual checks remain open. No backend change, app-store submission or new costs.
 
 Version 0.7.1 removes the waiting-turn card, the Record section on You, and
 table-themed wording. Results/statistics remain stored on the backend. The WC

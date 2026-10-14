@@ -1,6 +1,6 @@
 # Word Conquest — app roadmap
 
-Updated: 13 October 2026
+Updated: 14 October 2026
 
 This is an acceptance checklist. The original local two-player prototype remains
 available; a separate online implementation now exists. Rules remain experimental.
