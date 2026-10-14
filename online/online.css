@@ -326,6 +326,16 @@ input:read-only {
 .page-heading .primary {
   flex-shrink: 0;
 }
+.page-heading.compact {
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.page-heading.compact .eyebrow {
+  margin: 0;
+}
+.page-heading.actions-only {
+  justify-content: flex-end;
+}
 .list-toolbar {
   display: flex;
   justify-content: space-between;

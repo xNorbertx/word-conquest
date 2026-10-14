@@ -1,5 +1,16 @@
 # Implementation and verification - updated 14 October 2026
 
+## Remove redundant page titles — 14 October, 0.8.2
+
+- Removed the visible Your games, Friends and Your corner page titles. Games keeps
+  its greeting and New game action; Friends keeps My code above search; You opens
+  directly with the profile card. Compact action rows close the old heading space.
+- Named section landmarks preserve screen-reader navigation. Bottom navigation,
+  controls, backend and game data remain unchanged.
+- All 116 regression tests and original engine/scoring/supply suites pass. Web and
+  fixture builds, built HTML/control checks and CSS parsing pass. Physical Seeker
+  visual acceptance remains open. Publication verification follows below.
+
 ## Compact overview and supporting screens — 14 October, 0.8.1
 
 - Games use two rows: opponent and scores, followed by status, language and updated

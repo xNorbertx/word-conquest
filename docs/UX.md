@@ -112,3 +112,9 @@ four-digit scores, incoming/outgoing invitations and finished results. Existing
 push_off/push_blocked/push_error scenarios cover notification banner states.
 Source/build verification is complete; no browser surface is available in this
 session, so rendered phone widths, large text and physical Seeker checks are pending.
+
+## Main tab titles — 0.8.2
+
+Games, Friends and You rely on the selected navigation tab and named section
+landmarks rather than repeating a large page title. Keep useful actions in compact
+rows and let the profile card lead the You page.

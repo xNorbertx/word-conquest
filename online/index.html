@@ -44,21 +44,21 @@
   <button id="setup-signout" class="subtle-link">Sign out</button>
 </section>
 <section id="recovery" class="auth-screen" hidden><span class="large-icon" data-icon="lock"></span><h1>A fresh start.</h1><p class="muted">Choose a new password for your account.</p><form id="recovery-form" class="stack-form"><label for="new-password">New password</label><input id="new-password" type="password" autocomplete="new-password" minlength="12" required><p class="field-hint">At least 12 characters.</p><button class="primary full">Save password<span data-icon="arrow"></span></button></form></section>
-<section id="home" class="page" hidden>
-  <div class="page-heading"><div><p id="greeting" class="eyebrow">YOUR LITTLE WORD WORLD</p><h1>Your games<span class="heading-dot">.</span></h1></div><button id="new-game" class="primary"><span data-icon="plus"></span><span>New game</span></button></div>
+<section id="home" class="page" aria-label="Games" hidden>
+  <div class="page-heading compact"><p id="greeting" class="eyebrow">YOUR LITTLE WORD WORLD</p><button id="new-game" class="primary"><span data-icon="plus"></span><span>New game</span></button></div>
   <aside id="push-prompt" class="push-prompt" aria-label="Game notifications" hidden><span class="push-prompt-icon" data-icon="bell"></span><div><div class="push-prompt-heading"><h2>Notifications</h2><button id="push-prompt-enable" class="text-button" aria-label="Enable notifications">Enable</button></div><p id="push-prompt-copy" hidden></p></div><button id="push-prompt-dismiss" class="icon-button" aria-label="Remind me about notifications next week" data-icon="close"></button></aside>
   <div class="list-toolbar"><div class="segmented" role="group" aria-label="Games to show"><button id="active-games" aria-pressed="true">Playing <span id="active-count"></span></button><button id="finished-games" aria-pressed="false">Finished</button></div><span id="turn-count" class="small-note"></span></div>
   <div id="game-invitations" class="game-invitations"></div><div id="game-list" class="game-list"></div>
 </section>
-<section id="friends" class="page" hidden>
-  <div class="page-heading"><h1>Friends<span class="heading-dot">.</span></h1><button id="friend-code-button" class="secondary"><span data-icon="share"></span>My code</button></div>
+<section id="friends" class="page" aria-label="Friends" hidden>
+  <div class="page-heading compact actions-only"><button id="friend-code-button" class="secondary"><span data-icon="share"></span>My code</button></div>
   <form id="friend-search" class="friend-search" role="search"><label class="sr-only" for="friend-search-input">Find friends by username or friend code</label><span data-icon="search"></span><input id="friend-search-input" type="search" placeholder="Username or friend code" autocomplete="off" minlength="1" maxlength="64" required><button id="friend-search-submit" class="icon-button" aria-label="Search friends" data-icon="arrow"></button></form>
   <div class="friend-search-meta"><span id="friend-search-status" class="small-note" role="status"></span><button id="clear-friend-search" class="text-button" hidden>Clear search</button></div>
   <div id="friend-search-results" aria-live="polite"></div><div id="friend-list"></div>
 </section>
 <section id="activity" class="page" hidden><div class="page-heading"><div><p class="eyebrow">YOUR UPDATES</p><h1>Activity<span class="heading-dot">.</span></h1></div><button id="read-inbox" class="icon-button" aria-label="Mark all updates as read" data-icon="check-all"></button></div><div id="inbox" class="activity-list"></div></section>
-<section id="account" class="page" hidden>
-  <div class="page-heading"><div><h1>Your corner<span class="heading-dot">.</span></h1></div></div>
+<section id="account" class="page" aria-label="You" hidden>
+
   <div class="profile-card"><span id="profile-avatar" class="avatar avatar-large"></span><div><h2 id="profile-name"></h2><p id="profile-email" class="muted"></p></div><button id="edit-profile" class="icon-button" aria-label="Edit username" data-icon="edit"></button></div>
   <div class="settings-list">
     <button id="activity-button" class="settings-row"><span data-icon="history"></span><span>Activity<small id="activity-state"></small></span><span id="activity-badge" class="badge" hidden></span><span data-icon="chevron"></span></button>
