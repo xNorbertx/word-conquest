@@ -9,7 +9,14 @@
   controls, backend and game data remain unchanged.
 - All 116 regression tests and original engine/scoring/supply suites pass. Web and
   fixture builds, built HTML/control checks and CSS parsing pass. Physical Seeker
-  visual acceptance remains open. Publication verification follows below.
+  visual acceptance remains open.
+- Published source `5aab793` to the [web app](https://xnorbertx.github.io/word-conquest/online/); Pages
+  `7a837db` built successfully and all ten public assets match the tested build.
+- [Android 0.8.2-5aab793](https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-24734923), version code `24734923`,
+  passed the [pipeline](https://github.com/xNorbertx/word-conquest/actions/runs/38524353462). Verified the stable signing certificate,
+  package/version, notification permission, retained WC icons, packaged HTML/CSS,
+  and anonymous APK download. SHA-256: `a147868fd8cd571cdbc7b75a57d119f6c15d6a41b0487fbb97ac6071d189dad7`.
+  Local APK: `dist/word-conquest-0.8.2.apk`. No backend change or new service costs.
 
 ## Compact overview and supporting screens — 14 October, 0.8.1
 
