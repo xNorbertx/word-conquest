@@ -37,8 +37,6 @@
 #friends .section-label{margin-top:22px;justify-content:space-between}
 #friend-search-results:not(:empty){padding-bottom:20px;border-bottom:1px solid var(--line)}
 .friend-empty-note{padding:16px 0;color:var(--muted)}
-.friend-code{font-variant-numeric:tabular-nums;letter-spacing:1.8px;font-weight:600;overflow-wrap:anywhere}
-.friend-code-large{font-size:25px;text-align:center;padding:20px 0;color:var(--green)}
 .friend-game-invite{display:flex;align-items:center;gap:10px;text-align:left;width:100%;border:1px solid #ccd6c2;background:var(--green-soft);border-radius:15px;padding:12px 14px;margin-bottom:10px}
 .friend-game-invite>.avatar{width:36px;height:36px;font-size:17px}
 .friend-game-invite>span:nth-child(2){flex:1;min-width:0}.friend-game-invite strong,.friend-game-invite small{display:block;overflow-wrap:anywhere}

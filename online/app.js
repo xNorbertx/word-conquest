@@ -2848,7 +2848,7 @@ function createSnapshotCache(storage, { namespace = "", now = Date.now, ttl = 7 
 }
 
 // package.json
-var version = "0.9.0";
+var version = "0.9.1";
 
 // online/app.js
 init_dist();
@@ -9837,8 +9837,7 @@ function emptyState(title, copy2, symbol = "leaf") {
 }
 
 // online/friends.js
-var formatFriendCode = (code) => (code || "").match(/.{1,4}/g)?.join("-") || "";
-function createFriends({ api: api2, getUser, getData, setData, run: run2, status: status2, invite: invite2, openGame: openGame2, editProfile: editProfile2 }) {
+function createFriends({ api: api2, getUser, getData, setData, run: run2, status: status2, invite: invite2, openGame: openGame2 }) {
   let searchVersion = 0, loadVersion = 0, searchResults = null, searchQuery = "", mutating = false;
   const act2 = (label, fn, style = "secondary", symbol) => button(label, () => run2(fn), style, symbol);
   const data = () => getData()?.social || { people: [], invitations: [], outgoing: [], blocked: [] };
@@ -9878,7 +9877,7 @@ function createFriends({ api: api2, getUser, getData, setData, run: run2, status
     }
   }
   function options(person) {
-    const content = [node("p", formatFriendCode(person.friend_code), "friend-code")];
+    const content = [];
     if (person.status === "accepted") content.push(act2("Remove friend", async () => {
       if (await ask({ title: `Remove ${person.display_name}?`, message: "Your games will stay. You can add each other again later.", label: "Remove friend", cancel: "Keep friend" })) await action2(person, "remove");
     }, "secondary full", "user"));
@@ -9888,11 +9887,11 @@ function createFriends({ api: api2, getUser, getData, setData, run: run2, status
     }, "text-button danger full", "shield"));
     showSheet(person.display_name, content);
   }
-  function personRow(person, search2 = false) {
+  function personRow(person) {
     const box = node("div", void 0, "friend-row"), copy2 = node("div", void 0, "friend-copy");
     copy2.append(node("strong", person.display_name));
     const incoming = person.status === "pending" && person.requested_by !== getUser()?.id;
-    if (search2 || person.status !== "accepted") copy2.append(node("small", search2 ? formatFriendCode(person.friend_code) : incoming ? "Wants to be your friend" : "Request sent"));
+    if (person.status === "pending") copy2.append(node("small", incoming ? "Wants to be your friend" : "Request sent"));
     box.append(avatar2(person.display_name), copy2);
     let primary;
     if (person.status === "accepted") {
@@ -9924,8 +9923,8 @@ function createFriends({ api: api2, getUser, getData, setData, run: run2, status
     badge.textContent = count > 9 ? "9+" : String(count);
     $("friend-list").replaceChildren();
     if (searchResults !== null) {
-      $("friend-search-results").replaceChildren(node("p", `Results for \u201C${searchQuery}\u201D`, "small-note"), ...searchResults.map((p) => personRow(p, true)));
-      if (!searchResults.length) $("friend-search-results").append(node("p", "No players found. Check their username or try their friend code.", "friend-empty-note"));
+      $("friend-search-results").replaceChildren(node("p", `Results for \u201C${searchQuery}\u201D`, "small-note"), ...searchResults.map((p) => personRow(p)));
+      if (!searchResults.length) $("friend-search-results").append(node("p", "No players found. Check their username.", "friend-empty-note"));
       $("clear-friend-search").hidden = false;
     } else {
       $("friend-search-results").replaceChildren();
@@ -9934,7 +9933,7 @@ function createFriends({ api: api2, getUser, getData, setData, run: run2, status
     group("Requests", incoming.map((p) => personRow(p)));
     const friends2 = people.filter((p) => p.status === "accepted");
     group("Your friends", friends2.map((p) => personRow(p)));
-    if (!friends2.length && !incoming.length) $("friend-list").append(emptyState("Good words. Better company.", "Find a friend above or share your friend code.", "friends"));
+    if (!friends2.length && !incoming.length) $("friend-list").append(emptyState("Good words. Better company.", "Find a friend by their username.", "friends"));
     group("Sent requests", people.filter((p) => p.status === "pending" && p.requested_by === getUser()?.id).map((p) => personRow(p)));
   }
   async function refresh() {
@@ -9949,7 +9948,7 @@ function createFriends({ api: api2, getUser, getData, setData, run: run2, status
     if (!query) {
       searchResults = null;
       render();
-      status2("Enter a username or friend code.", true);
+      status2("Enter a username.", true);
       return;
     }
     $("friend-search-submit").disabled = true;
@@ -9967,19 +9966,13 @@ function createFriends({ api: api2, getUser, getData, setData, run: run2, status
       }
     }
   }
-  function showCode() {
-    const profile = getData().profile, code = formatFriendCode(profile.friend_code), content = [node("p", "Share this code so a friend can find you."), node("p", code, "friend-code friend-code-large"), act2("Copy friend code", async () => {
-      await navigator.clipboard.writeText(code);
-      status2("Friend code copied.");
-    }, "primary full", "copy")];
-    content.push(node("p", `Friends can also find you by your username: ${profile.username || profile.display_name}.`, "field-hint"));
-    content.push(act2("Edit username", editProfile2, "text-button full", "edit"));
-    if (data().blocked.length) content.push(act2("Blocked players", () => showSheet("Blocked players.", data().blocked.map((p) => {
+  function showBlocked() {
+    const blocked = data().blocked;
+    showSheet("Blocked players.", blocked.length ? blocked.map((p) => {
       const b = node("div", void 0, "friend-row");
       b.append(node("strong", p.display_name), act2("Unblock", () => action2(p, "unblock"), "secondary friend-action"));
       return b;
-    })), "text-button full", "shield"));
-    showSheet("Your friend code.", content);
+    }) : node("p", "No one blocked."));
   }
   $("friend-search").onsubmit = (e) => {
     e.preventDefault();
@@ -9995,7 +9988,6 @@ function createFriends({ api: api2, getUser, getData, setData, run: run2, status
     render();
     $("friend-search-input").focus();
   };
-  $("friend-code-button").onclick = showCode;
   function reset() {
     ++searchVersion;
     ++loadVersion;
@@ -10005,7 +9997,7 @@ function createFriends({ api: api2, getUser, getData, setData, run: run2, status
     $("friend-search-submit").disabled = false;
     $("friend-search-status").textContent = "";
   }
-  return { render, refresh, reset };
+  return { render, refresh, reset, showBlocked };
 }
 
 // online/username.mjs
@@ -10613,7 +10605,7 @@ var push = createPushControls({ api, getUser: () => user, onStatus: (message) =>
 } });
 var friends = createFriends({ api, getUser: () => user, getData: () => homeData, setData: (partial) => {
   if (homeData) Object.assign(homeData, partial);
-}, run, status, invite: (person) => showNewGame(person), openGame, editProfile });
+}, run, status, invite: (person) => showNewGame(person), openGame });
 var screens = ["loading", "setup", "auth", "username-setup", "recovery", "home", "friends", "activity", "account", "game"];
 var homeRequests = createHomeRequests(() => api({ action: "home" }));
 var gameRequests = createHomeRequests((key) => api({ action: "game", gameId: key.split("/")[1] }));
@@ -10916,7 +10908,7 @@ async function showActivity({ route = true } = {}) {
 async function showFriends({ route = true } = {}) {
   if (!user) return;
   const ticket = ++navigation, actor = user.id;
-  if (!homeData?.profile.friend_code) await fetchHome();
+  if (!homeData?.social || typeof homeData?.profile.email_notifications !== "boolean") await fetchHome();
   if (ticket !== navigation || actor !== user?.id || !homeData) return;
   if (homeData.profile.username === null) return showUsernameSetup();
   ++gameLoad;
@@ -11592,6 +11584,13 @@ async function account({ route = true } = {}) {
   $("profile-avatar").textContent = profile.display_name.slice(0, 1).toUpperCase();
   renderPush();
 }
+async function showBlockedPlayers() {
+  if (!user) return;
+  const ticket = ++navigation, actor = user.id;
+  await friends.refresh();
+  if (ticket !== navigation || actor !== user?.id || currentView !== "account") return;
+  friends.showBlocked();
+}
 function editProfile() {
   const form = node("form", void 0, "stack-form"), label = node("label", "Username"), input = node("input"), error = node("p", void 0, "form-alert");
   input.id = "edit-username";
@@ -11686,7 +11685,7 @@ function showPrivacy() {
   showSheet("Privacy & your account.", content);
 }
 function showDataInfo() {
-  showSheet("Your privacy.", [node("p", "Signed-in players can search usernames and see friend codes. During signup, anyone can check whether a username is taken. Your email stays private. Friend requests must be accepted. Only players in a game can see its board and moves."), node("p", "Supabase stores games and accounts. Resend sends account emails. Optional Android notifications use Google Firebase Cloud Messaging with a device token and game reference."), node("p", "There are no ads, contacts uploads or analytics trackers. Account deletion removes your login, profile, friendships, blocks and private inbox. Shared history stays anonymized for your opponents; backups expire under the hosting provider's retention policy.")]);
+  showSheet("Your privacy.", [node("p", "Signed-in players can find each other by username. During signup, anyone can check whether a username is taken. Your email stays private. Friend requests must be accepted. Only players in a game can see its board and moves."), node("p", "Supabase stores games and accounts. Resend sends account emails. Optional Android notifications use Google Firebase Cloud Messaging with a device token and game reference."), node("p", "There are no ads, contacts uploads or analytics trackers. Account deletion removes your login, profile, friendships, blocks and private inbox. Shared history stays anonymized for your opponents; backups expire under the hosting provider's retention policy.")]);
 }
 async function exportData() {
   const data = await api({ action: "export" }), url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" })), link = node("a");
@@ -11824,6 +11823,7 @@ $("push-prompt-enable").onclick = () => run(async () => {
 });
 $("push-prompt-dismiss").onclick = () => push.snooze();
 $("new-game").onclick = showNewGame;
+$("blocked-players").onclick = () => run(showBlockedPlayers);
 $("edit-profile").onclick = editProfile;
 $("push-settings").onclick = showPush;
 $("help-button").onclick = showRules;
