@@ -1,5 +1,43 @@
 # Implementation and verification - updated 16 October 2026
 
+## Letter lens and balanced castle jokers — 16 October 2026, 0.9.0
+
+- Owner selected prototype 3, Letter lens, with blank unassigned jokers. The live
+  implementation replaces text fields with a native modal: local board context,
+  enlarged letter, swipeable alphabet, word preview and Use letter confirmation.
+  Tap a selected joker on the board or in the word to edit it. Cancel preserves
+  the assignment; confirmation sends a small letter animation back to the tile.
+- English A–Z and Swedish A–Z/Å/Ä/Ö work without invoking a phone keyboard.
+  Keyboard arrows/letter shortcuts, accessible joker labels, native dialog focus,
+  Android Back and reduced motion are supported. Drag selection opens the lens
+  after release; pointer cancellation does not open it. Revision/turn changes
+  invalidate an open picker before it can assign a stale letter.
+- New English autumn-v4 and Swedish autumn-sv-v2 openings keep six jokers: one
+  per starting block and one neutral joker adjacent to each corner castle. Each
+  left/right pair is reflected for equal access, with varied nearby offsets;
+  neutral jokers stay outside starting neighborhoods and are never adjacent to
+  another joker. The old generator balanced left/right reach but did not ensure
+  top/bottom castle coverage. Letter category budgets and scoring stay unchanged.
+- Previous pinned engines/configs and existing game boards remain unchanged.
+  The server creates and persists new layouts; create retries retain them.
+  Both clients must advertise the new version to join/play a new-layout game.
+- Verification: 127 regression tests plus original engine/scoring/supply suites,
+  including 800 seeded bilingual openings, legacy-generation equivalence,
+  picker confirmation/cancellation, immediate swipe confirmation, keyboard and
+  gesture handling, stale assignment rejection and server joker scoring.
+  Four production-app DOM scenarios cover both new/legacy language versions;
+  CSS parsing and production build pass. These are not rendered-browser tests.
+- Deployed game-api to the existing project aumiyyjsdqdazzmdmprl. Two isolated
+  hosted test games passed four joker-word turns (including Swedish accents),
+  balanced placement, create/turn retries, stale/old-client guards, invitation
+  acceptance, opponent reload, game summaries and statistics. Both test games
+  ended by resignation; no real player games were changed. Evidence is in the
+  ignored work/lens-live-result.json. No migration, dictionary change or new cost.
+- Web/APK release verification follows below. Physical phone scrolling, animation
+  and small-screen/large-text acceptance remain open: browser tools currently
+  expose no inspectable surfaces.
+
+
 ## Joker interaction prototypes — 16 October, design review
 
 - Created an offline [comparison gallery](../design/joker-interactions/index.html)
@@ -20,7 +58,7 @@
 - Local gallery: http://127.0.0.1:4178/ (also opens directly from disk). The browser
   tool reports no available surfaces; opening the preview in Codex was queued.
   Actual rendering, small-screen layout and touch/animation feel need owner review.
-  No concept is approved for implementation yet.
+  Superseded by the owner’s selection of option 3, Letter lens, above.
 - At the owner’s request, published the gallery for phone review at
   [https://xnorbertx.github.io/word-conquest/previews/jokers/](https://xnorbertx.github.io/word-conquest/previews/jokers/). Pages commit
   `9ee8bed` built successfully. All seven public preview assets match the reviewed

@@ -1,5 +1,20 @@
 # Run, deploy and maintain
 
+## Balanced openings and Letter lens — 0.9.0
+
+Current defaults: autumn-v4 (English) and autumn-sv-v2 (Swedish). New pinned
+opening-v4.mjs handles generation only; move legality/scoring/replacements still
+dispatch to the existing language engines. The integrity manifest covers the
+new generator/configs. Never edit these files after deployment: introduce another
+version for a future change. Existing boards are stored and are not regenerated.
+
+Deploy order remains npm test, npm run build, game-api, web, signed APK. No SQL,
+secrets, cron or push changes are needed. A rollback must keep support for the new
+versions once games exist; stop selecting them in a later client if necessary.
+No services or ongoing costs were added. Use scripts/ux-preview.cjs for isolated
+interaction fixtures; these must never be included in production/Android assets.
+
+
 ## Current deployment — 30 September 2026
 
 Dedicated project `aumiyyjsdqdazzmdmprl`, Free plan, Paris EU. CLI authenticated locally
@@ -226,7 +241,7 @@ or recurring cost is introduced.
 
 ## Castle income ruleset 0.5.0
 
-The default online rules version is autumn-v3. server/engine.mjs dispatches v1/v2
+The 0.5.0 default online rules version was autumn-v3. server/engine.mjs dispatches v1/v2
 games to immutable engine-v1 and v3 to engine-v2. rules-v3 adds castleIncome
 (side 2, centre 4), centre ownership value 5, and random starting-player policy.
 The server's cryptographic RNG draws the starter once at creation. Stored

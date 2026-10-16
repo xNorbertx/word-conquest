@@ -1,5 +1,17 @@
 # Game languages
 
+## Current openings — 0.9.0
+
+New English games use autumn-v4; new Swedish games use autumn-sv-v2. Both use
+the same pinned opening-v4 generator: one joker in each starting block and one
+adjacent to each corner castle, with random reflected offsets. The dictionaries,
+alphabets, weights, category budgets, scoring and replacement rules are unchanged.
+Existing autumn-v1/v2/v3 and autumn-sv-v1 games retain their original behavior.
+Both players need the updated client for new-layout games. Letter lens supports
+both alphabets and older games; unassigned jokers are visually blank with zero
+letter points and an accessible Joker label.
+
+
 Version 0.8.0 adds Svenska alongside English. Choose the language in New game,
 including when inviting directly from Friends. The last choice is remembered on
 that device for that account. Invitations, game cards and game headers identify

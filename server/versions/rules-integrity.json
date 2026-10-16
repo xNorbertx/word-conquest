@@ -7,5 +7,8 @@
   "rules-sv-v1.mjs": "cd84ba9b1b3797b6dd246e468f308080d7c3bcddc6c5da3d502bda2962c42803",
   "engine-sv-v1.mjs": "ceb7e2c98d4a884c836002cc6c7a7625a9b18d6a8c65d74a0d5fb5453dae0b12",
   "engine-sv-v2.mjs": "fc72a93de945c2cd23760fd013ef8e01e87d120ac5f98cd7f25c701dab782fb1",
-  "dictionary-sv-v1.meta.json": "e20495c7bc9e8c8240405fcee7acaf68ed36dee92416c98d559806c194f95260"
+  "dictionary-sv-v1.meta.json": "e20495c7bc9e8c8240405fcee7acaf68ed36dee92416c98d559806c194f95260",
+  "opening-v4.mjs": "21b3ac39c8915071aa84ffc542d033ef819d126a96dc12c8a4b832e5914088bc",
+  "rules-v4.mjs": "c0f15e2713ea3020afd9b45f2a1d086479adee1ff9538a80153b01e797caab49",
+  "rules-sv-v2.mjs": "561068b6155d86b488681cc4e8db7e2d81101855aab629d37f9f5724a49c09b9"
 }

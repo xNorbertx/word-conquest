@@ -1,5 +1,13 @@
 # Android pilot and build pipeline
 
+Version 0.9.0 introduces the approved Letter lens picker and blank joker tiles.
+Swipe or tap the alphabet and confirm; edit via the board or word, with no phone
+keyboard. New games distribute the four neutral jokers beside the four corner
+castles, keeping one joker per starting block. English/Swedish rules are versioned;
+existing boards remain unchanged. Both players need this update or the latest
+web app for new-layout games. Physical Seeker touch/animation acceptance remains.
+
+
 Target test phone: Solana Seeker / Android 16. Package: `com.wordconquest.app`.
 The APK uses the same Supabase accounts and games as the web app.
 

@@ -42,7 +42,7 @@ export function createBoardScoreMotion({onComplete}){
     for(const t of tiles){const el=tile(t.id);if(!el)continue;
       el.classList.remove('selected','last-move','motion-source','motion-castle','motion-loss');owner(el,t);
       el.classList.toggle('motion-word-tile',path.includes(t.id));
-      el.querySelector('text:not(.value)').textContent=t.letter==='?'&&path.includes(t.id)?plan.word[path.indexOf(t.id)]||'?':t.letter;
+      el.querySelector('text:not(.value)').textContent=t.letter==='?'&&path.includes(t.id)?plan.word[path.indexOf(t.id)]||'':t.letter==='?'?'':t.letter;
       el.querySelector('.value').textContent=plan.beforeTiles.find(b=>b.id===t.id).value;
       el.querySelector('.step')?.remove();
     }

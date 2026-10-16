@@ -36,14 +36,15 @@ clear letters, and selection/focus feedback. Captured castles lift and settle wi
 a single quiet ripple, then continue the score sequence. Only confirmed ownership
 changes trigger capture motion; reduced motion changes the colour immediately.
 
-## Joker interactions — 16 October 2026, for review
+## Joker interactions — 16 October 2026, approved
 
 The [joker interaction gallery](joker-interactions/index.html) contains three
 standalone offline prototypes: Tile bloom (a picker around the tile), Word dock
 (letter buttons beneath the word), and Letter lens (an enlarged tile and swipeable
 alphabet). Compare an asterisk, infinity and layered-tile symbol on any concept.
 English/Swedish and one/two joker scenarios work in all three. These are design
-options awaiting owner selection, separate from the live 0.8.3 joker input fix.
+options kept for comparison. The owner approved option 3, Letter lens, with blank
+joker tiles; 0.9.0 implements it in the app.
 See [prototype controls and tradeoffs](joker-interactions/README.md), or open the
 [published phone preview](https://xnorbertx.github.io/word-conquest/previews/jokers/).
 

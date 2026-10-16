@@ -12,7 +12,7 @@ import {requireUsername,signUpAccount} from './username.mjs';
 import {scoreMotionPlan,createScoreLedger} from './score-motion.mjs';
 import {createBoardScoreMotion} from './score-motion.js';
 import {tilePoints,castleLabel} from './board-geometry.mjs';
-import {bindJokerInput} from './joker-input.mjs';
+import {createJokerLens,canAssignJoker} from './joker-lens.mjs';
 import {LANGUAGES,languageFor,languageLabel} from '../server/languages.mjs';
 import {Engine,config as defaultConfig,configFor,RULES_VERSION,SUPPORTED_RULES,rulesLabel,captureRule,castleRule} from '../server/domain.mjs';
 let config=defaultConfig;
@@ -44,6 +44,7 @@ const homeRequests=createHomeRequests(()=>api({action:'home'}));
 const gameRequests=createHomeRequests(key=>api({action:'game',gameId:key.split('/')[1]}));
 const scoreLedger=createScoreLedger(localStorage);
 const scoreMotion=createBoardScoreMotion({onComplete:()=>{if(game&&currentView==='game')renderGame();}});
+const jokerLens=createJokerLens();
 function screen(name,{route=true,replace=false}={}){
   scoreMotion.cancel(false);
   closeSheet();currentView=name;for(const id of screens)$(id).hidden=id!==name;
@@ -200,8 +201,8 @@ function canPlay(){return !preview&&gameFresh&&myTurn()&&!busy&&!pending()&&!sco
 function drawBoard(){
   const board=$('board');board.replaceChildren();board.setAttribute('viewBox','-295 -295 590 590');
   const last=history[0]?.recap,seat=seatOf(game,user?.id)||1;if(!focusTile)focusTile=game.state.tiles.find(t=>t.owner===seat)?.id||game.state.tiles[0].id;
-  for(const t of game.state.tiles){const p=pos(t),step=selection.indexOf(t.id),letter=t.letter==='?'&&step>=0?(jokers[t.id]||'?'):t.letter;
-    const g=svg('g',{'data-id':t.id,role:'button',tabindex:t.id===focusTile?0:-1,'aria-pressed':step>=0,'aria-disabled':!canPlay()&&!preview,'aria-label':`${letter==='?'?'Joker':letter}, ${t.owner===seat?'yours':t.owner?'opponent':'neutral'}, ${Engine.letterValue(t.letter,config)} letter points${t.castle?', '+castleLabel(t,config):''}`,class:`tile owner${t.owner}${t.castle?' castle-tile'+(t.q===0&&t.r===0?' centre-castle':''):''}${t.owner===seat?' your-tile':''}${step>=0?' selected':''}${highlightLast&&last?.path?.includes(t.id)?' last-move':''}`});
+  for(const t of game.state.tiles){const p=pos(t),step=selection.indexOf(t.id),letter=t.letter==='?'?(step>=0?jokers[t.id]||'':''):t.letter;
+    const g=svg('g',{'data-id':t.id,role:'button',tabindex:t.id===focusTile?0:-1,'aria-pressed':step>=0,'aria-disabled':!canPlay()&&!preview,'aria-label':`${t.letter==='?'?'Joker'+(letter?', '+letter:''):letter}, ${t.owner===seat?'yours':t.owner?'opponent':'neutral'}, ${Engine.letterValue(t.letter,config)} letter points${t.castle?', '+castleLabel(t,config):''}`,class:`tile owner${t.owner}${t.letter==='?'?' joker-tile':''}${t.castle?' castle-tile'+(t.q===0&&t.r===0?' centre-castle':''):''}${t.owner===seat?' your-tile':''}${step>=0?' selected':''}${highlightLast&&last?.path?.includes(t.id)?' last-move':''}`});
     g.append(svg('polygon',{points:tilePoints(t)}),svg('text',{x:p.x,y:p.y+(t.castle?1:-2)},letter),svg('text',{x:p.x,y:p.y+19,class:'value'},Engine.letterValue(t.letter,config)));
     if(t.owner)g.append(svg('circle',{cx:p.x+20,cy:p.y-19,r:4.3,class:'marker'}));
     if(t.castle)g.append(svg('title',{},castleLabel(t,config)),svg('circle',{cx:p.x,cy:p.y,r:34,class:'castle-pulse','aria-hidden':'true'}));
@@ -209,18 +210,27 @@ function drawBoard(){
   }
   const centers=selection.map(id=>pos(game.state.tiles.find(t=>t.id===id)));const segments=centers.slice(1).map((b,i)=>{const a=centers[i],length=Math.hypot(b.x-a.x,b.y-a.y),dx=(b.x-a.x)/length*15,dy=(b.y-a.y)/length*15;return `M${a.x+dx},${a.y+dy} L${b.x-dx},${b.y-dy}`;}).join(' ');board.append(svg('path',{class:'path',d:segments}));
 }
-function renderJokers(){
-  $('jokers').replaceChildren();
-  for(const id of selection){
-    if(game.state.tiles.find(t=>t.id===id).letter!=='?')continue;
-    const position=selection.indexOf(id)+1,label=node('label',`Joker ${position}`),input=node('input');
-    input.value=jokers[id]||'';input.setAttribute('aria-label',`Joker at position ${position}`);
-    bindJokerInput(input,config,letter=>{
-      // Ignore late keyboard events from fields replaced by a board/selection update.
-      if(!input.isConnected||!selection.includes(id)||jokers[id]===letter)return;
-      jokers[id]=letter;drawBoard();renderSelection();
-    });
-    label.append(input);$('jokers').append(label);
+function openJoker(id){
+  const snapshot={gameId:game?.id,revision:game?.revision,tileId:id};
+  const valid=()=>currentView==='game'&&canAssignJoker(snapshot,{gameId:game?.id,revision:game?.revision,editable:preview||canPlay(),path:selection,tiles:game?.state.tiles||[]});
+  if(!valid())return;
+  jokerLens.open({tileId:id,tiles:game.state.tiles,path:[...selection],assignments:{...jokers},alphabet:config.alphabet||LANGUAGES.en.alphabet,valid,
+    onCommit:letter=>{if(!valid())return;jokers[id]=letter;drawBoard();renderSelection();}
+  });
+}
+function openPendingJoker(){
+  const id=selection.find(id=>game.state.tiles.find(t=>t.id===id).letter==='?'&&!jokers[id]);
+  if(id)openJoker(id);
+}
+function renderWord(){
+  const heading=$('word');heading.replaceChildren();
+  if(!selection.length){heading.textContent='Find your word.';return;}
+  for(const [i,id] of selection.entries()){
+    const tile=game.state.tiles.find(t=>t.id===id);
+    if(tile.letter!=='?'){heading.append(node('span',tile.letter));continue;}
+    const slot=button(jokers[id]||'',()=>openJoker(id),'word-joker');
+    slot.setAttribute('aria-label','Joker at position '+(i+1)+(jokers[id]?', '+jokers[id]:'')+'. Choose a letter');
+    slot.disabled=!preview&&!canPlay();heading.append(slot);
   }
 }
 function selectionHint(error){
@@ -231,8 +241,8 @@ function selectionHint(error){
   return error||'Ready when you are.';
 }
 function renderSelection(){
-  const word=selection.length?Engine.wordForPath(game.state,selection,jokers):'Find your word.';const error=Engine.validatePath(game.state,selection,{...config,dictionaryEnabled:false},true,null,jokers);
-  $('word').textContent=word;$('word').classList.toggle('placeholder',!selection.length);$('submit-word').disabled=!canPlay()||!!error;$('clear-word').disabled=!selection.length||busy||!!pending();
+  const error=Engine.validatePath(game.state,selection,{...config,dictionaryEnabled:false},true,null,jokers);
+  renderWord();$('word').classList.toggle('placeholder',!selection.length);$('submit-word').disabled=!canPlay()||!!error;$('clear-word').disabled=!selection.length||busy||!!pending();
   $('selection-help').textContent=preview?'Board preview. Moves are not saved.':selectionHint(error);$('selection-help').classList.toggle('invalid',!!error&&selection.length>=config.minimumWordLength&&!selection.some(id=>game.state.tiles.find(t=>t.id===id).letter==='?'&&!jokers[id]));
   $('score-preview').hidden=!selection.length;
   if(selection.length){const s=Engine.scoreMove(game.state,selection,config);$('score-preview').replaceChildren(node('span',`${s.wordPoints} word points + ${s.territoryGain} land${s.castleIncome?` + ${s.castleIncome} income`:''}`),icon('info'));$('submit-label').textContent=`Play word · ${s.totalGain}`;}else $('submit-label').textContent='Play word';
@@ -240,7 +250,7 @@ function renderSelection(){
   $('pending').hidden=!pending();$('pending-message').textContent=busy?'Saving your move...':'Move not confirmed yet. Retry when connected.';$('retry').disabled=busy;
 }
 function renderGame(){
-  scoreMotion.cancel(false);
+  scoreMotion.cancel(false);jokerLens.validate();
   const totals=Engine.scoreBreakdown(game.state,config),seat=seatOf(game,user?.id)||1;
   const active=game.status==='active',ownTurn=preview||myTurn(),unconfirmed=!!pending();
   const other=opponentName(game,user?.id);
@@ -271,15 +281,15 @@ function renderGame(){
   if(isFinished(game)){$('result-title').textContent=game.status==='completed'?gameStatus(game,user?.id)+'.':game.status==='abandoned'?'A game left unfinished.':'Invitation cancelled.';$('result-description').textContent=game.status==='completed'?`${totals[seat-1].total} to ${totals[seat===1?1:0].total}. A little word, a little world.`:'This game ended without a result.';}
   const last=history[0]?.recap;$('recap').hidden=!last;
   if(last){const copy=node('span'),symbol=node('span',undefined,'recap-symbol');symbol.append(icon('history'));copy.append(node('small','LAST MOVE'),node('strong',last.word?`${game.names[last.player-1]} played ${last.word}`:activityText(last.action,game.names[last.player-1])));$('recap').replaceChildren(symbol,copy,node('span',last.score?`+${last.score.wordPoints}`:''));}
-  drawBoard();renderJokers();renderSelection();
+  drawBoard();renderSelection();
 }
 function choose(id){
   if((!canPlay()&&!preview)||!id||id===selection.at(-1))return;
   if(selection.length>1&&id===selection.at(-2))delete jokers[selection.pop()];
   else {const error=Engine.validatePath(game.state,[...selection,id],config,false);if(error){if(!dragging)status(error,true);return;}selection.push(id);}
-  highlightLast=false;focusTile=id;drawBoard();renderJokers();renderSelection();
+  highlightLast=false;focusTile=id;drawBoard();renderSelection();
 }
-function clearWord(){if(busy||pending())return;selection=[];jokers={};highlightLast=false;renderGame();}
+function clearWord(){if(busy||pending())return;selection=[];jokers={};highlightLast=false;jokerLens.close();renderGame();}
 async function sendPending(){
   const command=pending();if(!command||busy)return;const sentGame=game.id,sentUser=user.id,storageKey=pendingKey();busy=true;++gameLoad;gameRequests.reset();renderGame();
   try{
@@ -456,14 +466,25 @@ $('read-inbox').onclick=()=>run(async()=>{await api({action:'read_notifications'
 $('submit-word').onclick=()=>run(()=>action('word'));$('retry').onclick=()=>run(sendPending);$('clear-word').onclick=clearWord;
 $('zoom').onclick=()=>{const expanded=$('board').classList.toggle('enlarged');$('zoom').setAttribute('aria-pressed',expanded);$('zoom').setAttribute('aria-label',expanded?'Fit board':'Enlarge board');$('zoom').replaceChildren(icon(expanded?'shrink':'expand'));};
 const tileAt=(x,y)=>document.elementFromPoint(x,y)?.closest('[data-id]')?.dataset.id;
-$('board').onpointerdown=e=>{if(e.button!==0)return;const id=tileAt(e.clientX,e.clientY);if(!id)return;e.preventDefault();dragging=true;$('board').setPointerCapture(e.pointerId);choose(id);};
-$('board').onpointermove=e=>{if(dragging)choose(tileAt(e.clientX,e.clientY));};
-for(const event of ['pointerup','pointercancel','lostpointercapture'])$('board').addEventListener(event,()=>{dragging=false;});
+let boardGesture=null;
+$('board').onpointerdown=e=>{
+  if(e.button!==0||e.isPrimary===false||(!canPlay()&&!preview))return;const id=tileAt(e.clientX,e.clientY);if(!id)return;
+  e.preventDefault();dragging=true;boardGesture={id,pointerId:e.pointerId,moved:false,edit:selection.includes(id)&&game.state.tiles.find(t=>t.id===id).letter==='?'};
+  $('board').setPointerCapture(e.pointerId);if(!boardGesture.edit)choose(id);
+};
+$('board').onpointermove=e=>{if(!dragging||boardGesture?.pointerId!==e.pointerId)return;const id=tileAt(e.clientX,e.clientY);if(!id||id===boardGesture.id&&!boardGesture.moved)return;
+  if(!boardGesture.moved&&boardGesture.edit)choose(boardGesture.id);boardGesture.moved=true;choose(id);
+};
+$('board').addEventListener('pointerup',e=>{if(boardGesture?.pointerId!==e.pointerId)return;const gesture=boardGesture;boardGesture=null;dragging=false;
+  if($('board').hasPointerCapture(e.pointerId))$('board').releasePointerCapture(e.pointerId);
+  if(gesture.edit&&!gesture.moved)openJoker(gesture.id);else openPendingJoker();
+});
+for(const event of ['pointercancel','lostpointercapture'])$('board').addEventListener(event,()=>{dragging=false;boardGesture=null;});
 $('board').onkeydown=e=>{
   const id=e.target.closest('[data-id]')?.dataset.id;if(!id)return;
-  if(e.key==='Enter'||e.key===' '){e.preventDefault();choose(id);$('board').querySelector(`[data-id="${id}"]`)?.focus();}
+  if(e.key==='Enter'||e.key===' '){e.preventDefault();const edit=selection.includes(id)&&game.state.tiles.find(t=>t.id===id).letter==='?';if(!edit)choose(id);$('board').querySelector(`[data-id="${id}"]`)?.focus();if(edit)openJoker(id);else openPendingJoker();}
   else if(e.key==='Escape'){e.preventDefault();clearWord();$('board').querySelector(`[data-id="${id}"]`)?.focus();}
-  else if(e.key==='Backspace'){e.preventDefault();if(canPlay()||preview){delete jokers[selection.pop()];drawBoard();renderJokers();renderSelection();$('board').querySelector(`[data-id="${id}"]`)?.focus();}}
+  else if(e.key==='Backspace'){e.preventDefault();if(canPlay()||preview){delete jokers[selection.pop()];drawBoard();renderSelection();$('board').querySelector(`[data-id="${id}"]`)?.focus();}}
   else if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();const tile=game.state.tiles.find(t=>t.id===id),[dq,dr]={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0]}[e.key];const next=game.state.tiles.find(t=>t.q===tile.q+dq&&t.r===tile.r+dr);if(next){focusTile=next.id;drawBoard();$('board').querySelector(`[data-id="${next.id}"]`)?.focus();}}
 };
 $('preview-button').onclick=()=>{preview=true;config=defaultConfig;game={id:'preview',rules_version:RULES_VERSION,state:{...Engine.newGame(config),player:1,startingPlayer:1},status:'active',players:[],names:['You','Alex'],revision:0};history=[];invite=null;selection=[];jokers={};screen('game',{route:false});renderGame();};

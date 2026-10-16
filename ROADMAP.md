@@ -8,8 +8,10 @@ See [implementation and verification status](docs/PROGRESS.md) and the single
 [manual setup checklist](docs/SETUP.md). Boxes remain unchecked until their hosted
 and real-device acceptance checks pass, not merely because source code was written.
 
-Joker input 0.8.3 fixes ignored mobile keyboard composition and loss when selecting
-another tile. English/Swedish regressions pass; affected-phone confirmation remains.
+Jokers 0.9.0 use the approved Letter lens with blank tiles and no text field.
+New games have one neutral joker beside each corner castle plus one per starting
+block. Existing boards keep their layout. Regression and hosted checks pass;
+physical picker/animation acceptance remains. See PROGRESS.md for release evidence.
 
 Current status: web app published on GitHub Pages, authoritative Supabase backend
 deployed, and authentication email delivered successfully through Resend. Automated

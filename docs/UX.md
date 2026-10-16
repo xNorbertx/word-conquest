@@ -1,5 +1,17 @@
 # Autumn Sunday UX revision - 4 October 2026
 
+## Letter lens — 0.9.0
+
+Approved prototype: option 3, with empty joker tiles instead of a symbol. Selected
+jokers are editable slots in the word; the board opens the same picker after a
+tap or completed drag. A native dialog shows nearby tiles, the enlarged candidate,
+word preview, swipeable alphabet and Use letter. Cancel does not save the draft.
+There is no text input or mobile keyboard. Blank tiles retain zero points and
+screen-reader labels. Confirmation returns the letter to the board with a short
+animation; reduced motion skips it. New-game joker placement is versioned and
+distributed around all four corner castles. Phone feel remains to be confirmed.
+
+
 The 0.3.0 client replaces the previous utility-style online interface. The original
 root prototype and all server rules, dictionary versions and letter balancing stay
 unchanged. No new service, paid asset, tracker or font dependency was added.

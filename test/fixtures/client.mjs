@@ -2,7 +2,7 @@ import {gameSummary} from '../../server/game-summary.mjs';
 // Local-only UI fixture adapter. Never imported by the production build.
 import {Engine,config,configFor,applyCommand,RULES_VERSION} from '../../server/domain.mjs';
 import words from '../../server/versions/dictionary-v1.json';
-import {languageForRules} from '../../server/languages.mjs';
+import {LANGUAGES,languageForRules} from '../../server/languages.mjs';
 import swedishWords from '../../server/versions/dictionary-sv-v1.json';
 import dictionaryMeta from '../../server/versions/dictionary-v1.meta.json';
 const A='11111111-1111-4111-8111-111111111111',B='22222222-2222-4222-8222-222222222222',C='33333333-3333-4333-8333-333333333333';
@@ -44,10 +44,10 @@ if(['income','motion','motion_walnut','motion_incoming','motion_final','motion_r
  if(scenario==='motion_final')s.lettersUsed=119;
 }
 
-if(scenario.startsWith('swedish')){games[0]=newGame(ids[0],'Björn','autumn-sv-v1');['F','?','R'].forEach((letter,i)=>Object.assign(games[0].state.tiles.find(t=>t.id===`${i-1},0`),{letter,owner:i===0?1:2}));games[1].names[1]='Mara';}
+if(scenario.startsWith('swedish')){games[0]=newGame(ids[0],'Björn',LANGUAGES.sv.rulesVersion);['F','?','R'].forEach((letter,i)=>Object.assign(games[0].state.tiles.find(t=>t.id===`${i-1},0`),{letter,owner:i===0?1:2}));games[1].names[1]='Mara';}
 const jokersPath=wordPath.slice(0,3);
 if(scenario==='joker')games[0].state.tiles.find(t=>t.id===wordPath[1]).letter='?';
-if(scenario==='compact'){games[0].names[1]='Alexandra with a very long username';games[0].state.wordPoints=[1125,998];games[1]=newGame(ids[1],'Ellinor','autumn-sv-v1');games[1].state.player=2;games[1].updated_at=date(1440);games[2].rules_version='autumn-sv-v1';games[2].dictionary_version=languageForRules('autumn-sv-v1').dictionary.version;}
+if(scenario==='compact'){games[0].names[1]='Alexandra with a very long username';games[0].state.wordPoints=[1125,998];games[1]=newGame(ids[1],'Ellinor',LANGUAGES.sv.rulesVersion);games[1].state.player=2;games[1].updated_at=date(1440);games[2].rules_version=LANGUAGES.sv.rulesVersion;games[2].dictionary_version=languageForRules(LANGUAGES.sv.rulesVersion).dictionary.version;}
 if(scenario==='longnames'){profile.display_name='Norbert with a very long display name';games[0].names[0]=profile.display_name;games[0].names[1]='Alexandra with a rather long surname';}
 const recap={action:'word',player:2,at:date(24),word:'MEADOW',path:games[0].state.tiles.slice(15,21).map(t=>t.id),score:{letters:12,lengthBonus:3,wordPoints:15,territoryGain:4,enemyLoss:2,totalGain:19},changed:games[0].state.tiles.slice(15,21).map((t,i)=>({id:t.id,before:{...t,letter:'MEADOW'[i],owner:i<3?0:1},after:{...t,owner:2}}))};
 const history={[ids[0]]:[{revision:10,recap}], [ids[2]]:[{revision:10,recap:{...recap,word:'GARDENS',score:{...recap.score,wordPoints:19},player:1}}]};
@@ -60,7 +60,7 @@ for(const s of ['motion','motion_walnut','motion_incoming','motion_final','motio
 if(scenario==='draw')games[0].draw_by=B;
 if(sceneGame[scenario]){const url=new URL(location.href);url.searchParams.set('game',sceneGame[scenario]);window.history.replaceState(null,'',url);}
 const social={people:scenario==='empty'?[]:[{id:B,display_name:'Mara',friend_code:'ABCDEF123456',status:'accepted',request_id:ids[1],requested_by:A},{id:C,display_name:'Jules',friend_code:'ABCDEF234567',status:'pending',request_id:ids[2],requested_by:C}],invitations:[],outgoing:[],blocked:[]};
-if(scenario==='compact')social.invitations.push({id:'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',host:'Olivia',rules_version:'autumn-sv-v1',token});
+if(scenario==='compact')social.invitations.push({id:'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',host:'Olivia',rules_version:LANGUAGES.sv.rulesVersion,token});
 if(scenario==='swedish_invitation'){const url=new URL(location.href);url.searchParams.set('invite',token);window.history.replaceState(null,'',url);}
 if(scenario==='friends'){const url=new URL(location.href);url.searchParams.set('view','friends');window.history.replaceState(null,'',url);}
 const originalFetch=window.fetch.bind(window);
@@ -77,11 +77,11 @@ window.fetch=async(url,options)=>{
     case 'game':if(scenario==='compact'&&input.gameId==='eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'){result={invitation:{token}};break;}if(!game)return error('Game not found','not_found',404);gameRequests++;updateMarker();result=structuredClone({game,profile,history:(history[game.id]||[]).slice(0,input.supportsFastReads?1:100),historyHasMore:(history[game.id]?.length||0)>1,invitation:game.status==='invited'?{token,expires_at:date(-7*1440)}:null});if(slowGame)await new Promise(r=>setTimeout(r,4000));break;
     case 'game_history':{historyRequests++;updateMarker();const rows=(history[game.id]||[]).filter(m=>m.revision<(input.beforeRevision||game.revision+1));result={history:rows.slice(0,50),hasMore:rows.length>50,nextBefore:rows.slice(0,50).at(-1)?.revision??null};break;}
     case 'create':{let g=games.find(g=>g.id===input.gameId);if(!g){g=newGame(input.gameId,input.friendId?'Mara':'',input.rulesVersion||RULES_VERSION);g.status='invited';g.players=[A,null];g.revision=0;g.names=['Norbert',''];games.unshift(g);}if(input.friendId)social.outgoing.push({id:g.id,recipient:input.friendId});result={game:g};break;}
-    case 'invitation':if(input.choice==='preview'){result={invitation:{id:'ffffffff-ffff-4fff-8fff-ffffffffffff',status:'invited',host:'Olivia',expires_at:date(-1440),rulesVersion:['swedish_invitation','compact'].includes(scenario)?'autumn-sv-v1':RULES_VERSION}};}else if(input.choice==='cancel'){games[3].status='cancelled';result={game:games[3]};}else if(input.choice==='accept'){const g=newGame('ffffffff-ffff-4fff-8fff-ffffffffffff','Olivia',['swedish_invitation','compact'].includes(scenario)?'autumn-sv-v1':RULES_VERSION);games.push(g);result={game:g};}else result={game:{status:'declined'}};break;
+    case 'invitation':if(input.choice==='preview'){result={invitation:{id:'ffffffff-ffff-4fff-8fff-ffffffffffff',status:'invited',host:'Olivia',expires_at:date(-1440),rulesVersion:['swedish_invitation','compact'].includes(scenario)?LANGUAGES.sv.rulesVersion:RULES_VERSION}};}else if(input.choice==='cancel'){games[3].status='cancelled';result={game:games[3]};}else if(input.choice==='accept'){const g=newGame('ffffffff-ffff-4fff-8fff-ffffffffffff','Olivia',['swedish_invitation','compact'].includes(scenario)?LANGUAGES.sv.rulesVersion:RULES_VERSION);games.push(g);result={game:g};}else result={game:{status:'declined'}};break;
     case 'turn':{
       const existing=receipts.get(input.command.operationId);if(existing){result={game,replayed:true,...existing};break;}
       if(staleNext){staleNext=false;game.revision++;return error('Stale board','stale',409);}
-      try{const update=applyCommand(game,user.id,input.command,game.rules_version==='autumn-sv-v1'?swedishDictionary:dictionary,game.dictionary_version,random);Object.assign(game,update.next);game.updated_at=new Date().toISOString();history[game.id]??=[];history[game.id].unshift({revision:game.revision,recap:update.recap});const receipt={acceptedRevision:game.revision,recap:update.recap};receipts.set(input.command.operationId,receipt);commits++;result={game,replayed:false,...receipt};updateMarker();if(failNext){failNext=false;throw new TypeError('Simulated response lost after commit');}}
+      try{const update=applyCommand(game,user.id,input.command,languageForRules(game.rules_version).code==='sv'?swedishDictionary:dictionary,game.dictionary_version,random);Object.assign(game,update.next);game.updated_at=new Date().toISOString();history[game.id]??=[];history[game.id].unshift({revision:game.revision,recap:update.recap});const receipt={acceptedRevision:game.revision,recap:update.recap};receipts.set(input.command.operationId,receipt);commits++;result={game,replayed:false,...receipt};updateMarker();if(failNext){failNext=false;throw new TypeError('Simulated response lost after commit');}}
       catch(e){if(e instanceof TypeError)throw e;return error(e.message,e.code||'invalid_word',e.status||400);}break;
     }
     case 'friends':result={social,profile};break;

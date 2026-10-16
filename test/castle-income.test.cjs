@@ -9,11 +9,11 @@ before(async()=>{d=await import('../server/domain.mjs');db=new PGlite();
 });
 after(async()=>{await db?.close();});
 const cmd=(g,action='refresh',extra={})=>({action,revision:g.revision,operationId:crypto.randomUUID(),...extra});
-const game=starter=>({id:crypto.randomUUID(),players:[A,B],status:'active',revision:1,rules_version:'autumn-v3',dictionary_version:meta.version,state:d.Engine.newGame(d.config,()=>starter===1?.2:.8)});
+const game=starter=>({id:crypto.randomUUID(),players:[A,B],status:'active',revision:1,rules_version:'autumn-v3',dictionary_version:meta.version,state:d.Engine.newGame(d.configFor('autumn-v3'),()=>starter===1?.2:.8)});
 async function rpc(name,args){return (await db.query(`select ${name}(${args.map((_,i)=>'$'+(i+1)).join(',')}) as result`,args)).rows[0].result;}
 function ownCastles(g){const side=g.state.tiles.filter(t=>t.castle&&t.q!==0);side[0].owner=1;side[1].owner=2;g.state.tiles.find(t=>t.id==='0,0').owner=1;return g;}
 test('server-generated starts support either seat, while old versions always start with host',()=>{
- for(const [roll,expected]of [[0,1],[.499999,1],[.5,2],[.999999,2]]){const s=d.Engine.newGame(d.config,()=>roll);assert.equal(s.player,expected);assert.equal(s.startingPlayer,expected);assert.deepEqual(s.castleIncome,[0,0]);assert.deepEqual(s.turns,[0,0]);}
+ for(const [roll,expected]of [[0,1],[.499999,1],[.5,2],[.999999,2]]){const s=d.Engine.newGame(d.configFor('autumn-v3'),()=>roll);assert.equal(s.player,expected);assert.equal(s.startingPlayer,expected);assert.deepEqual(s.castleIncome,[0,0]);assert.deepEqual(s.turns,[0,0]);}
  for(const version of ['autumn-v1','autumn-v2']){const s=d.Engine.newGame(d.configFor(version),()=>.8);assert.equal(s.player,1);assert.equal(s.castleIncome,undefined);}
 });
 test('side 2 / center 4 pays both owners only after a full round for either starter',()=>{
@@ -23,7 +23,7 @@ test('side 2 / center 4 pays both owners only after a full round for either star
   assert.deepEqual(first.next.state.castleIncome,[0,0]);assert.equal(first.recap.roundComplete,false);
   g=first.next;const second=d.applyCommand(g,g.players[g.state.player-1],cmd(g),words,meta.version,()=>.4);
   assert.deepEqual(second.next.state.castleIncome,[6,2]);assert.deepEqual(second.recap.income,[6,2]);assert.equal(second.recap.round,1);assert.equal(second.next.state.player,starter);
-  const parts=d.Engine.scoreBreakdown(second.next.state,d.config);assert.equal(parts[0].income,6);assert.equal(parts[1].income,2);assert.equal(parts[0].territory,11);assert.equal(parts[0].total,17);
+  const parts=d.Engine.scoreBreakdown(second.next.state,d.configFor('autumn-v3'));assert.equal(parts[0].income,6);assert.equal(parts[1].income,2);assert.equal(parts[0].territory,11);assert.equal(parts[0].total,17);
   assert.deepEqual(before.state.castleIncome,[0,0]);
  }
 });
@@ -32,7 +32,7 @@ test('center steal has value five, pays the new owner, and preview agrees with s
   const g=game(starter),p=3-starter;g.state.player=p;g.state.turns[starter-1]=1;g.state.castleIncome=[8,12];
   g.state.tiles.forEach(t=>{if(t.castle)t.owner=0;});g.state.tiles.find(t=>t.castle&&t.q<0).owner=starter;
   const path=[...'GARDENS'].map((letter,i)=>{const id=`${i-3},0`;Object.assign(g.state.tiles.find(t=>t.id===id),{letter,owner:i===0?p:i<6?starter:0,castle:i===3});return id;});
-  const preview=d.Engine.scoreMove(g.state,path,d.config),before=structuredClone(g),{next,recap}=d.applyCommand(g,g.players[p-1],cmd(g,'word',{path,score:999,state:{castleIncome:[999,999]}}),words,meta.version,()=>.4);
+  const preview=d.Engine.scoreMove(g.state,path,d.configFor('autumn-v3')),before=structuredClone(g),{next,recap}=d.applyCommand(g,g.players[p-1],cmd(g,'word',{path,score:999,state:{castleIncome:[999,999]}}),words,meta.version,()=>.4);
   assert.equal(preview.wordPoints,19);assert.equal(preview.territoryGain,10);assert.equal(preview.enemyLoss,9);assert.equal(preview.castleIncome,4);assert.equal(preview.totalGain,33);assert.deepEqual(recap.score,preview);
   assert.equal(recap.income[starter-1],2);assert.equal(recap.income[p-1],4);assert.equal(next.state.castleIncome[p-1],before.state.castleIncome[p-1]+4);
   assert.equal(recap.totalsAfter[p-1]-recap.totalsBefore[p-1],33);assert.equal(recap.totalsAfter[starter-1]-recap.totalsBefore[starter-1],-7);
