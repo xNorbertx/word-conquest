@@ -2713,7 +2713,7 @@ function createSnapshotCache(storage, { namespace = "", now = Date.now, ttl = 7 
 }
 
 // package.json
-var version = "0.8.2";
+var version = "0.8.3";
 
 // online/app.js
 init_dist();
@@ -10211,6 +10211,37 @@ function castleLabel(tile, config3) {
   return `${name}: ${config3.castleIncome ? `+${centre ? config3.castleIncome.center : config3.castleIncome.side} each round, ` : ""}${value} territory points`;
 }
 
+// online/joker-input.mjs
+function bindJokerInput(input, config3, onLetter) {
+  let composing = false;
+  input.type = "text";
+  input.inputMode = "text";
+  input.lang = config3.language || "en";
+  input.autocomplete = "off";
+  input.autocapitalize = "characters";
+  input.spellcheck = false;
+  input.setAttribute("autocorrect", "off");
+  input.enterKeyHint = "done";
+  const update = (commit) => {
+    const letter = normalizeJoker(input.value, config3);
+    if (commit && input.value !== letter) input.value = letter;
+    onLetter(letter);
+  };
+  input.oncompositionstart = () => {
+    composing = true;
+  };
+  input.oninput = (e) => update(!composing && !e.isComposing);
+  input.oncompositionend = () => {
+    composing = false;
+    update(true);
+  };
+  input.onchange = () => update(!composing);
+  input.onblur = () => {
+    composing = false;
+    update(true);
+  };
+}
+
 // online/presentation.mjs
 var seatOf = (game2, userId) => game2.players.indexOf(userId) + 1;
 var isFinished = (game2) => !["active", "invited"].includes(game2.status);
@@ -10808,24 +10839,15 @@ function renderJokers() {
   $("jokers").replaceChildren();
   for (const id of selection) {
     if (game.state.tiles.find((t) => t.id === id).letter !== "?") continue;
-    const label = node("label", `Joker ${selection.indexOf(id) + 1}`), input = node("input");
-    input.maxLength = config2.language === "sv" ? 2 : 1;
-    input.pattern = config2.language === "sv" ? "[A-Za-z\xC5\xC4\xD6\xE5\xE4\xF6]" : "[A-Za-z]";
-    input.lang = config2.language || "en";
-    input.autocomplete = "off";
-    input.autocapitalize = "characters";
+    const position = selection.indexOf(id) + 1, label = node("label", `Joker ${position}`), input = node("input");
     input.value = jokers[id] || "";
-    input.setAttribute("aria-label", `Joker at position ${selection.indexOf(id) + 1}`);
-    const update = () => {
-      input.value = normalizeJoker(input.value, config2);
-      jokers[id] = input.value;
+    input.setAttribute("aria-label", `Joker at position ${position}`);
+    bindJokerInput(input, config2, (letter) => {
+      if (!input.isConnected || !selection.includes(id) || jokers[id] === letter) return;
+      jokers[id] = letter;
       drawBoard();
       renderSelection();
-    };
-    input.oninput = (e) => {
-      if (!e.isComposing) update();
-    };
-    input.oncompositionend = update;
+    });
     label.append(input);
     $("jokers").append(label);
   }
