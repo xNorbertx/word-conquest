@@ -1,5 +1,12 @@
 # Android pilot and build pipeline
 
+Version 0.9.1 removes My code, code copying/sharing, code labels in search/results
+and all friend-code hints. Friends begins with username search. You → Blocked
+players retains the ability to unblock someone. The server no longer looks up
+friend codes or account IDs and omits retired code fields from API responses.
+Existing accounts, friendships, invitations, games and gameplay are preserved.
+
+
 Version 0.9.0 introduces the approved Letter lens picker and blank joker tiles.
 Swipe or tap the alphabet and confirm; edit via the board or word, with no phone
 keyboard. New games distribute the four neutral jokers beside the four corner
@@ -17,7 +24,7 @@ Swedish combining marks are supported without changing the input mid-composition
 Affected-phone confirmation is still needed; the event sequences pass regression.
 
 Version 0.8.2 removes the redundant Your games, Friends and Your corner titles.
-New game and My code remain in compact action rows; You opens with the profile.
+New game remains in a compact action row; You opens with the profile.
 
 Version 0.8.1 compacts game cards into two rows, with language beside turn/status.
 Invitations, Friends, Activity, account notes and the notification enablement prompt
@@ -81,7 +88,7 @@ works with the deployed backend. The web app also includes the current changes.
 Version 0.6.0 added Friends: search usernames, accept friend requests and invite
 someone directly from your list. Activity is under You. Incoming game invitations
 appear in Games; enabled Android push opens the invitation for its intended player.
-Names are searchable without an opt-in. Friend codes remain available for sharing.
+Names are searchable without an opt-in. Since 0.9.1, discovery uses usernames only.
 Both players should install this
 update to use the Friends flow. Friend requests currently use in-app badges/live
 updates; game invitations use the existing native push queue.

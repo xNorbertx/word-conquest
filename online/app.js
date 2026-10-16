@@ -38,7 +38,7 @@ const publicApp='https://xnorbertx.github.io/word-conquest/online/';
 const authRedirect=()=>native?publicApp:location.origin+location.pathname;
 const status=(message,error=false)=>notify(message,error);
 const push=createPushControls({api,getUser:()=>user,onStatus:message=>{status(message);renderPush();},onChange:()=>renderPush(),onUpdate:()=>void poll(),onOpen:id=>{notificationGame=id;if(user&&authReady&&!recovering)void run(openNotification);}});
-const friends=createFriends({api,getUser:()=>user,getData:()=>homeData,setData:partial=>{if(homeData)Object.assign(homeData,partial);},run,status,invite:person=>showNewGame(person),openGame,editProfile});
+const friends=createFriends({api,getUser:()=>user,getData:()=>homeData,setData:partial=>{if(homeData)Object.assign(homeData,partial);},run,status,invite:person=>showNewGame(person),openGame});
 const screens=['loading','setup','auth','username-setup','recovery','home','friends','activity','account','game'];
 const homeRequests=createHomeRequests(()=>api({action:'home'}));
 const gameRequests=createHomeRequests(key=>api({action:'game',gameId:key.split('/')[1]}));
@@ -145,7 +145,7 @@ async function showHome(quiet=false,{route=true,replace=false}={}){
   offlineNotice(!navigator.onLine);return true;
 }
 async function showActivity({route=true}={}){if(!user)return;const ticket=++navigation,actor=user.id;if(!homeData)await fetchHome();if(ticket!==navigation||actor!==user?.id||!homeData)return;if(homeData.profile.username===null)return showUsernameSetup();++gameLoad;screen('activity',{route});renderActivity();}
-async function showFriends({route=true}={}){if(!user)return;const ticket=++navigation,actor=user.id;if(!homeData?.profile.friend_code)await fetchHome();if(ticket!==navigation||actor!==user?.id||!homeData)return;if(homeData.profile.username===null)return showUsernameSetup();++gameLoad;screen('friends',{route});friends.render();await friends.refresh();}
+async function showFriends({route=true}={}){if(!user)return;const ticket=++navigation,actor=user.id;if(!homeData?.social||typeof homeData?.profile.email_notifications!=='boolean')await fetchHome();if(ticket!==navigation||actor!==user?.id||!homeData)return;if(homeData.profile.username===null)return showUsernameSetup();++gameLoad;screen('friends',{route});friends.render();await friends.refresh();}
 async function showInvite(){
   const raw=localStorage.getItem('wc-invitation');if(!raw||!user||homeData?.profile.username===null)return false;const token=invitationToken(raw);if(!token){localStorage.removeItem('wc-invitation');throw Error('That invitation code does not look right.');}
   const {invitation:i}=await api({action:'invitation',choice:'preview',token});
@@ -392,6 +392,10 @@ async function account({route=true}={}){
   if(!user)return;const ticket=++navigation,actor=user.id;if(typeof homeData?.profile.email_notifications!=='boolean')await fetchHome();if(ticket!==navigation||actor!==user?.id||!homeData)return;if(homeData.profile.username===null)return showUsernameSetup();++gameLoad;screen('account',{route});
   const profile=homeData.profile;$('profile-name').textContent=profile.display_name;$('profile-email').textContent=user.email||'';$('profile-avatar').textContent=profile.display_name.slice(0,1).toUpperCase();renderPush();
 }
+async function showBlockedPlayers(){
+  if(!user)return;const ticket=++navigation,actor=user.id;await friends.refresh();
+  if(ticket!==navigation||actor!==user?.id||currentView!=='account')return;friends.showBlocked();
+}
 function editProfile(){
   const form=node('form',undefined,'stack-form'),label=node('label','Username'),input=node('input'),error=node('p',undefined,'form-alert');
   input.id='edit-username';label.htmlFor=input.id;input.maxLength=40;input.required=true;input.autocomplete='username';input.autocapitalize='none';input.spellcheck=false;input.value=homeData.profile.username||homeData.profile.display_name;
@@ -423,7 +427,7 @@ function showPrivacy(){
   if(lastProblem){content.push(node('p',`Last issue: ${lastProblem}`,'menu-note'));if(lastRequestId)content.push(act('Copy support reference',async()=>{await navigator.clipboard.writeText(lastRequestId);status('Support reference copied.');},'text-button'));}
   showSheet('Privacy & your account.',content);
 }
-function showDataInfo(){showSheet('Your privacy.',[node('p','Signed-in players can search usernames and see friend codes. During signup, anyone can check whether a username is taken. Your email stays private. Friend requests must be accepted. Only players in a game can see its board and moves.'),node('p','Supabase stores games and accounts. Resend sends account emails. Optional Android notifications use Google Firebase Cloud Messaging with a device token and game reference.'),node('p','There are no ads, contacts uploads or analytics trackers. Account deletion removes your login, profile, friendships, blocks and private inbox. Shared history stays anonymized for your opponents; backups expire under the hosting provider\'s retention policy.')]);}
+function showDataInfo(){showSheet('Your privacy.',[node('p','Signed-in players can find each other by username. During signup, anyone can check whether a username is taken. Your email stays private. Friend requests must be accepted. Only players in a game can see its board and moves.'),node('p','Supabase stores games and accounts. Resend sends account emails. Optional Android notifications use Google Firebase Cloud Messaging with a device token and game reference.'),node('p','There are no ads, contacts uploads or analytics trackers. Account deletion removes your login, profile, friendships, blocks and private inbox. Shared history stays anonymized for your opponents; backups expire under the hosting provider\'s retention policy.')]);}
 async function exportData(){const data=await api({action:'export'}),url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'})),link=node('a');link.href=url;link.download='word-conquest-data.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);closeSheet();status('Your data export is ready.');}
 function showDelete(){
   const form=node('form',undefined,'stack-form'),label=node('label','Type DELETE to confirm'),input=node('input');input.id='delete-confirmation';input.autocomplete='off';input.required=true;input.pattern='DELETE';label.htmlFor=input.id;const remove=button('Permanently delete account',null,'primary danger full','trash');remove.type='submit';form.append(label,input,remove);
@@ -456,7 +460,7 @@ $('activity-button').onclick=()=>run(()=>showActivity());$('account-button').onc
 $('friends-button').onclick=()=>run(()=>showFriends());
 $('active-games').onclick=()=>{filter='active';renderHome();};$('finished-games').onclick=()=>{filter='finished';renderHome();};
 $('push-prompt-enable').onclick=()=>run(async()=>{if(push.snapshot().state==='blocked')await push.openSettings();else await connectPush();});$('push-prompt-dismiss').onclick=()=>push.snooze();
-$('new-game').onclick=showNewGame;$('edit-profile').onclick=editProfile;$('push-settings').onclick=showPush;
+$('new-game').onclick=showNewGame;$('blocked-players').onclick=()=>run(showBlockedPlayers);$('edit-profile').onclick=editProfile;$('push-settings').onclick=showPush;
 $('help-button').onclick=showRules;for(const b of document.querySelectorAll('[data-sheet]'))b.onclick=()=>b.dataset.sheet==='rules'?showRules():showPrivacy();
 $('game-menu').onclick=showGameMenu;$('share-invite').onclick=()=>run(shareInvite);$('copy-invite').onclick=()=>run(copyInvite);$('cancel-invite').onclick=()=>run(quitGame);
 $('player-score-1').onclick=()=>{scoreMotion.cancel();showScore(1);};$('player-score-2').onclick=()=>{scoreMotion.cancel();showScore(2);};$('score-preview').onclick=showWordScore;$('recap').onclick=showRecap;

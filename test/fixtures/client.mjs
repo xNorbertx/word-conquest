@@ -17,7 +17,7 @@ if(scenario==='motion_reduced'){
  window.matchMedia=query=>query==='(prefers-reduced-motion: reduce)'?{matches:true,addEventListener(){},removeEventListener(){}}:originalMedia(query);
 }
 const secondSeat=['walnut','walnut_waiting','motion_walnut'].includes(scenario);
-const self={id:secondSeat?B:A,email:'demo@example.invalid'},profile={id:self.id,display_name:secondSeat?'Mara':'Norbert',email_notifications:false,friend_code:'A1B2C3D4E5F6'};
+const self={id:secondSeat?B:A,email:'demo@example.invalid'},profile={id:self.id,display_name:secondSeat?'Mara':'Norbert',email_notifications:false};
 profile.username=scenario==='onboarding'?(sessionStorage.getItem('wc-design-username')||null):profile.display_name;
 if(scenario==='onboarding')profile.display_name=profile.username||'Player';
 let user=scenario==='auth'?null:self,authListener=null,channelListener=null,failNext=false,staleNext=false,commits=0,slowHome=sessionStorage.getItem('wc-slow-home')==='true',homeRequests=0,gameRequests=0,historyRequests=0,slowGame=sessionStorage.getItem('wc-slow-game')==='true',readFailure=false;
@@ -59,7 +59,7 @@ const sceneGame={swedish:ids[0],history:ids[0],game:ids[0],income:ids[0],capture
 for(const s of ['motion','motion_walnut','motion_incoming','motion_final','motion_reduced'])sceneGame[s]=ids[0];
 if(scenario==='draw')games[0].draw_by=B;
 if(sceneGame[scenario]){const url=new URL(location.href);url.searchParams.set('game',sceneGame[scenario]);window.history.replaceState(null,'',url);}
-const social={people:scenario==='empty'?[]:[{id:B,display_name:'Mara',friend_code:'ABCDEF123456',status:'accepted',request_id:ids[1],requested_by:A},{id:C,display_name:'Jules',friend_code:'ABCDEF234567',status:'pending',request_id:ids[2],requested_by:C}],invitations:[],outgoing:[],blocked:[]};
+const social={people:scenario==='empty'?[]:[{id:B,display_name:'Mara',status:'accepted',request_id:ids[1],requested_by:A},{id:C,display_name:'Jules',status:'pending',request_id:ids[2],requested_by:C}],invitations:[],outgoing:[],blocked:[]};
 if(scenario==='compact')social.invitations.push({id:'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',host:'Olivia',rules_version:LANGUAGES.sv.rulesVersion,token});
 if(scenario==='swedish_invitation'){const url=new URL(location.href);url.searchParams.set('invite',token);window.history.replaceState(null,'',url);}
 if(scenario==='friends'){const url=new URL(location.href);url.searchParams.set('view','friends');window.history.replaceState(null,'',url);}
@@ -85,8 +85,8 @@ window.fetch=async(url,options)=>{
       catch(e){if(e instanceof TypeError)throw e;return error(e.message,e.code||'invalid_word',e.status||400);}break;
     }
     case 'friends':result={social,profile};break;
-    case 'friend_search':result={people:[{id:'44444444-4444-4444-8444-444444444444',display_name:input.query.toLowerCase().includes('long')?'Alexandra with a rather long surname':'Alex',friend_code:'AB12CD34EF56',status:null}]};break;
-    case 'friend_action':{let p=social.people.find(p=>p.id===input.friendId);if(!p){p={id:input.friendId,display_name:'Alex',friend_code:'AB12CD34EF56'};social.people.push(p);}if(input.choice==='request')Object.assign(p,{status:'pending',requested_by:A,request_id:input.operationId});else if(input.choice==='accept')p.status='accepted';else social.people=social.people.filter(p=>p.id!==input.friendId);result={social};break;}
+    case 'friend_search':result={people:[{id:'44444444-4444-4444-8444-444444444444',display_name:input.query.toLowerCase().includes('long')?'Alexandra with a rather long surname':'Alex',status:null}]};break;
+    case 'friend_action':{let p=social.people.find(p=>p.id===input.friendId);if(!p){p={id:input.friendId,display_name:'Alex'};social.people.push(p);}if(input.choice==='request')Object.assign(p,{status:'pending',requested_by:A,request_id:input.operationId});else if(input.choice==='accept')p.status='accepted';else social.people=social.people.filter(p=>p.id!==input.friendId);result={social};break;}
     case 'stats':result={statistics:scenario==='empty'?{}:{'autumn-v1/english-letterpress-v1':{wins:3,losses:1,draws:1,highestFinalScore:142,bestWord:'GARDENS',bestTurn:19}}};break;
     case 'profile':if((input.username||input.name).toLowerCase()==='mara')return error('That username is already taken. Try another.','username_taken',409);profile.username=profile.display_name=input.username||input.name;result={username:profile.username};break;
     case 'read_notifications':notifications.forEach(n=>n.read_at=new Date().toISOString());break;

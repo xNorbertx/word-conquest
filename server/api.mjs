@@ -35,7 +35,7 @@ export function createHandler(db, settings={}) {
     const allowed=(settings.origins || []).includes(origin);
     const headers={'Content-Type':'application/json','Cache-Control':'no-store','X-Request-Id':requestId,'Vary':'Origin',
       ...(allowed?{'Access-Control-Allow-Origin':origin,'Access-Control-Allow-Headers':'authorization, apikey, content-type, x-client-info','Access-Control-Allow-Methods':'POST, OPTIONS','Access-Control-Max-Age':'600','Access-Control-Expose-Headers':'Server-Timing, X-Request-Id'}:{})};
-    const reply=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:{...headers,'Server-Timing':[...timings,`total;dur=${(performance.now()-started).toFixed(1)}`].join(', ')}});
+    const reply=(body,status=200)=>new Response(JSON.stringify(body,(key,value)=>key==='friend_code'?undefined:value),{status,headers:{...headers,'Server-Timing':[...timings,`total;dur=${(performance.now()-started).toFixed(1)}`].join(', ')}});
     try {
       if (origin && !allowed) throw new Fault('origin','This app origin is not enabled.',403);
       if(req.method==='OPTIONS') return new Response(null,{status:204,headers});
@@ -187,7 +187,7 @@ export function createHandler(db, settings={}) {
         case 'friends': return reply({social:unwrap(await db.rpc('wc_friends',{p_actor:actor})),profile});
         case 'friend_search': {
           const query=typeof input.query==='string'?input.query.trim():'';
-          if(!query||query.length>64)throw new Fault('invalid_search','Enter a username or friend code.');
+          if(!query||query.length>40)throw new Fault('invalid_search','Enter a username.');
           return reply({people:unwrap(await db.rpc('wc_friend_search',{p_actor:actor,p_query:query}))});
         }
         case 'friend_action': {

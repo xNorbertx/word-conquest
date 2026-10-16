@@ -1,12 +1,16 @@
 # Word Conquest — app roadmap
 
-Updated: 16 October 2026
+Updated: 17 October 2026
 
 This is an acceptance checklist. The original local two-player prototype remains
 available; a separate online implementation now exists. Rules remain experimental.
 See [implementation and verification status](docs/PROGRESS.md) and the single
 [manual setup checklist](docs/SETUP.md). Boxes remain unchecked until their hosted
 and real-device acceptance checks pass, not merely because source code was written.
+
+Friends 0.9.1 uses username-only discovery. Friend-code UI and lookups are removed;
+account IDs remain internal. Blocked players is available under You. Existing
+relationships and games are preserved; regression and hosted checks pass.
 
 Jokers 0.9.0 use the approved Letter lens with blank tiles and no text field.
 New games have one neutral joker beside each corner castle plus one per starting

@@ -18,10 +18,12 @@ cleared on sign-out, account switch or rejected account access. Clearing app/sit
 data also removes it. It does not introduce a third-party analytics service.
 
 Only participants can read their game records. Owner decision, 4 October: signed-in
-players can search usernames without an opt-in step. Results contain a name,
-friend code, opaque ID and the caller's own friendship state; no email, game record,
-statistics or device information. Friend codes can also be shared as an exact
-lookup. Partial search requires three characters; shorter usernames match exactly. Search returns at
+players can search usernames without an opt-in step. Owner clarification, 17 October:
+friend codes are retired and account IDs are not discovery inputs. Results contain
+a username and the caller's friendship state, plus internal IDs used for actions;
+IDs are never displayed as a way to find players. No email, game record, statistics
+or device information is exposed. Partial search requires three characters;
+shorter usernames match exactly. Search returns at
 most 20 matches, and is covered by authenticated API rate limiting.
 
 Owner clarification, 5 October: account creation uses email/password. Authenticated
@@ -32,7 +34,7 @@ contain 1–40 letters, numbers, spaces or `. _ - ( ) '` and at least one letter
 `profiles.username IS NULL` is the persistent incomplete-setup state; no local flag
 or editable Auth metadata can skip it. Names are reserved only when Continue saves
 them. Unnamed accounts cannot play or use Friends and do not appear in friend search,
-including by code. Random suggestions are availability-checked, editable and not
+regardless of their internal IDs. Random suggestions are availability-checked, editable and not
 reserved until saved; the unique index handles a competing claim at save time.
 Completion uses a locked transaction, so lost replies or another device completing
 setup cannot overwrite a saved name. The legacy availability endpoint remains public

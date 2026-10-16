@@ -1,5 +1,19 @@
 # Run, deploy and maintain
 
+## Username-only friend discovery — 0.9.1
+
+Apply 202610170001_username_only_friends.sql, then deploy game-api before clients.
+It replaces wc_friend_search/wc_friends without changing any stored rows. Search
+matches normalized usernames only; raw/formatted friend codes and account UUIDs
+are not alternate lookups. Service-only grants and block/onboarding filters remain.
+API responses omit friend_code, including legacy profile/social/export payloads.
+The legacy column is retained for a reversible rollout; it is unused for discovery.
+Internal account IDs continue to identify relationships and action targets.
+Older APKs must update to remove their old code UI; the backend already rejects
+code discovery. Blocked-player controls now live under You. No new infrastructure
+or costs, and no changes to game invitation capabilities or gameplay rules.
+
+
 ## Balanced openings and Letter lens — 0.9.0
 
 Current defaults: autumn-v4 (English) and autumn-sv-v2 (Swedish). New pinned
@@ -128,7 +142,7 @@ retain the migration and stored relationships. Older clients are asked to update
 when opening an addressed invitation through its notification.
 
 Friendship exports and deletion are included in account controls. Search exposes
-only names and friend codes to signed-in users, as explicitly approved by the owner.
+only names to signed-in users. The 0.9.1 migration retires the former friend-code lookup.
 Unique names and operator reporting/moderation remain backlog items before a wider
 public launch. Private pilot users can block a player and contact their inviter.
 

@@ -51,8 +51,7 @@
   <div id="game-invitations" class="game-invitations"></div><div id="game-list" class="game-list"></div>
 </section>
 <section id="friends" class="page" aria-label="Friends" hidden>
-  <div class="page-heading compact actions-only"><button id="friend-code-button" class="secondary"><span data-icon="share"></span>My code</button></div>
-  <form id="friend-search" class="friend-search" role="search"><label class="sr-only" for="friend-search-input">Find friends by username or friend code</label><span data-icon="search"></span><input id="friend-search-input" type="search" placeholder="Username or friend code" autocomplete="off" minlength="1" maxlength="64" required><button id="friend-search-submit" class="icon-button" aria-label="Search friends" data-icon="arrow"></button></form>
+  <form id="friend-search" class="friend-search" role="search"><label class="sr-only" for="friend-search-input">Find friends by username</label><span data-icon="search"></span><input id="friend-search-input" type="search" placeholder="Username" autocomplete="off" autocapitalize="none" spellcheck="false" minlength="1" maxlength="40" required><button id="friend-search-submit" class="icon-button" aria-label="Search friends" data-icon="arrow"></button></form>
   <div class="friend-search-meta"><span id="friend-search-status" class="small-note" role="status"></span><button id="clear-friend-search" class="text-button" hidden>Clear search</button></div>
   <div id="friend-search-results" aria-live="polite"></div><div id="friend-list"></div>
 </section>
@@ -64,6 +63,7 @@
     <button id="activity-button" class="settings-row"><span data-icon="history"></span><span>Activity<small id="activity-state"></small></span><span id="activity-badge" class="badge" hidden></span><span data-icon="chevron"></span></button>
     <button id="push-settings" class="settings-row" hidden><span data-icon="bell"></span><span>Notifications<small id="push-state"></small></span><span data-icon="chevron"></span></button>
     <button class="settings-row" data-sheet="rules"><span data-icon="book"></span><span>How to play</span><span data-icon="chevron"></span></button>
+    <button id="blocked-players" class="settings-row"><span data-icon="shield"></span><span>Blocked players</span><span data-icon="chevron"></span></button>
     <button class="settings-row" data-sheet="privacy"><span data-icon="shield"></span><span>Privacy &amp; account</span><span data-icon="chevron"></span></button>
     <button id="signout" class="settings-row"><span data-icon="logout"></span><span>Sign out</span><span data-icon="chevron"></span></button>
   </div><p class="quiet-footer">Word Conquest <span id="app-version"></span></p>

@@ -1,4 +1,30 @@
-# Implementation and verification - updated 16 October 2026
+# Implementation and verification - updated 17 October 2026
+
+## Username-only Friends — 17 October 2026, 0.9.1
+
+- Removed My code, code formatting/copy/share controls, code rows in search and
+  friend options, code-based hints, CSS and fixture fields. Friends starts directly
+  with Username search. Internal IDs remain action/relationship keys, not UI text.
+- Moved blocked-player management to You → Blocked players, including fresh data,
+  unblocking and empty state. Delayed loads cannot open it after navigation/account
+  changes. Username editing remains in the profile; game invitation links remain.
+- Non-destructive migration 202610170001_username_only_friends.sql replaces search
+  and social payload functions. Search matches usernames only, preserving Unicode,
+  case-insensitive exact names, short exact names, partial matching, block filters,
+  unfinished/deleting-account exclusion and service-only access. No data deleted.
+  Legacy code storage remains inert for rollback; API responses omit friend_code.
+- All 132 regression tests plus original suites pass. New integration tests verify
+  preservation of accounts/friendships/games/invitations, failed code/UUID lookups,
+  block/unblock, permissions and API payload filtering. Production/fixture builds
+  and DOM checks for search/results/options, Invite, hidden IDs and unblocking pass.
+  DOM checks do not substitute for a rendered phone layout check.
+- Applied only the expected migration and deployed game-api to existing project
+  aumiyyjsdqdazzmdmprl. Live checks using isolated accounts confirm username lookup,
+  rejection of raw/lowercase/formatted codes and UUIDs, code-free profile/social
+  responses and preservation of the existing friendship. No hosted game, profile
+  or friendship mutations were needed. Evidence: work/username-search-live-result.json.
+- Web and signed APK release evidence follows. No new costs or infrastructure.
+
 
 ## Letter lens and balanced castle jokers — 16 October 2026, 0.9.0
 

@@ -53,8 +53,9 @@ The username is your displayed name. Uniqueness ignores case and normalizes Unic
 width and composition; names use 1–40 letters, numbers, spaces or simple punctuation.
 You can change it under You, provided the new name is available. Signed-in players
 can search usernames; unfinished accounts do not appear in friend search.
-Friend codes still support sharing and exact lookup. My code includes blocked-player
-management. Existing games, friendships and rules are unchanged.
+Friend discovery uses usernames only. Friend codes and internal account IDs cannot
+be used for lookup. Blocked-player management is under You → Blocked players.
+Existing games, friendships and internal account IDs are unchanged.
 
 ### Castle income experiment (0.5.0)
 
