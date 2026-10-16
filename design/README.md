@@ -44,7 +44,8 @@ standalone offline prototypes: Tile bloom (a picker around the tile), Word dock
 alphabet). Compare an asterisk, infinity and layered-tile symbol on any concept.
 English/Swedish and one/two joker scenarios work in all three. These are design
 options awaiting owner selection, separate from the live 0.8.3 joker input fix.
-See [prototype controls and tradeoffs](joker-interactions/README.md).
+See [prototype controls and tradeoffs](joker-interactions/README.md), or open the
+[published phone preview](https://xnorbertx.github.io/word-conquest/previews/jokers/).
 
 ## Reference source
 

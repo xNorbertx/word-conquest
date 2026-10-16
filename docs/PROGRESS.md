@@ -21,6 +21,11 @@
   tool reports no available surfaces; opening the preview in Codex was queued.
   Actual rendering, small-screen layout and touch/animation feel need owner review.
   No concept is approved for implementation yet.
+- At the owner’s request, published the gallery for phone review at
+  [https://xnorbertx.github.io/word-conquest/previews/jokers/](https://xnorbertx.github.io/word-conquest/previews/jokers/). Pages commit
+  `9ee8bed` built successfully. All seven public preview assets match the reviewed
+  source. Only `previews/jokers/` changed in the hosting branch; app/prototype
+  assets are preserved. Existing free hosting, no sign-in or new service costs.
 
 ## Mobile joker input — 16 October, 0.8.3
 

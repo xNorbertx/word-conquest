@@ -1,5 +1,7 @@
 # Joker interaction studies
 
+[Open the published phone-friendly gallery](https://xnorbertx.github.io/word-conquest/previews/jokers/). No sign-in required.
+
 Open **index.html** directly in a browser; the three separate HTML pages also work
 offline. No installation, account, font download or build step is needed.
 
@@ -35,8 +37,9 @@ are available; arbitrary letters can be previewed but the demo Play button requi
 a valid word for the sample path. `make-fixture.mjs` checks the samples, scoring,
 board shapes and accepted substitutions against the current engine/dictionaries.
 
-These are review-only prototypes. They are not imported by the app, deployed to
-the live host or packaged in Android. The current working joker fix remains live.
+These are review-only prototypes, hosted separately under `/previews/jokers/`.
+They are not imported by the app or packaged in Android. The current working
+joker fix remains live.
 No network APIs, personal data, analytics or browser storage are used.
 
 ## Review status
