@@ -23,7 +23,17 @@
   rejection of raw/lowercase/formatted codes and UUIDs, code-free profile/social
   responses and preservation of the existing friendship. No hosted game, profile
   or friendship mutations were needed. Evidence: work/username-search-live-result.json.
-- Web and signed APK release evidence follows. No new costs or infrastructure.
+- Released source `5163782`. [Web](https://xnorbertx.github.io/word-conquest/online/) is live from Pages
+  `fb1d674`; Pages succeeded and all ten public assets match the
+  tested build after line-ending normalization. Root prototype and gallery remain.
+- [Android 0.9.1-5163782](https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-24962913), code `24962913`, passed
+  [CI](https://github.com/xNorbertx/word-conquest/actions/runs/38973868635). Verified stable signing certificate, package/version,
+  notifications, WC icons, matching HTML/CSS, absence of friend-code UI/logic,
+  and no private keys/fixtures. [Anonymous APK](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-24962913/word-conquest-android.apk) matches
+  SHA-256 `cbe15a13b8893e69759841fb42dd75b35ace9f1b54d135c8292208867bda11a0` (4,970,685 bytes).
+  Local copy: `dist/word-conquest-0.9.1.apk`; install over the existing pilot.
+- No new costs, infrastructure, game rules or dictionary changes. Phone layout
+  acceptance remains a manual check; DOM behavior and packaged assets are verified.
 
 
 ## Letter lens and balanced castle jokers — 16 October 2026, 0.9.0
