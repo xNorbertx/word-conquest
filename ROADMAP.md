@@ -8,6 +8,9 @@ See [implementation and verification status](docs/PROGRESS.md) and the single
 [manual setup checklist](docs/SETUP.md). Boxes remain unchecked until their hosted
 and real-device acceptance checks pass, not merely because source code was written.
 
+Games 0.9.2 places Playing/Finished and New game in one row, with no welcome
+greeting or waiting-turn summary.
+
 Friends 0.9.1 uses username-only discovery. Friend-code UI and lookups are removed;
 account IDs remain internal. Blocked players is available under You. Existing
 relationships and games are preserved; regression and hosted checks pass.

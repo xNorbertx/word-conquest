@@ -1,5 +1,16 @@
 # Implementation and verification - updated 17 October 2026
 
+
+## Compact Games toolbar — 17 October 2026, 0.9.2
+
+- Removed the welcome greeting and waiting-turn total from Games, including their
+  render logic and unused CSS. Playing/Finished and New game share one toolbar;
+  the optional notification prompt sits below it. The Playing count is preserved.
+- Narrow-screen spacing keeps all three labeled controls in one row. Existing
+  filtering, creation, game cards, invitations and notification actions remain.
+- Presentation-only update; no backend, data, rules or dictionary changes.
+  Verification and web/signed APK release evidence follow below.
+
 ## Username-only Friends — 17 October 2026, 0.9.1
 
 - Removed My code, code formatting/copy/share controls, code rows in search and

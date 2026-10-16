@@ -1,5 +1,8 @@
 # Android pilot and build pipeline
 
+Version 0.9.2 simplifies Games: Playing/Finished and New game share one row.
+The welcome greeting and waiting-turn text are removed.
+
 Version 0.9.1 removes My code, code copying/sharing, code labels in search/results
 and all friend-code hints. Friends begins with username search. You → Blocked
 players retains the ability to unblock someone. The server no longer looks up
