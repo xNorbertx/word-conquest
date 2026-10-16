@@ -1,5 +1,27 @@
 # Implementation and verification - updated 16 October 2026
 
+## Joker interaction prototypes — 16 October, design review
+
+- Created an offline [comparison gallery](../design/joker-interactions/index.html)
+  and three interactive HTML pages: Tile bloom, Word dock and Letter lens. Each
+  uses the current board geometry, castles, palette and compact score cards.
+- No text-field entry or system keyboard: choose directly near the tile, from a
+  word-level letter pad, or from a swipeable preview with explicit confirmation.
+  Symbols (asterisk/infinity/layered tiles), language, one/two jokers and reduced
+  motion can be compared independently. Assigned tiles retain a wild marker and
+  zero letter points; tapping the tile or word slot edits the letter.
+- Generated four fixed-path fixtures with the pinned English/Swedish dictionaries
+  and current game engine. Valid substitutions, WORD/FÅR examples and score totals
+  are checked. No production dependency, gameplay, server or Android change.
+- Sixteen DOM-level scenarios passed across all concepts/languages/joker counts:
+  assigning/editing, lens cancellation, valid/invalid words, playing/restarting,
+  symbol changes, full alphabets, keyboard activation and Escape. JavaScript and
+  CSS parsing pass. This does not simulate real keyboard/touch or browser layout.
+- Local gallery: http://127.0.0.1:4178/ (also opens directly from disk). The browser
+  tool reports no available surfaces; opening the preview in Codex was queued.
+  Actual rendering, small-screen layout and touch/animation feel need owner review.
+  No concept is approved for implementation yet.
+
 ## Mobile joker input — 16 October, 0.8.3
 
 - Reproduced the reported pattern with the existing event handler: a composing

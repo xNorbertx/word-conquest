@@ -36,6 +36,16 @@ clear letters, and selection/focus feedback. Captured castles lift and settle wi
 a single quiet ripple, then continue the score sequence. Only confirmed ownership
 changes trigger capture motion; reduced motion changes the colour immediately.
 
+## Joker interactions — 16 October 2026, for review
+
+The [joker interaction gallery](joker-interactions/index.html) contains three
+standalone offline prototypes: Tile bloom (a picker around the tile), Word dock
+(letter buttons beneath the word), and Letter lens (an enlarged tile and swipeable
+alphabet). Compare an asterisk, infinity and layered-tile symbol on any concept.
+English/Swedish and one/two joker scenarios work in all three. These are design
+options awaiting owner selection, separate from the live 0.8.3 joker input fix.
+See [prototype controls and tradeoffs](joker-interactions/README.md).
+
 ## Reference source
 
 Created with the built-in image generation tool, refining the Paper & Ink concept.
