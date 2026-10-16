@@ -17,6 +17,15 @@
   acceptance while composition remains active. All 123 regression tests and the
   original engine/scoring/supply suites pass. Production/fixture builds pass.
   No browser surface was available; physical keyboard confirmation is still needed.
+- Published source `a4372f5` to the [web app](https://xnorbertx.github.io/word-conquest/online/).
+  Pages `e888d4d` built successfully; all ten public assets match the tested
+  output after newline normalization. The original prototype remains unchanged.
+- [Android 0.8.3-a4372f5](https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-24954421) (`24954421`)
+  passed the [pipeline](https://github.com/xNorbertx/word-conquest/actions/runs/38957367910) with all 123 tests. Verified stable signing,
+  package/version, notification permission, WC icons, packaged joker handler,
+  matching HTML/CSS and fixture/private-key exclusion. Anonymous APK download
+  matches SHA-256 `9183e41e8327ccc78bdca36dda184f67b181e682f2a6dd0ac2358aa6e6419166`.
+  Local APK: `dist/word-conquest-0.8.3.apk`. No backend changes or new costs.
 
 ## Remove redundant page titles — 14 October, 0.8.2
 

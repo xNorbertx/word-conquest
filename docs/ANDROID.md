@@ -3,6 +3,11 @@
 Target test phone: Solana Seeker / Android 16. Package: `com.wordconquest.app`.
 The APK uses the same Supabase accounts and games as the web app.
 
+Version 0.8.3 fixes joker entry on mobile keyboards that keep letters in composition.
+Board/word updates are immediate; selecting another tile preserves the letter.
+Swedish combining marks are supported without changing the input mid-composition.
+Affected-phone confirmation is still needed; the event sequences pass regression.
+
 Version 0.8.2 removes the redundant Your games, Friends and Your corner titles.
 New game and My code remain in compact action rows; You opens with the profile.
 
@@ -31,15 +36,15 @@ Install the new APK to receive client changes. Backend improvements are already
 compatible with older APKs. First visits still need network access; physical Seeker
 startup/resume timing remains a device acceptance check. No paid service was added.
 
-Verified pilot build: [0.8.2-5aab793](https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-24734923) (version code `24734923`),
-from the successful [pipeline run](https://github.com/xNorbertx/word-conquest/actions/runs/38524353462). The signature matches the existing
-pilot. Package/version, notification permission, WC icons, simplified tab headers
-and matching packaged HTML/CSS were verified. Anonymous download matches SHA-256
-`a147868fd8cd571cdbc7b75a57d119f6c15d6a41b0487fbb97ac6071d189dad7`.
-Local APK: `dist/word-conquest-0.8.2.apk`. Install over the existing pilot.
-[Download the APK directly](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-24734923/word-conquest-android.apk); no GitHub sign-in is needed.
-All 116 regression tests and the original suites pass. Physical Seeker visual
-acceptance remains open. No backend change, app-store submission or new costs.
+Verified pilot build: [0.8.3-a4372f5](https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-24954421) (version code `24954421`),
+from the successful [pipeline run](https://github.com/xNorbertx/word-conquest/actions/runs/38957367910). The signature matches the existing
+pilot. Package/version, notification permission, WC icons, joker input fix and
+matching packaged HTML/CSS were verified. Anonymous download matches SHA-256
+`9183e41e8327ccc78bdca36dda184f67b181e682f2a6dd0ac2358aa6e6419166`.
+Local APK: `dist/word-conquest-0.8.3.apk`. Install over the existing pilot.
+[Download the APK directly](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-24954421/word-conquest-android.apk); no GitHub sign-in is needed.
+All 123 regression tests and the original suites pass. Physical keyboard confirmation
+remains open. No backend change, app-store submission or new costs.
 
 Version 0.7.1 removes the waiting-turn card, the Record section on You, and
 table-themed wording. Results/statistics remain stored on the backend. The WC
