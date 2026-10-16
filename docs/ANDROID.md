@@ -44,15 +44,16 @@ Install the new APK to receive client changes. Backend improvements are already
 compatible with older APKs. First visits still need network access; physical Seeker
 startup/resume timing remains a device acceptance check. No paid service was added.
 
-Verified pilot build: [0.8.3-a4372f5](https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-24954421) (version code `24954421`),
-from the successful [pipeline run](https://github.com/xNorbertx/word-conquest/actions/runs/38957367910). The signature matches the existing
-pilot. Package/version, notification permission, WC icons, joker input fix and
-matching packaged HTML/CSS were verified. Anonymous download matches SHA-256
-`9183e41e8327ccc78bdca36dda184f67b181e682f2a6dd0ac2358aa6e6419166`.
-Local APK: `dist/word-conquest-0.8.3.apk`. Install over the existing pilot.
-[Download the APK directly](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-24954421/word-conquest-android.apk); no GitHub sign-in is needed.
-All 123 regression tests and the original suites pass. Physical keyboard confirmation
-remains open. No backend change, app-store submission or new costs.
+Verified pilot build: [0.9.0-e0d6ae8](https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-24962119) (version code `24962119`),
+from the successful [pipeline run](https://github.com/xNorbertx/word-conquest/actions/runs/38972487191). The signature matches the existing
+pilot. Package/version, notification permission, WC icons, Letter lens/new rules
+and matching packaged HTML/CSS were verified. Anonymous download matches SHA-256
+`caa160facebc6c0000bf5aed54fc9007d62f998ac9036c04b21451d7ee6d2788`.
+Local APK: `dist/word-conquest-0.9.0.apk`. Install over the existing pilot.
+[Download the APK directly](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-24962119/word-conquest-android.apk); no GitHub sign-in is needed.
+All 127 regression tests and the original suites pass, alongside 800 bilingual
+opening checks and hosted English/Swedish joker turns/retries. Physical touch and
+animation feel remain open. No app-store submission, migration or new costs.
 
 Version 0.7.1 removes the waiting-turn card, the Record section on You, and
 table-themed wording. Results/statistics remain stored on the backend. The WC

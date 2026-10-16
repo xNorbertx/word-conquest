@@ -33,9 +33,20 @@
   acceptance, opponent reload, game summaries and statistics. Both test games
   ended by resignation; no real player games were changed. Evidence is in the
   ignored work/lens-live-result.json. No migration, dictionary change or new cost.
-- Web/APK release verification follows below. Physical phone scrolling, animation
-  and small-screen/large-text acceptance remain open: browser tools currently
-  expose no inspectable surfaces.
+- Released source `e0d6ae8`. [Web app](https://xnorbertx.github.io/word-conquest/online/) is live from Pages commit
+  `03d28b0`; Pages built successfully and all ten public assets match
+  the tested build (normalizing Windows line endings where needed). Original root
+  prototype and separately published joker gallery remain available.
+- [Signed Android 0.9.0-e0d6ae8](https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-24962119), code `24962119`, passed
+  [CI](https://github.com/xNorbertx/word-conquest/actions/runs/38972487191) including all tests and the native build. Package/version,
+  notification permission, WC icons, Letter lens/new rules, packaged HTML/CSS,
+  existing signing certificate and absence of private keys/fixtures were checked.
+  [Anonymous APK download](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-24962119/word-conquest-android.apk) matches SHA-256
+  `caa160facebc6c0000bf5aed54fc9007d62f998ac9036c04b21451d7ee6d2788` (4,971,079 bytes).
+  Local copy: `dist/word-conquest-0.9.0.apk`. Install over the existing pilot.
+- Physical phone scrolling, animation and small-screen/large-text acceptance
+  remain open: browser tools expose no inspectable surfaces in this session.
+  No new costs, app-store submission, migration or real-player data changes.
 
 
 ## Joker interaction prototypes — 16 October, design review
