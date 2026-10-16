@@ -54,15 +54,16 @@ Install the new APK to receive client changes. Backend improvements are already
 compatible with older APKs. First visits still need network access; physical Seeker
 startup/resume timing remains a device acceptance check. No paid service was added.
 
-Verified pilot build: [0.9.1-5163782](https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-24962913) (version code `24962913`),
-from the successful [pipeline run](https://github.com/xNorbertx/word-conquest/actions/runs/38973868635). The signature matches the existing
-pilot. Package/version, notification permission, WC icons, matching HTML/CSS and
-absence of friend-code UI/logic were verified. Anonymous download matches SHA-256
-`cbe15a13b8893e69759841fb42dd75b35ace9f1b54d135c8292208867bda11a0`.
-Local APK: `dist/word-conquest-0.9.1.apk`. Install over the existing pilot.
-[Download the APK directly](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-24962913/word-conquest-android.apk); no GitHub sign-in is needed.
-All 132 regression tests and the original suites pass, alongside live username-only
-search and response checks. No app-store submission, gameplay change or new costs.
+Verified pilot build: [0.9.2-c138151](https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-24963455) (version code `24963455`),
+from the successful [pipeline run](https://github.com/xNorbertx/word-conquest/actions/runs/38974808904). The signature matches the existing
+pilot. Verified package/version, notification permission, WC icons, compact Games
+toolbar and matching packaged HTML/CSS. Anonymous download matches SHA-256
+`372625d814aafbf3f9e7092293186fe6d53c32d4db68c4cc6b67a649d778ac32`.
+Local APK: `dist/word-conquest-0.9.2.apk`. Install over the existing pilot.
+[Download the APK directly](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-24963455/word-conquest-android.apk); no GitHub sign-in is needed.
+All 132 regression tests and original suites pass in CI. No backend or gameplay
+change, data migration, app-store submission or new costs. Phone layout acceptance
+remains open because browser inspection was unavailable during this turn.
 
 Version 0.7.1 removes the waiting-turn card, the Record section on You, and
 table-themed wording. Results/statistics remain stored on the backend. The WC

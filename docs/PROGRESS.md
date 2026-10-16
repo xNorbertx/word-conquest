@@ -9,7 +9,21 @@
 - Narrow-screen spacing keeps all three labeled controls in one row. Existing
   filtering, creation, game cards, invitations and notification actions remain.
 - Presentation-only update; no backend, data, rules or dictionary changes.
-  Verification and web/signed APK release evidence follow below.
+  Production/fixture builds, nine existing Games/presentation tests and markup/CSS
+  inspection passed. No new tests were added for this presentation-only change.
+- [Web](https://xnorbertx.github.io/word-conquest/online/) published from source `c138151`, Pages `cd63564`.
+  All ten public assets match the tested build after line-ending normalization.
+  The original prototype and design gallery remain unchanged.
+- [Android 0.9.2-c138151](https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-24963455), code `24963455`, passed
+  [CI](https://github.com/xNorbertx/word-conquest/actions/runs/38974808904) and its full 132-test regression suite plus original suites.
+  Verified the existing signing certificate, package/version, notifications,
+  WC icons, toolbar markup and matching packaged HTML/CSS. No private keys/fixtures.
+  [Anonymous APK](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-24963455/word-conquest-android.apk) matches SHA-256
+  `372625d814aafbf3f9e7092293186fe6d53c32d4db68c4cc6b67a649d778ac32` (4,970,629 bytes).
+  Local APK: `dist/word-conquest-0.9.2.apk`; install over the existing pilot.
+- Browser inspection was unavailable (no browser surfaces; IAB creation rejected
+  as unavailable). Rendered phone layout remains a manual acceptance check.
+  No backend deployment, data changes, new infrastructure or costs.
 
 ## Username-only Friends — 17 October 2026, 0.9.1
 
