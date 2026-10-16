@@ -2848,7 +2848,7 @@ function createSnapshotCache(storage, { namespace = "", now = Date.now, ttl = 7 
 }
 
 // package.json
-var version = "0.9.1";
+var version = "0.9.2";
 
 // online/app.js
 init_dist();
@@ -10751,11 +10751,9 @@ async function openNotification() {
 }
 function renderHome() {
   if (!homeData) return;
-  const { games, profile } = homeData;
-  $("greeting").textContent = profile.display_name && profile.display_name !== "Player" ? `WELCOME BACK, ${profile.display_name.toUpperCase()}` : "YOUR LITTLE WORD WORLD";
-  const active = games.filter((g) => !isFinished(g)).length, turns = games.filter((g) => gameStatus(g, user.id) === "Your turn").length;
+  const { games } = homeData;
+  const active = games.filter((g) => !isFinished(g)).length;
   $("active-count").textContent = active || "";
-  $("turn-count").textContent = turns ? `${turns} ${turns === 1 ? "turn" : "turns"} waiting` : "";
   $("active-games").setAttribute("aria-pressed", filter === "active");
   $("finished-games").setAttribute("aria-pressed", filter === "finished");
   const invitations = $("game-invitations");
