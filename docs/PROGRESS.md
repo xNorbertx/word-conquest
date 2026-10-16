@@ -1,4 +1,22 @@
-# Implementation and verification - updated 14 October 2026
+# Implementation and verification - updated 16 October 2026
+
+## Mobile joker input — 16 October, 0.8.3
+
+- Reproduced the reported pattern with the existing event handler: a composing
+  keyboard shows a typed letter in its field while the board remains ?, and
+  selecting another tile rebuilds the field from the empty joker map. A keyboard
+  sending non-composing input updates correctly. The affected device/keyboard
+  remains unconfirmed; this is a confirmed code defect and likely explanation.
+- Joker letters now update the board, word validation and submission map on every
+  input event, including composition. The input value is left untouched until the
+  keyboard commits, blurs or reports a non-composing change. Removed the native
+  character-length cap so combining marks can form Å/Ä/Ö. The shared normalizer
+  still allows exactly one letter from the game's alphabet. Late events from
+  detached/replaced fields cannot overwrite a new selection.
+- Added event-sequence regression coverage and authoritative English/Swedish word
+  acceptance while composition remains active. All 123 regression tests and the
+  original engine/scoring/supply suites pass. Production/fixture builds pass.
+  No browser surface was available; physical keyboard confirmation is still needed.
 
 ## Remove redundant page titles — 14 October, 0.8.2
 

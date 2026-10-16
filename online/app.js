@@ -12,7 +12,8 @@ import {requireUsername,signUpAccount} from './username.mjs';
 import {scoreMotionPlan,createScoreLedger} from './score-motion.mjs';
 import {createBoardScoreMotion} from './score-motion.js';
 import {tilePoints,castleLabel} from './board-geometry.mjs';
-import {LANGUAGES,languageFor,languageLabel,normalizeJoker} from '../server/languages.mjs';
+import {bindJokerInput} from './joker-input.mjs';
+import {LANGUAGES,languageFor,languageLabel} from '../server/languages.mjs';
 import {Engine,config as defaultConfig,configFor,RULES_VERSION,SUPPORTED_RULES,rulesLabel,captureRule,castleRule} from '../server/domain.mjs';
 let config=defaultConfig;
 import {$,svg,icon,node,button,setting,notify,showSheet,closeSheet,ask,initUI,closeTopDialog,emptyState} from './ui.js';
@@ -209,7 +210,18 @@ function drawBoard(){
   const centers=selection.map(id=>pos(game.state.tiles.find(t=>t.id===id)));const segments=centers.slice(1).map((b,i)=>{const a=centers[i],length=Math.hypot(b.x-a.x,b.y-a.y),dx=(b.x-a.x)/length*15,dy=(b.y-a.y)/length*15;return `M${a.x+dx},${a.y+dy} L${b.x-dx},${b.y-dy}`;}).join(' ');board.append(svg('path',{class:'path',d:segments}));
 }
 function renderJokers(){
-  $('jokers').replaceChildren();for(const id of selection){if(game.state.tiles.find(t=>t.id===id).letter!=='?')continue;const label=node('label',`Joker ${selection.indexOf(id)+1}`),input=node('input');input.maxLength=config.language==='sv'?2:1;input.pattern=config.language==='sv'?'[A-Za-zÅÄÖåäö]':'[A-Za-z]';input.lang=config.language||'en';input.autocomplete='off';input.autocapitalize='characters';input.value=jokers[id]||'';input.setAttribute('aria-label',`Joker at position ${selection.indexOf(id)+1}`);const update=()=>{input.value=normalizeJoker(input.value,config);jokers[id]=input.value;drawBoard();renderSelection();};input.oninput=e=>{if(!e.isComposing)update();};input.oncompositionend=update;label.append(input);$('jokers').append(label);}
+  $('jokers').replaceChildren();
+  for(const id of selection){
+    if(game.state.tiles.find(t=>t.id===id).letter!=='?')continue;
+    const position=selection.indexOf(id)+1,label=node('label',`Joker ${position}`),input=node('input');
+    input.value=jokers[id]||'';input.setAttribute('aria-label',`Joker at position ${position}`);
+    bindJokerInput(input,config,letter=>{
+      // Ignore late keyboard events from fields replaced by a board/selection update.
+      if(!input.isConnected||!selection.includes(id)||jokers[id]===letter)return;
+      jokers[id]=letter;drawBoard();renderSelection();
+    });
+    label.append(input);$('jokers').append(label);
+  }
 }
 function selectionHint(error){
   if(!gameFresh)return 'Checking for updates…';

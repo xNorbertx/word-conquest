@@ -1,12 +1,15 @@
 # Word Conquest — app roadmap
 
-Updated: 14 October 2026
+Updated: 16 October 2026
 
 This is an acceptance checklist. The original local two-player prototype remains
 available; a separate online implementation now exists. Rules remain experimental.
 See [implementation and verification status](docs/PROGRESS.md) and the single
 [manual setup checklist](docs/SETUP.md). Boxes remain unchecked until their hosted
 and real-device acceptance checks pass, not merely because source code was written.
+
+Joker input 0.8.3 fixes ignored mobile keyboard composition and loss when selecting
+another tile. English/Swedish regressions pass; affected-phone confirmation remains.
 
 Current status: web app published on GitHub Pages, authoritative Supabase backend
 deployed, and authentication email delivered successfully through Resend. Automated
