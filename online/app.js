@@ -1812,10 +1812,10 @@ var monogram_default = {
 
 // server/versions/engine-v1.mjs
 var WordConquest = /* @__PURE__ */ (() => {
-  const distance = (a, b) => Math.max(Math.abs(a.q - b.q), Math.abs(a.r - b.r));
-  const adjacent = (a, b) => distance(a, b) === 1;
-  const letterType = (value, config3) => ["vowels", "flexible", "ordinary", "rare"].find((type) => config3.letterBalance[type].includes(value));
-  function shuffled(values, random) {
+  const distance2 = (a, b) => Math.max(Math.abs(a.q - b.q), Math.abs(a.r - b.r));
+  const adjacent2 = (a, b) => distance2(a, b) === 1;
+  const letterType2 = (value, config3) => ["vowels", "flexible", "ordinary", "rare"].find((type) => config3.letterBalance[type].includes(value));
+  function shuffled2(values, random) {
     const result = [...values];
     for (let i = result.length - 1; i > 0; i--) {
       const j = Math.floor(random() * (i + 1));
@@ -1823,7 +1823,7 @@ var WordConquest = /* @__PURE__ */ (() => {
     }
     return result;
   }
-  function categoryPlan(count, config3, random, allowRare = true) {
+  function categoryPlan2(count, config3, random, allowRare = true) {
     const balance = config3.letterBalance;
     if (!count) return [];
     if (count === 1) {
@@ -1841,22 +1841,22 @@ var WordConquest = /* @__PURE__ */ (() => {
       ...Array(rare).fill("rare")
     ];
   }
-  function placeLetters(tiles, batch, plan, config3, random, previous = /* @__PURE__ */ new Map()) {
+  function placeLetters2(tiles, batch, plan, config3, random, previous = /* @__PURE__ */ new Map()) {
     if (!batch.length) return;
-    const values = shuffled(plan, random).map((type) => letter(config3, random, (value) => config3.letterBalance[type].includes(value)));
+    const values = shuffled2(plan, random).map((type) => letter2(config3, random, (value) => config3.letterBalance[type].includes(value)));
     let best = null, bestCost = Infinity;
     for (let attempt = 0; attempt < config3.letterBalance.placementAttempts; attempt++) {
-      const candidate = shuffled(values, random).map((value, i) => value === previous.get(batch[i].id) ? letter(config3, random, (next) => letterType(next, config3) === letterType(value, config3) && next !== value) : value);
+      const candidate = shuffled2(values, random).map((value, i) => value === previous.get(batch[i].id) ? letter2(config3, random, (next) => letterType2(next, config3) === letterType2(value, config3) && next !== value) : value);
       const letters = new Map(batch.map((t, i) => [t.id, candidate[i]]));
       const valueAt = (t) => letters.get(t.id) || t.letter;
       let cost = 0;
       for (const tile of batch) {
-        const value = valueAt(tile), type = letterType(value, config3), neighbors = tiles.filter((t) => adjacent(t, tile));
-        const vowelAccess = neighbors.some((t) => valueAt(t) === "?" || letterType(valueAt(t), config3) === "vowels");
+        const value = valueAt(tile), type = letterType2(value, config3), neighbors = tiles.filter((t) => adjacent2(t, tile));
+        const vowelAccess = neighbors.some((t) => valueAt(t) === "?" || letterType2(valueAt(t), config3) === "vowels");
         if (type !== "vowels" && !vowelAccess) cost += 3;
         if (type === "rare") {
           if (!vowelAccess) cost += 8;
-          if (neighbors.some((t) => letterType(valueAt(t), config3) === "rare")) cost += 8;
+          if (neighbors.some((t) => letterType2(valueAt(t), config3) === "rare")) cost += 8;
         }
       }
       if (cost < bestCost) {
@@ -1867,8 +1867,8 @@ var WordConquest = /* @__PURE__ */ (() => {
     }
     batch.forEach((tile, i) => tile.letter = best[i]);
   }
-  const openingBand = (tile, tiles) => tile.owner ? "base" : tiles.some((t) => t.owner && adjacent(tile, t)) ? "near" : "outer";
-  function letter(config3, random = Math.random, accept = () => true) {
+  const openingBand2 = (tile, tiles) => tile.owner ? "base" : tiles.some((t) => t.owner && adjacent2(tile, t)) ? "near" : "outer";
+  function letter2(config3, random = Math.random, accept = () => true) {
     const weights = Object.entries(config3.letterWeights).filter(([value, weight]) => weight > 0 && accept(value));
     if (!weights.length) throw new Error("Letter distribution needs vowels and consonants.");
     let roll = random() * weights.reduce((sum2, [, weight]) => sum2 + weight, 0);
@@ -1878,16 +1878,16 @@ var WordConquest = /* @__PURE__ */ (() => {
     }
     return weights.at(-1)[0];
   }
-  function generateBoard(config3, random = Math.random) {
+  function generateBoard2(config3, random = Math.random) {
     const tiles = [], radius = config3.boardRadius;
     for (let q = -radius; q <= radius; q++) for (let r = -radius; r <= radius; r++) {
       if (Math.abs(q) + Math.abs(r) > 2 * radius - config3.cornerCut) continue;
-      tiles.push({ id: `${q},${r}`, q, r, letter: letter(config3, random), owner: 0, castle: false });
+      tiles.push({ id: `${q},${r}`, q, r, letter: letter2(config3, random), owner: 0, castle: false });
     }
     const mirror = (t) => tiles.find((a) => a.q === -t.q && a.r === t.r);
     const anchor = tiles.find((t) => t.q === -radius && t.r === 0), region = [anchor];
     while (region.length < config3.startingTerritories) {
-      const next = tiles.filter((t) => t.q < 0 && !region.includes(t) && region.some((a) => adjacent(a, t))).sort((a, b) => distance(a, anchor) - distance(b, anchor) || a.r - b.r || a.q - b.q)[0];
+      const next = tiles.filter((t) => t.q < 0 && !region.includes(t) && region.some((a) => adjacent2(a, t))).sort((a, b) => distance2(a, anchor) - distance2(b, anchor) || a.r - b.r || a.q - b.q)[0];
       if (!next) break;
       region.push(next);
     }
@@ -1905,43 +1905,43 @@ var WordConquest = /* @__PURE__ */ (() => {
     while (castles.length + 2 <= config3.castleCount && castleCandidates.length) {
       const pair2 = Math.floor(castles.length / 2);
       const target = { q: -Math.max(1, Math.floor(radius / 2)), r: (pair2 % 2 === 0 ? -1 : 1) * Math.max(1, radius - 1) };
-      const rank = (t) => Math.min(...starts.map((a) => distance(a, t))) + (castles.length ? Math.min(...castles.map((a) => distance(a, t))) : 0);
-      castleCandidates.sort((a, b) => distance(a.tile, target) - distance(b.tile, target) || rank(b.tile) - rank(a.tile) || a.tie - b.tie);
+      const rank = (t) => Math.min(...starts.map((a) => distance2(a, t))) + (castles.length ? Math.min(...castles.map((a) => distance2(a, t))) : 0);
+      castleCandidates.sort((a, b) => distance2(a.tile, target) - distance2(b.tile, target) || rank(b.tile) - rank(a.tile) || a.tie - b.tie);
       const tile = castleCandidates.shift().tile;
       castles.push(tile, mirror(tile));
     }
     castles.forEach((t) => t.castle = true);
     const jokers2 = [];
     if (config3.jokerCount >= 2) {
-      const first = shuffled(region, random)[0];
-      const other = shuffled(tiles.filter((t) => t.owner === 2 && t.id !== mirror(first).id), random)[0] || mirror(first);
+      const first = shuffled2(region, random)[0];
+      const other = shuffled2(tiles.filter((t) => t.owner === 2 && t.id !== mirror(first).id), random)[0] || mirror(first);
       jokers2.push(first, other);
     }
     if (config3.jokerCount % 2) {
       const centerline = tiles.filter((t) => t.q === 0 && !t.castle && !t.owner);
       if (centerline.length) jokers2.push(centerline[Math.floor(random() * centerline.length)]);
     }
-    const reach = (t) => Math.min(...starts.filter((a) => a.owner === (t.q < 0 ? 1 : 2)).map((a) => distance(a, t)));
+    const reach = (t) => Math.min(...starts.filter((a) => a.owner === (t.q < 0 ? 1 : 2)).map((a) => distance2(a, t)));
     while (jokers2.length + 2 <= config3.jokerCount) {
       const available = tiles.filter((t) => t.q !== 0 && !t.owner && !t.castle && !jokers2.includes(t));
-      const left = shuffled(available.filter((t) => t.q < 0), random).sort((a, b) => Math.min(...jokers2.map((t) => distance(t, b)), 99) - Math.min(...jokers2.map((t) => distance(t, a)), 99));
+      const left = shuffled2(available.filter((t) => t.q < 0), random).sort((a, b) => Math.min(...jokers2.map((t) => distance2(t, b)), 99) - Math.min(...jokers2.map((t) => distance2(t, a)), 99));
       const first = left.find((t) => available.some((a) => a.q > 0 && reach(a) === reach(t)));
       if (!first) break;
-      const right = shuffled(available.filter((t) => t.q > 0 && reach(t) === reach(first)), random);
+      const right = shuffled2(available.filter((t) => t.q > 0 && reach(t) === reach(first)), random);
       const other = right.find((t) => t.id !== mirror(first).id) || right[0];
       jokers2.push(first, other);
     }
     jokers2.forEach((t) => t.letter = "?");
     for (const band of ["base", "near", "outer"]) {
-      const batches = [-1, 1].map((side) => tiles.filter((t) => Math.sign(t.q) === side && t.letter !== "?" && openingBand(t, tiles) === band));
-      const plan = categoryPlan(batches[0].length, config3, random, band === "outer");
-      batches.forEach((batch) => placeLetters(tiles, batch, batch.length === plan.length ? plan : categoryPlan(batch.length, config3, random, band === "outer"), config3, random));
+      const batches = [-1, 1].map((side) => tiles.filter((t) => Math.sign(t.q) === side && t.letter !== "?" && openingBand2(t, tiles) === band));
+      const plan = categoryPlan2(batches[0].length, config3, random, band === "outer");
+      batches.forEach((batch) => placeLetters2(tiles, batch, batch.length === plan.length ? plan : categoryPlan2(batch.length, config3, random, band === "outer"), config3, random));
     }
     const center3 = tiles.filter((t) => t.q === 0 && t.letter !== "?");
-    placeLetters(tiles, center3, categoryPlan(center3.length, config3, random), config3, random);
+    placeLetters2(tiles, center3, categoryPlan2(center3.length, config3, random), config3, random);
     return tiles;
   }
-  const newGame3 = (config3, random) => ({ tiles: generateBoard(config3, random), player: 1, turns: [0, 0], wordPoints: [0, 0], lettersUsed: 0, log: [], over: false });
+  const newGame4 = (config3, random) => ({ tiles: generateBoard2(config3, random), player: 1, turns: [0, 0], wordPoints: [0, 0], lettersUsed: 0, log: [], over: false });
   const canReenter = (state, config3) => config3.allowReentry && !state.tiles.some((t) => t.owner === state.player);
   const wordForPath = (state, ids, jokerLetters = {}) => ids.map((id) => {
     const tile = state.tiles.find((t) => t.id === id);
@@ -1954,7 +1954,7 @@ var WordConquest = /* @__PURE__ */ (() => {
     if (tiles.some((t) => !t)) return "Unknown territory.";
     if (new Set(ids).size !== ids.length) return "A tile can only be used once.";
     if (tiles[0].owner !== state.player && !canReenter(state, config3)) return "Start on one of your territories.";
-    if (tiles.some((t, i) => i > 0 && !adjacent(t, tiles[i - 1]))) return "Choose an adjacent tile (diagonals count).";
+    if (tiles.some((t, i) => i > 0 && !adjacent2(t, tiles[i - 1]))) return "Choose an adjacent tile (diagonals count).";
     if (tiles.filter((t) => t.owner && t.owner !== state.player).length > config3.maxEnemyTilesPerWord)
       return `Use at most ${config3.maxEnemyTilesPerWord} enemy tiles per word.`;
     if (complete && tiles.length < config3.minimumWordLength) return `Choose at least ${config3.minimumWordLength} letters.`;
@@ -1999,7 +1999,7 @@ var WordConquest = /* @__PURE__ */ (() => {
     const selected = new Set(ids), previous = new Map(tiles.map((t) => [t.id, t.letter]));
     const next = tiles.map((t) => selected.has(t.id) && t.letter !== "?" ? { ...t } : t);
     const refreshed = next.filter((t) => selected.has(t.id) && t.letter !== "?");
-    placeLetters(next, refreshed, categoryPlan(refreshed.length, config3, random), config3, random, previous);
+    placeLetters2(next, refreshed, categoryPlan2(refreshed.length, config3, random), config3, random, previous);
     return { tiles: next, refreshed: refreshed.map((t) => t.id) };
   }
   function submit3(state, ids, config3, dictionary = null, jokerLetters = {}, random = Math.random) {
@@ -2037,7 +2037,7 @@ var WordConquest = /* @__PURE__ */ (() => {
     advanceTurn(next, config3, move.letterCost);
     return { state: next, captured: [], refreshed: updated.refreshed };
   }
-  return { distance, adjacent, letterType, openingBand, generateBoard, newGame: newGame3, canReenter, wordForPath, validatePath, capturedTiles, letterValue, lengthBonus, scoreMove: scoreMove3, scoreBreakdown: scoreBreakdown3, scores: scores3, lettersRemaining, advanceTurn, refreshLetters, submit: submit3, refreshTurn: refreshTurn3 };
+  return { distance: distance2, adjacent: adjacent2, letterType: letterType2, openingBand: openingBand2, generateBoard: generateBoard2, newGame: newGame4, canReenter, wordForPath, validatePath, capturedTiles, letterValue, lengthBonus, scoreMove: scoreMove3, scoreBreakdown: scoreBreakdown3, scores: scores3, lettersRemaining, advanceTurn, refreshLetters, submit: submit3, refreshTurn: refreshTurn3 };
 })();
 if (false) (void 0).exports = WordConquest;
 var engine_v1_default = WordConquest;
@@ -2092,10 +2092,10 @@ var engine_v2_default = { ...engine_v1_default, newGame, territoryValue, castleI
 
 // server/versions/engine-sv-v1.mjs
 var WordConquest2 = /* @__PURE__ */ (() => {
-  const distance = (a, b) => Math.max(Math.abs(a.q - b.q), Math.abs(a.r - b.r));
-  const adjacent = (a, b) => distance(a, b) === 1;
-  const letterType = (value, config3) => ["vowels", "flexible", "ordinary", "rare"].find((type) => config3.letterBalance[type].includes(value));
-  function shuffled(values, random) {
+  const distance2 = (a, b) => Math.max(Math.abs(a.q - b.q), Math.abs(a.r - b.r));
+  const adjacent2 = (a, b) => distance2(a, b) === 1;
+  const letterType2 = (value, config3) => ["vowels", "flexible", "ordinary", "rare"].find((type) => config3.letterBalance[type].includes(value));
+  function shuffled2(values, random) {
     const result = [...values];
     for (let i = result.length - 1; i > 0; i--) {
       const j = Math.floor(random() * (i + 1));
@@ -2103,7 +2103,7 @@ var WordConquest2 = /* @__PURE__ */ (() => {
     }
     return result;
   }
-  function categoryPlan(count, config3, random, allowRare = true) {
+  function categoryPlan2(count, config3, random, allowRare = true) {
     const balance = config3.letterBalance;
     if (!count) return [];
     if (count === 1) {
@@ -2121,22 +2121,22 @@ var WordConquest2 = /* @__PURE__ */ (() => {
       ...Array(rare).fill("rare")
     ];
   }
-  function placeLetters(tiles, batch, plan, config3, random, previous = /* @__PURE__ */ new Map()) {
+  function placeLetters2(tiles, batch, plan, config3, random, previous = /* @__PURE__ */ new Map()) {
     if (!batch.length) return;
-    const values = shuffled(plan, random).map((type) => letter(config3, random, (value) => config3.letterBalance[type].includes(value)));
+    const values = shuffled2(plan, random).map((type) => letter2(config3, random, (value) => config3.letterBalance[type].includes(value)));
     let best = null, bestCost = Infinity;
     for (let attempt = 0; attempt < config3.letterBalance.placementAttempts; attempt++) {
-      const candidate = shuffled(values, random).map((value, i) => value === previous.get(batch[i].id) ? letter(config3, random, (next) => letterType(next, config3) === letterType(value, config3) && next !== value) : value);
+      const candidate = shuffled2(values, random).map((value, i) => value === previous.get(batch[i].id) ? letter2(config3, random, (next) => letterType2(next, config3) === letterType2(value, config3) && next !== value) : value);
       const letters = new Map(batch.map((t, i) => [t.id, candidate[i]]));
       const valueAt = (t) => letters.get(t.id) || t.letter;
       let cost = 0;
       for (const tile of batch) {
-        const value = valueAt(tile), type = letterType(value, config3), neighbors = tiles.filter((t) => adjacent(t, tile));
-        const vowelAccess = neighbors.some((t) => valueAt(t) === "?" || letterType(valueAt(t), config3) === "vowels");
+        const value = valueAt(tile), type = letterType2(value, config3), neighbors = tiles.filter((t) => adjacent2(t, tile));
+        const vowelAccess = neighbors.some((t) => valueAt(t) === "?" || letterType2(valueAt(t), config3) === "vowels");
         if (type !== "vowels" && !vowelAccess) cost += 3;
         if (type === "rare") {
           if (!vowelAccess) cost += 8;
-          if (neighbors.some((t) => letterType(valueAt(t), config3) === "rare")) cost += 8;
+          if (neighbors.some((t) => letterType2(valueAt(t), config3) === "rare")) cost += 8;
         }
       }
       if (cost < bestCost) {
@@ -2147,8 +2147,8 @@ var WordConquest2 = /* @__PURE__ */ (() => {
     }
     batch.forEach((tile, i) => tile.letter = best[i]);
   }
-  const openingBand = (tile, tiles) => tile.owner ? "base" : tiles.some((t) => t.owner && adjacent(tile, t)) ? "near" : "outer";
-  function letter(config3, random = Math.random, accept = () => true) {
+  const openingBand2 = (tile, tiles) => tile.owner ? "base" : tiles.some((t) => t.owner && adjacent2(tile, t)) ? "near" : "outer";
+  function letter2(config3, random = Math.random, accept = () => true) {
     const weights = Object.entries(config3.letterWeights).filter(([value, weight]) => weight > 0 && accept(value));
     if (!weights.length) throw new Error("Letter distribution needs vowels and consonants.");
     let roll = random() * weights.reduce((sum2, [, weight]) => sum2 + weight, 0);
@@ -2158,16 +2158,16 @@ var WordConquest2 = /* @__PURE__ */ (() => {
     }
     return weights.at(-1)[0];
   }
-  function generateBoard(config3, random = Math.random) {
+  function generateBoard2(config3, random = Math.random) {
     const tiles = [], radius = config3.boardRadius;
     for (let q = -radius; q <= radius; q++) for (let r = -radius; r <= radius; r++) {
       if (Math.abs(q) + Math.abs(r) > 2 * radius - config3.cornerCut) continue;
-      tiles.push({ id: `${q},${r}`, q, r, letter: letter(config3, random), owner: 0, castle: false });
+      tiles.push({ id: `${q},${r}`, q, r, letter: letter2(config3, random), owner: 0, castle: false });
     }
     const mirror = (t) => tiles.find((a) => a.q === -t.q && a.r === t.r);
     const anchor = tiles.find((t) => t.q === -radius && t.r === 0), region = [anchor];
     while (region.length < config3.startingTerritories) {
-      const next = tiles.filter((t) => t.q < 0 && !region.includes(t) && region.some((a) => adjacent(a, t))).sort((a, b) => distance(a, anchor) - distance(b, anchor) || a.r - b.r || a.q - b.q)[0];
+      const next = tiles.filter((t) => t.q < 0 && !region.includes(t) && region.some((a) => adjacent2(a, t))).sort((a, b) => distance2(a, anchor) - distance2(b, anchor) || a.r - b.r || a.q - b.q)[0];
       if (!next) break;
       region.push(next);
     }
@@ -2185,43 +2185,43 @@ var WordConquest2 = /* @__PURE__ */ (() => {
     while (castles.length + 2 <= config3.castleCount && castleCandidates.length) {
       const pair2 = Math.floor(castles.length / 2);
       const target = { q: -Math.max(1, Math.floor(radius / 2)), r: (pair2 % 2 === 0 ? -1 : 1) * Math.max(1, radius - 1) };
-      const rank = (t) => Math.min(...starts.map((a) => distance(a, t))) + (castles.length ? Math.min(...castles.map((a) => distance(a, t))) : 0);
-      castleCandidates.sort((a, b) => distance(a.tile, target) - distance(b.tile, target) || rank(b.tile) - rank(a.tile) || a.tie - b.tie);
+      const rank = (t) => Math.min(...starts.map((a) => distance2(a, t))) + (castles.length ? Math.min(...castles.map((a) => distance2(a, t))) : 0);
+      castleCandidates.sort((a, b) => distance2(a.tile, target) - distance2(b.tile, target) || rank(b.tile) - rank(a.tile) || a.tie - b.tie);
       const tile = castleCandidates.shift().tile;
       castles.push(tile, mirror(tile));
     }
     castles.forEach((t) => t.castle = true);
     const jokers2 = [];
     if (config3.jokerCount >= 2) {
-      const first = shuffled(region, random)[0];
-      const other = shuffled(tiles.filter((t) => t.owner === 2 && t.id !== mirror(first).id), random)[0] || mirror(first);
+      const first = shuffled2(region, random)[0];
+      const other = shuffled2(tiles.filter((t) => t.owner === 2 && t.id !== mirror(first).id), random)[0] || mirror(first);
       jokers2.push(first, other);
     }
     if (config3.jokerCount % 2) {
       const centerline = tiles.filter((t) => t.q === 0 && !t.castle && !t.owner);
       if (centerline.length) jokers2.push(centerline[Math.floor(random() * centerline.length)]);
     }
-    const reach = (t) => Math.min(...starts.filter((a) => a.owner === (t.q < 0 ? 1 : 2)).map((a) => distance(a, t)));
+    const reach = (t) => Math.min(...starts.filter((a) => a.owner === (t.q < 0 ? 1 : 2)).map((a) => distance2(a, t)));
     while (jokers2.length + 2 <= config3.jokerCount) {
       const available = tiles.filter((t) => t.q !== 0 && !t.owner && !t.castle && !jokers2.includes(t));
-      const left = shuffled(available.filter((t) => t.q < 0), random).sort((a, b) => Math.min(...jokers2.map((t) => distance(t, b)), 99) - Math.min(...jokers2.map((t) => distance(t, a)), 99));
+      const left = shuffled2(available.filter((t) => t.q < 0), random).sort((a, b) => Math.min(...jokers2.map((t) => distance2(t, b)), 99) - Math.min(...jokers2.map((t) => distance2(t, a)), 99));
       const first = left.find((t) => available.some((a) => a.q > 0 && reach(a) === reach(t)));
       if (!first) break;
-      const right = shuffled(available.filter((t) => t.q > 0 && reach(t) === reach(first)), random);
+      const right = shuffled2(available.filter((t) => t.q > 0 && reach(t) === reach(first)), random);
       const other = right.find((t) => t.id !== mirror(first).id) || right[0];
       jokers2.push(first, other);
     }
     jokers2.forEach((t) => t.letter = "?");
     for (const band of ["base", "near", "outer"]) {
-      const batches = [-1, 1].map((side) => tiles.filter((t) => Math.sign(t.q) === side && t.letter !== "?" && openingBand(t, tiles) === band));
-      const plan = categoryPlan(batches[0].length, config3, random, band === "outer");
-      batches.forEach((batch) => placeLetters(tiles, batch, batch.length === plan.length ? plan : categoryPlan(batch.length, config3, random, band === "outer"), config3, random));
+      const batches = [-1, 1].map((side) => tiles.filter((t) => Math.sign(t.q) === side && t.letter !== "?" && openingBand2(t, tiles) === band));
+      const plan = categoryPlan2(batches[0].length, config3, random, band === "outer");
+      batches.forEach((batch) => placeLetters2(tiles, batch, batch.length === plan.length ? plan : categoryPlan2(batch.length, config3, random, band === "outer"), config3, random));
     }
     const center3 = tiles.filter((t) => t.q === 0 && t.letter !== "?");
-    placeLetters(tiles, center3, categoryPlan(center3.length, config3, random), config3, random);
+    placeLetters2(tiles, center3, categoryPlan2(center3.length, config3, random), config3, random);
     return tiles;
   }
-  const newGame3 = (config3, random) => ({ tiles: generateBoard(config3, random), player: 1, turns: [0, 0], wordPoints: [0, 0], lettersUsed: 0, log: [], over: false });
+  const newGame4 = (config3, random) => ({ tiles: generateBoard2(config3, random), player: 1, turns: [0, 0], wordPoints: [0, 0], lettersUsed: 0, log: [], over: false });
   const canReenter = (state, config3) => config3.allowReentry && !state.tiles.some((t) => t.owner === state.player);
   const wordForPath = (state, ids, jokerLetters = {}) => ids.map((id) => {
     const tile = state.tiles.find((t) => t.id === id);
@@ -2234,7 +2234,7 @@ var WordConquest2 = /* @__PURE__ */ (() => {
     if (tiles.some((t) => !t)) return "Unknown territory.";
     if (new Set(ids).size !== ids.length) return "A tile can only be used once.";
     if (tiles[0].owner !== state.player && !canReenter(state, config3)) return "Start on one of your territories.";
-    if (tiles.some((t, i) => i > 0 && !adjacent(t, tiles[i - 1]))) return "Choose an adjacent tile (diagonals count).";
+    if (tiles.some((t, i) => i > 0 && !adjacent2(t, tiles[i - 1]))) return "Choose an adjacent tile (diagonals count).";
     if (tiles.filter((t) => t.owner && t.owner !== state.player).length > config3.maxEnemyTilesPerWord)
       return `Use at most ${config3.maxEnemyTilesPerWord} enemy tiles per word.`;
     if (complete && tiles.length < config3.minimumWordLength) return `Choose at least ${config3.minimumWordLength} letters.`;
@@ -2279,7 +2279,7 @@ var WordConquest2 = /* @__PURE__ */ (() => {
     const selected = new Set(ids), previous = new Map(tiles.map((t) => [t.id, t.letter]));
     const next = tiles.map((t) => selected.has(t.id) && t.letter !== "?" ? { ...t } : t);
     const refreshed = next.filter((t) => selected.has(t.id) && t.letter !== "?");
-    placeLetters(next, refreshed, categoryPlan(refreshed.length, config3, random), config3, random, previous);
+    placeLetters2(next, refreshed, categoryPlan2(refreshed.length, config3, random), config3, random, previous);
     return { tiles: next, refreshed: refreshed.map((t) => t.id) };
   }
   function submit3(state, ids, config3, dictionary = null, jokerLetters = {}, random = Math.random) {
@@ -2317,7 +2317,7 @@ var WordConquest2 = /* @__PURE__ */ (() => {
     advanceTurn(next, config3, move.letterCost);
     return { state: next, captured: [], refreshed: updated.refreshed };
   }
-  return { distance, adjacent, letterType, openingBand, generateBoard, newGame: newGame3, canReenter, wordForPath, validatePath, capturedTiles, letterValue, lengthBonus, scoreMove: scoreMove3, scoreBreakdown: scoreBreakdown3, scores: scores3, lettersRemaining, advanceTurn, refreshLetters, submit: submit3, refreshTurn: refreshTurn3 };
+  return { distance: distance2, adjacent: adjacent2, letterType: letterType2, openingBand: openingBand2, generateBoard: generateBoard2, newGame: newGame4, canReenter, wordForPath, validatePath, capturedTiles, letterValue, lengthBonus, scoreMove: scoreMove3, scoreBreakdown: scoreBreakdown3, scores: scores3, lettersRemaining, advanceTurn, refreshLetters, submit: submit3, refreshTurn: refreshTurn3 };
 })();
 if (false) (void 0).exports = WordConquest2;
 var engine_sv_v1_default = WordConquest2;
@@ -2370,11 +2370,142 @@ function submit2(state, ids, config3, dictionary = null, jokerLetters = {}, rand
 var refreshTurn2 = (state, config3, random = Math.random) => finish2(state, engine_sv_v1_default.refreshTurn(state, config3, random), config3);
 var engine_sv_v2_default = { ...engine_sv_v1_default, newGame: newGame2, territoryValue: territoryValue2, castleIncomePerRound: castleIncomePerRound2, scoreMove: scoreMove2, scoreBreakdown: scoreBreakdown2, scores: scores2, submit: submit2, refreshTurn: refreshTurn2 };
 
+// server/versions/opening-v4.mjs
+var distance = (a, b) => Math.max(Math.abs(a.q - b.q), Math.abs(a.r - b.r));
+var adjacent = (a, b) => distance(a, b) === 1;
+var letterType = (value, config3) => ["vowels", "flexible", "ordinary", "rare"].find((type) => config3.letterBalance[type].includes(value));
+function shuffled(values, random) {
+  const result = [...values];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+function categoryPlan(count, config3, random, allowRare = true) {
+  const balance = config3.letterBalance;
+  if (!count) return [];
+  if (count === 1) {
+    const roll = random();
+    return [roll < balance.vowelShare ? "vowels" : roll < balance.vowelShare + balance.flexibleShare ? "flexible" : "ordinary"];
+  }
+  const vowels = Math.max(1, Math.min(count - 1, Math.round(count * balance.vowelShare)));
+  const flexible = Math.max(1, Math.min(count - vowels, Math.round(count * balance.flexibleShare)));
+  const remaining = count - vowels - flexible;
+  const rare = allowRare && count >= balance.rareMinBatch && random() < balance.rareBatchChance ? Math.min(remaining, Math.floor(count * balance.rareMaxShare), 1) : 0;
+  return [
+    ...Array(vowels).fill("vowels"),
+    ...Array(flexible).fill("flexible"),
+    ...Array(remaining - rare).fill("ordinary"),
+    ...Array(rare).fill("rare")
+  ];
+}
+function placeLetters(tiles, batch, plan, config3, random, previous = /* @__PURE__ */ new Map()) {
+  if (!batch.length) return;
+  const values = shuffled(plan, random).map((type) => letter(config3, random, (value) => config3.letterBalance[type].includes(value)));
+  let best = null, bestCost = Infinity;
+  for (let attempt = 0; attempt < config3.letterBalance.placementAttempts; attempt++) {
+    const candidate = shuffled(values, random).map((value, i) => value === previous.get(batch[i].id) ? letter(config3, random, (next) => letterType(next, config3) === letterType(value, config3) && next !== value) : value);
+    const letters = new Map(batch.map((t, i) => [t.id, candidate[i]]));
+    const valueAt = (t) => letters.get(t.id) || t.letter;
+    let cost = 0;
+    for (const tile of batch) {
+      const value = valueAt(tile), type = letterType(value, config3), neighbors = tiles.filter((t) => adjacent(t, tile));
+      const vowelAccess = neighbors.some((t) => valueAt(t) === "?" || letterType(valueAt(t), config3) === "vowels");
+      if (type !== "vowels" && !vowelAccess) cost += 3;
+      if (type === "rare") {
+        if (!vowelAccess) cost += 8;
+        if (neighbors.some((t) => letterType(valueAt(t), config3) === "rare")) cost += 8;
+      }
+    }
+    if (cost < bestCost) {
+      best = candidate;
+      bestCost = cost;
+    }
+    if (!cost) break;
+  }
+  batch.forEach((tile, i) => tile.letter = best[i]);
+}
+var openingBand = (tile, tiles) => tile.owner ? "base" : tiles.some((t) => t.owner && adjacent(tile, t)) ? "near" : "outer";
+function letter(config3, random = Math.random, accept = () => true) {
+  const weights = Object.entries(config3.letterWeights).filter(([value, weight]) => weight > 0 && accept(value));
+  if (!weights.length) throw new Error("Letter distribution needs vowels and consonants.");
+  let roll = random() * weights.reduce((sum2, [, weight]) => sum2 + weight, 0);
+  for (const [value, weight] of weights) {
+    roll -= weight;
+    if (roll < 0) return value;
+  }
+  return weights.at(-1)[0];
+}
+function generateBoard(config3, random = Math.random) {
+  const tiles = [], radius = config3.boardRadius;
+  for (let q = -radius; q <= radius; q++) for (let r = -radius; r <= radius; r++) {
+    if (Math.abs(q) + Math.abs(r) > 2 * radius - config3.cornerCut) continue;
+    tiles.push({ id: `${q},${r}`, q, r, letter: letter(config3, random), owner: 0, castle: false });
+  }
+  const mirror = (t) => tiles.find((a) => a.q === -t.q && a.r === t.r);
+  const anchor = tiles.find((t) => t.q === -radius && t.r === 0), region = [anchor];
+  while (region.length < config3.startingTerritories) {
+    const next = tiles.filter((t) => t.q < 0 && !region.includes(t) && region.some((a) => adjacent(a, t))).sort((a, b) => distance(a, anchor) - distance(b, anchor) || a.r - b.r || a.q - b.q)[0];
+    if (!next) break;
+    region.push(next);
+  }
+  region.forEach((t) => {
+    t.owner = 1;
+    mirror(t).owner = 2;
+  });
+  const starts = tiles.filter((t) => t.owner);
+  const castles = [];
+  if (config3.castleCount % 2) {
+    const center4 = tiles.find((t) => t.q === 0 && t.r === 0);
+    if (center4 && !center4.owner) castles.push(center4);
+  }
+  const castleCandidates = tiles.filter((t) => !t.owner && t.q < 0).map((tile) => ({ tile, tie: random() }));
+  while (castles.length + 2 <= config3.castleCount && castleCandidates.length) {
+    const pair2 = Math.floor(castles.length / 2);
+    const target = { q: -Math.max(1, Math.floor(radius / 2)), r: (pair2 % 2 === 0 ? -1 : 1) * Math.max(1, radius - 1) };
+    const rank = (t) => Math.min(...starts.map((a) => distance(a, t))) + (castles.length ? Math.min(...castles.map((a) => distance(a, t))) : 0);
+    castleCandidates.sort((a, b) => distance(a.tile, target) - distance(b.tile, target) || rank(b.tile) - rank(a.tile) || a.tie - b.tie);
+    const tile = castleCandidates.shift().tile;
+    castles.push(tile, mirror(tile));
+  }
+  castles.forEach((t) => t.castle = true);
+  const jokers2 = [];
+  if (config3.jokerCount >= 2) {
+    const first = shuffled(region, random)[0];
+    const other = shuffled(tiles.filter((t) => t.owner === 2 && t.id !== mirror(first).id), random)[0] || mirror(first);
+    jokers2.push(first, other);
+  }
+  const sideCastles = castles.filter((t) => t.q < 0);
+  if (config3.jokerCount !== 2 + sideCastles.length * 2)
+    throw new Error("Castle-neighbor openings need two base jokers and one per side castle.");
+  for (const castle of sideCastles) {
+    const candidates = tiles.filter((t) => t.q < 0 && Math.sign(t.r) === Math.sign(castle.r) && !t.owner && !t.castle && adjacent(t, castle) && openingBand(t, tiles) === "outer" && [t, mirror(t)].every((a) => jokers2.every((j) => distance(a, j) > 1)));
+    if (!candidates.length) throw new Error("No balanced joker position beside castle.");
+    const chosen = shuffled(candidates, random)[0];
+    jokers2.push(chosen, mirror(chosen));
+  }
+  jokers2.forEach((t) => t.letter = "?");
+  for (const band of ["base", "near", "outer"]) {
+    const batches = [-1, 1].map((side) => tiles.filter((t) => Math.sign(t.q) === side && t.letter !== "?" && openingBand(t, tiles) === band));
+    const plan = categoryPlan(batches[0].length, config3, random, band === "outer");
+    batches.forEach((batch) => placeLetters(tiles, batch, batch.length === plan.length ? plan : categoryPlan(batch.length, config3, random, band === "outer"), config3, random));
+  }
+  const center3 = tiles.filter((t) => t.q === 0 && t.letter !== "?");
+  placeLetters(tiles, center3, categoryPlan(center3.length, config3, random), config3, random);
+  return tiles;
+}
+function newGame3(config3, random = Math.random) {
+  const startingPlayer = random() < 0.5 ? 1 : 2;
+  return { tiles: generateBoard(config3, random), player: startingPlayer, startingPlayer, turns: [0, 0], wordPoints: [0, 0], castleIncome: [0, 0], lettersUsed: 0, log: [], over: false };
+}
+
 // server/engine.mjs
 var engine = (config3) => config3.language === "sv" ? engine_sv_v2_default : config3.castleIncome ? engine_v2_default : engine_v1_default;
 var engine_default = {
   ...engine_v1_default,
-  newGame: (config3, random) => engine(config3).newGame(config3, random),
+  newGame: (config3, random) => (config3.jokerPlacement ? newGame3 : engine(config3).newGame)(config3, random),
+  generateBoard: (config3, random) => (config3.jokerPlacement ? generateBoard : engine(config3).generateBoard)(config3, random),
   validatePath: (state, ids, config3, ...args) => engine(config3).validatePath(state, ids, config3, ...args),
   scoreMove: (state, ids, config3) => engine(config3).scoreMove(state, ids, config3),
   scoreBreakdown: (state, config3) => engine(config3).scoreBreakdown(state, config3),
@@ -2505,18 +2636,26 @@ var rules_sv_v1_default = Object.freeze({
   letterWeights: Object.freeze({ ...dictionary_sv_v1_meta_default.letterWeights })
 });
 
+// server/versions/rules-v4.mjs
+var rules_v4_default = Object.freeze({ ...rules_v3_default, jokerPlacement: "castle-neighbors-v1" });
+
+// server/versions/rules-sv-v2.mjs
+var rules_sv_v2_default = Object.freeze({ ...rules_sv_v1_default, jokerPlacement: "castle-neighbors-v1" });
+
 // server/rules.mjs
-var RULES_VERSION = "autumn-v3";
+var RULES_VERSION = "autumn-v4";
 var rules = Object.freeze({
   "autumn-v1": Object.freeze({ ...rules_v1_default, dictionaryEnabled: true }),
   "autumn-v2": Object.freeze({ ...rules_v2_default, dictionaryEnabled: true }),
   "autumn-v3": Object.freeze({ ...rules_v3_default, dictionaryEnabled: true }),
-  "autumn-sv-v1": Object.freeze({ ...rules_sv_v1_default, dictionaryEnabled: true })
+  "autumn-sv-v1": Object.freeze({ ...rules_sv_v1_default, dictionaryEnabled: true }),
+  "autumn-v4": Object.freeze({ ...rules_v4_default, dictionaryEnabled: true }),
+  "autumn-sv-v2": Object.freeze({ ...rules_sv_v2_default, dictionaryEnabled: true })
 });
 var SUPPORTED_RULES = Object.freeze(Object.keys(rules));
 var configFor = (version6) => typeof version6 === "string" && Object.hasOwn(rules, version6) ? rules[version6] : null;
 var config = rules[RULES_VERSION];
-var rulesLabel = (version6) => ({ "autumn-v1": "Classic \xB7 3 captures", "autumn-v2": "Unlimited captures", "autumn-v3": "Castle income 2 / 4", "autumn-sv-v1": "Castle income 2 / 4" })[version6] || "Other rules";
+var rulesLabel = (version6) => ({ "autumn-v1": "Classic \xB7 3 captures", "autumn-v2": "Unlimited captures", "autumn-v3": "Castle income 2 / 4", "autumn-sv-v1": "Castle income 2 / 4", "autumn-v4": "Castle income 2 / 4", "autumn-sv-v2": "Castle income 2 / 4" })[version6] || "Other rules";
 var captureRule = (rules2) => Number.isFinite(rules2.maxEnemyTilesPerWord) ? `Capture up to ${rules2.maxEnemyTilesPerWord} opponent tiles per word.` : "No capture limit: every opponent tile in your word becomes yours.";
 var castleRule = (rules2) => rules2.castleIncome ? `Side castles earn ${rules2.castleIncome.side} each round; the centre earns ${rules2.castleIncome.center}. Final castle values are ${rules2.castlePoints} and ${rules2.centerCastlePoints}.` : `Castles are worth ${rules2.castlePoints} territory points.`;
 
@@ -2532,7 +2671,7 @@ var dictionary_v1_meta_default = {
 // server/languages.mjs
 var LANGUAGES = Object.freeze({
   en: Object.freeze({ code: "en", label: "English", rulesVersion: RULES_VERSION, alphabet: "ABCDEFGHIJKLMNOPQRSTUVWXYZ", dictionary: dictionary_v1_meta_default }),
-  sv: Object.freeze({ code: "sv", label: "Svenska", rulesVersion: "autumn-sv-v1", alphabet: "ABCDEFGHIJKLMNOPQRSTUVWXYZ\xC5\xC4\xD6", dictionary: dictionary_sv_v1_meta_default })
+  sv: Object.freeze({ code: "sv", label: "Svenska", rulesVersion: "autumn-sv-v2", alphabet: "ABCDEFGHIJKLMNOPQRSTUVWXYZ\xC5\xC4\xD6", dictionary: dictionary_sv_v1_meta_default })
 });
 var languageFor = (code) => typeof code === "string" && Object.hasOwn(LANGUAGES, code) ? LANGUAGES[code] : null;
 var languageForRules = (version6) => {
@@ -2540,10 +2679,6 @@ var languageForRules = (version6) => {
   return c ? languageFor(c.language || "en") : null;
 };
 var languageLabel = (version6) => languageForRules(version6)?.label || "Unknown language";
-var normalizeJoker = (value, config3) => {
-  const alphabet = config3.alphabet || LANGUAGES.en.alphabet;
-  return [...String(value).normalize("NFC").toUpperCase()].filter((c) => alphabet.includes(c)).slice(0, 1).join("");
-};
 
 // server/domain.mjs
 var uuid = (value) => typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
@@ -2713,7 +2848,7 @@ function createSnapshotCache(storage, { namespace = "", now = Date.now, ttl = 7 
 }
 
 // package.json
-var version = "0.8.3";
+var version = "0.9.0";
 
 // online/app.js
 init_dist();
@@ -9631,9 +9766,11 @@ function notify(message, error = false) {
   if (!error) toastTimer = setTimeout(() => $("toast").hidden = true, 4e3);
 }
 function closeSheet() {
+  if ($("joker-lens")?.open) $("joker-lens").close();
   if ($("sheet").open) $("sheet").close();
 }
 function showSheet(title, content) {
+  if ($("joker-lens")?.open) $("joker-lens").close();
   $("sheet-title").textContent = title;
   $("sheet-content").replaceChildren(...Array.isArray(content) ? content : [content]);
   hydrateIcons($("sheet-content"));
@@ -9678,6 +9815,10 @@ function initUI() {
   });
 }
 function closeTopDialog() {
+  if ($("joker-lens")?.open) {
+    $("joker-lens").close();
+    return true;
+  }
   if ($("confirm-dialog").open) {
     finishConfirm(false);
     return true;
@@ -10045,7 +10186,7 @@ function createBoardScoreMotion({ onComplete }) {
       el.classList.remove("selected", "last-move", "motion-source", "motion-castle", "motion-loss");
       owner(el, t);
       el.classList.toggle("motion-word-tile", path.includes(t.id));
-      el.querySelector("text:not(.value)").textContent = t.letter === "?" && path.includes(t.id) ? plan.word[path.indexOf(t.id)] || "?" : t.letter;
+      el.querySelector("text:not(.value)").textContent = t.letter === "?" && path.includes(t.id) ? plan.word[path.indexOf(t.id)] || "" : t.letter === "?" ? "" : t.letter;
       el.querySelector(".value").textContent = plan.beforeTiles.find((b) => b.id === t.id).value;
       el.querySelector(".step")?.remove();
     }
@@ -10211,35 +10352,148 @@ function castleLabel(tile, config3) {
   return `${name}: ${config3.castleIncome ? `+${centre ? config3.castleIncome.center : config3.castleIncome.side} each round, ` : ""}${value} territory points`;
 }
 
-// online/joker-input.mjs
-function bindJokerInput(input, config3, onLetter) {
-  let composing = false;
-  input.type = "text";
-  input.inputMode = "text";
-  input.lang = config3.language || "en";
-  input.autocomplete = "off";
-  input.autocapitalize = "characters";
-  input.spellcheck = false;
-  input.setAttribute("autocorrect", "off");
-  input.enterKeyHint = "done";
-  const update = (commit) => {
-    const letter = normalizeJoker(input.value, config3);
-    if (commit && input.value !== letter) input.value = letter;
-    onLetter(letter);
+// online/joker-lens.mjs
+var STEP = 52;
+var lensIndex = (scrollLeft, length) => Math.max(0, Math.min(length - 1, Math.round(scrollLeft / STEP)));
+function canAssignJoker(snapshot, current) {
+  return !!current && current.editable && snapshot.gameId === current.gameId && snapshot.revision === current.revision && current.path.includes(snapshot.tileId) && current.tiles.some((t) => t.id === snapshot.tileId && t.letter === "?");
+}
+function createJokerLens() {
+  const dialog = node("dialog", void 0, "sheet joker-lens");
+  dialog.id = "joker-lens";
+  dialog.setAttribute("aria-labelledby", "joker-lens-title");
+  document.body.append(dialog);
+  let session = null, rail = null, index2 = 0, options = [], letters = [], hero, word, confirm;
+  const close = () => {
+    session = null;
+    if (dialog.open) dialog.close();
   };
-  input.oncompositionstart = () => {
-    composing = true;
-  };
-  input.oninput = (e) => update(!composing && !e.isComposing);
-  input.oncompositionend = () => {
-    composing = false;
-    update(true);
-  };
-  input.onchange = () => update(!composing);
-  input.onblur = () => {
-    composing = false;
-    update(true);
-  };
+  dialog.addEventListener("close", () => {
+    if (!dialog.open) session = null;
+  });
+  dialog.addEventListener("cancel", (e) => {
+    e.preventDefault();
+    close();
+  });
+  dialog.addEventListener("click", (e) => {
+    if (e.target !== dialog) return;
+    const r = dialog.getBoundingClientRect();
+    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) close();
+  });
+  function paint() {
+    if (!session) return;
+    const candidate = letters[index2];
+    hero.textContent = candidate;
+    confirm.lastElementChild.textContent = "Use " + candidate;
+    options.forEach((option, i) => {
+      option.setAttribute("aria-selected", i === index2);
+      option.tabIndex = i === index2 ? 0 : -1;
+    });
+    word.replaceChildren(...session.path.map((id) => {
+      const tile = session.tiles.find((t) => t.id === id), value = id === session.tileId ? candidate : tile.letter === "?" ? session.assignments[id] || "" : tile.letter;
+      const slot = node("span", value, id === session.tileId ? "lens-current" : tile.letter === "?" ? "lens-other-joker" : "");
+      if (!value) slot.setAttribute("aria-label", "Unassigned joker");
+      return slot;
+    }));
+  }
+  function select(next, { focus = false } = {}) {
+    index2 = Math.max(0, Math.min(letters.length - 1, next));
+    rail.scrollTo({ left: index2 * STEP, behavior: "instant" });
+    paint();
+    if (focus) options[index2].focus({ preventScroll: true });
+  }
+  function sync() {
+    if (!session) return;
+    index2 = lensIndex(rail.scrollLeft, letters.length);
+    paint();
+  }
+  function commit() {
+    if (!session) return;
+    sync();
+    const active = session, candidate = letters[index2];
+    if (!active.valid()) {
+      close();
+      return;
+    }
+    const from = hero.getBoundingClientRect();
+    close();
+    active.onCommit(candidate);
+    const target = document.getElementById("board")?.querySelector(`[data-id="${active.tileId}"]`), to = target?.getBoundingClientRect();
+    if (to?.width && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      const flying = node("span", candidate, "lens-flight");
+      document.body.append(flying);
+      Object.assign(flying.style, { left: from.left + "px", top: from.top + "px", width: from.width + "px", height: from.height + "px" });
+      const animation = flying.animate([{ opacity: 1, transform: "translate(0,0) scale(1)" }, { opacity: 0, transform: `translate(${to.left + to.width / 2 - from.left - from.width / 2}px,${to.top + to.height / 2 - from.top - from.height / 2}px) scale(.42)` }], { duration: 330, easing: "cubic-bezier(.2,.8,.2,1)" });
+      animation.finished.catch(() => {
+      }).finally(() => flying.remove());
+    }
+    target?.focus({ preventScroll: true });
+  }
+  function open(next) {
+    close();
+    if (!next.valid()) return;
+    session = next;
+    letters = [...next.alphabet];
+    index2 = Math.max(0, letters.indexOf(next.assignments[next.tileId] || "A"));
+    const header = node("div", void 0, "sheet-header"), title = node("h2", "Make it yours.");
+    title.id = "joker-lens-title";
+    const dismiss = button("Close", close, "icon-button", "close");
+    dismiss.setAttribute("aria-label", "Close letter picker");
+    dismiss.querySelector("span").hidden = true;
+    header.append(title, dismiss);
+    const content = node("div", void 0, "lens-content"), stage = node("div", void 0, "lens-stage"), tile = next.tiles.find((t) => t.id === next.tileId);
+    const nearby = svg("svg", { viewBox: `${tile.q * 64 - 98} ${tile.r * 64 - 98} 196 196`, class: "lens-neighborhood", "aria-hidden": "true" });
+    for (const t of next.tiles.filter((t2) => Math.max(Math.abs(t2.q - tile.q), Math.abs(t2.r - tile.r)) <= 1)) {
+      const g = svg("g", { class: "lens-neighbor owner" + t.owner });
+      g.append(svg("polygon", { points: tilePoints(t) }), svg("text", { x: t.q * 64, y: t.r * 64 + 5 }, t.letter === "?" ? "" : t.letter));
+      nearby.append(g);
+    }
+    const bigTile = node("div", void 0, "lens-tile");
+    hero = node("strong");
+    bigTile.append(hero, node("small", "0"));
+    stage.append(nearby, bigTile);
+    word = node("div", void 0, "lens-word");
+    word.setAttribute("aria-label", "Word preview");
+    const picker = node("div", void 0, "lens-picker"), window2 = node("div", void 0, "lens-window");
+    window2.setAttribute("aria-hidden", "true");
+    rail = node("div", void 0, "lens-rail");
+    rail.setAttribute("role", "listbox");
+    rail.setAttribute("aria-label", "Joker letter");
+    rail.setAttribute("aria-orientation", "horizontal");
+    options = letters.map((letter2, i) => {
+      const option = button(letter2, () => select(i, { focus: true }), "lens-letter");
+      option.setAttribute("role", "option");
+      rail.append(option);
+      return option;
+    });
+    rail.addEventListener("scroll", sync, { passive: true });
+    rail.addEventListener("keydown", (e) => {
+      const nextIndex = e.key === "ArrowRight" ? index2 + 1 : e.key === "ArrowLeft" ? index2 - 1 : e.key === "Home" ? 0 : e.key === "End" ? letters.length - 1 : letters.indexOf(e.key.toUpperCase());
+      if (nextIndex < 0 && !["ArrowLeft"].includes(e.key)) return;
+      if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key) || letters.includes(e.key.toUpperCase())) {
+        e.preventDefault();
+        select(nextIndex, { focus: true });
+      }
+    });
+    picker.append(window2, rail);
+    const controls = node("div", void 0, "lens-controls"), previous = button("Previous letter", () => select(index2 - 1), "icon-button", "back"), nextLetter = button("Next letter", () => select(index2 + 1), "icon-button", "chevron");
+    for (const control of [previous, nextLetter]) {
+      control.setAttribute("aria-label", control.textContent);
+      control.querySelector("span").hidden = true;
+    }
+    confirm = button("Use letter", commit, "primary lens-use");
+    controls.append(previous, confirm, nextLetter);
+    content.append(stage, word, picker, controls);
+    dialog.replaceChildren(header, content);
+    paint();
+    dialog.showModal();
+    select(index2, { focus: true });
+  }
+  return { open, close, validate() {
+    if (session && !session.valid()) close();
+  }, get active() {
+    return !!session;
+  } };
 }
 
 // online/presentation.mjs
@@ -10367,6 +10621,7 @@ var scoreLedger = createScoreLedger(localStorage);
 var scoreMotion = createBoardScoreMotion({ onComplete: () => {
   if (game && currentView === "game") renderGame();
 } });
+var jokerLens = createJokerLens();
 function screen(name, { route = true, replace = false } = {}) {
   scoreMotion.cancel(false);
   closeSheet();
@@ -10820,9 +11075,9 @@ function drawBoard() {
   const last = history[0]?.recap, seat = seatOf(game, user?.id) || 1;
   if (!focusTile) focusTile = game.state.tiles.find((t) => t.owner === seat)?.id || game.state.tiles[0].id;
   for (const t of game.state.tiles) {
-    const p = pos(t), step = selection.indexOf(t.id), letter = t.letter === "?" && step >= 0 ? jokers[t.id] || "?" : t.letter;
-    const g = svg("g", { "data-id": t.id, role: "button", tabindex: t.id === focusTile ? 0 : -1, "aria-pressed": step >= 0, "aria-disabled": !canPlay() && !preview, "aria-label": `${letter === "?" ? "Joker" : letter}, ${t.owner === seat ? "yours" : t.owner ? "opponent" : "neutral"}, ${engine_default.letterValue(t.letter, config2)} letter points${t.castle ? ", " + castleLabel(t, config2) : ""}`, class: `tile owner${t.owner}${t.castle ? " castle-tile" + (t.q === 0 && t.r === 0 ? " centre-castle" : "") : ""}${t.owner === seat ? " your-tile" : ""}${step >= 0 ? " selected" : ""}${highlightLast && last?.path?.includes(t.id) ? " last-move" : ""}` });
-    g.append(svg("polygon", { points: tilePoints(t) }), svg("text", { x: p.x, y: p.y + (t.castle ? 1 : -2) }, letter), svg("text", { x: p.x, y: p.y + 19, class: "value" }, engine_default.letterValue(t.letter, config2)));
+    const p = pos(t), step = selection.indexOf(t.id), letter2 = t.letter === "?" ? step >= 0 ? jokers[t.id] || "" : "" : t.letter;
+    const g = svg("g", { "data-id": t.id, role: "button", tabindex: t.id === focusTile ? 0 : -1, "aria-pressed": step >= 0, "aria-disabled": !canPlay() && !preview, "aria-label": `${t.letter === "?" ? "Joker" + (letter2 ? ", " + letter2 : "") : letter2}, ${t.owner === seat ? "yours" : t.owner ? "opponent" : "neutral"}, ${engine_default.letterValue(t.letter, config2)} letter points${t.castle ? ", " + castleLabel(t, config2) : ""}`, class: `tile owner${t.owner}${t.letter === "?" ? " joker-tile" : ""}${t.castle ? " castle-tile" + (t.q === 0 && t.r === 0 ? " centre-castle" : "") : ""}${t.owner === seat ? " your-tile" : ""}${step >= 0 ? " selected" : ""}${highlightLast && last?.path?.includes(t.id) ? " last-move" : ""}` });
+    g.append(svg("polygon", { points: tilePoints(t) }), svg("text", { x: p.x, y: p.y + (t.castle ? 1 : -2) }, letter2), svg("text", { x: p.x, y: p.y + 19, class: "value" }, engine_default.letterValue(t.letter, config2)));
     if (t.owner) g.append(svg("circle", { cx: p.x + 20, cy: p.y - 19, r: 4.3, class: "marker" }));
     if (t.castle) g.append(svg("title", {}, castleLabel(t, config2)), svg("circle", { cx: p.x, cy: p.y, r: 34, class: "castle-pulse", "aria-hidden": "true" }));
     if (step >= 0) g.append(svg("text", { x: p.x - 19, y: p.y - 18, class: "step" }, step + 1));
@@ -10835,21 +11090,46 @@ function drawBoard() {
   }).join(" ");
   board.append(svg("path", { class: "path", d: segments }));
 }
-function renderJokers() {
-  $("jokers").replaceChildren();
-  for (const id of selection) {
-    if (game.state.tiles.find((t) => t.id === id).letter !== "?") continue;
-    const position = selection.indexOf(id) + 1, label = node("label", `Joker ${position}`), input = node("input");
-    input.value = jokers[id] || "";
-    input.setAttribute("aria-label", `Joker at position ${position}`);
-    bindJokerInput(input, config2, (letter) => {
-      if (!input.isConnected || !selection.includes(id) || jokers[id] === letter) return;
-      jokers[id] = letter;
+function openJoker(id) {
+  const snapshot = { gameId: game?.id, revision: game?.revision, tileId: id };
+  const valid = () => currentView === "game" && canAssignJoker(snapshot, { gameId: game?.id, revision: game?.revision, editable: preview || canPlay(), path: selection, tiles: game?.state.tiles || [] });
+  if (!valid()) return;
+  jokerLens.open({
+    tileId: id,
+    tiles: game.state.tiles,
+    path: [...selection],
+    assignments: { ...jokers },
+    alphabet: config2.alphabet || LANGUAGES.en.alphabet,
+    valid,
+    onCommit: (letter2) => {
+      if (!valid()) return;
+      jokers[id] = letter2;
       drawBoard();
       renderSelection();
-    });
-    label.append(input);
-    $("jokers").append(label);
+    }
+  });
+}
+function openPendingJoker() {
+  const id = selection.find((id2) => game.state.tiles.find((t) => t.id === id2).letter === "?" && !jokers[id2]);
+  if (id) openJoker(id);
+}
+function renderWord() {
+  const heading = $("word");
+  heading.replaceChildren();
+  if (!selection.length) {
+    heading.textContent = "Find your word.";
+    return;
+  }
+  for (const [i, id] of selection.entries()) {
+    const tile = game.state.tiles.find((t) => t.id === id);
+    if (tile.letter !== "?") {
+      heading.append(node("span", tile.letter));
+      continue;
+    }
+    const slot = button(jokers[id] || "", () => openJoker(id), "word-joker");
+    slot.setAttribute("aria-label", "Joker at position " + (i + 1) + (jokers[id] ? ", " + jokers[id] : "") + ". Choose a letter");
+    slot.disabled = !preview && !canPlay();
+    heading.append(slot);
   }
 }
 function selectionHint(error) {
@@ -10861,9 +11141,8 @@ function selectionHint(error) {
   return error || "Ready when you are.";
 }
 function renderSelection() {
-  const word = selection.length ? engine_default.wordForPath(game.state, selection, jokers) : "Find your word.";
   const error = engine_default.validatePath(game.state, selection, { ...config2, dictionaryEnabled: false }, true, null, jokers);
-  $("word").textContent = word;
+  renderWord();
   $("word").classList.toggle("placeholder", !selection.length);
   $("submit-word").disabled = !canPlay() || !!error;
   $("clear-word").disabled = !selection.length || busy || !!pending();
@@ -10882,6 +11161,7 @@ function renderSelection() {
 }
 function renderGame() {
   scoreMotion.cancel(false);
+  jokerLens.validate();
   const totals = engine_default.scoreBreakdown(game.state, config2), seat = seatOf(game, user?.id) || 1;
   const active = game.status === "active", ownTurn = preview || myTurn(), unconfirmed = !!pending();
   const other = opponentName(game, user?.id);
@@ -10947,7 +11227,6 @@ function renderGame() {
     $("recap").replaceChildren(symbol, copy2, node("span", last.score ? `+${last.score.wordPoints}` : ""));
   }
   drawBoard();
-  renderJokers();
   renderSelection();
 }
 function choose(id) {
@@ -10964,7 +11243,6 @@ function choose(id) {
   highlightLast = false;
   focusTile = id;
   drawBoard();
-  renderJokers();
   renderSelection();
 }
 function clearWord() {
@@ -10972,6 +11250,7 @@ function clearWord() {
   selection = [];
   jokers = {};
   highlightLast = false;
+  jokerLens.close();
   renderGame();
 }
 async function sendPending() {
@@ -11591,28 +11870,48 @@ $("zoom").onclick = () => {
   $("zoom").replaceChildren(icon(expanded ? "shrink" : "expand"));
 };
 var tileAt = (x, y) => document.elementFromPoint(x, y)?.closest("[data-id]")?.dataset.id;
+var boardGesture = null;
 $("board").onpointerdown = (e) => {
-  if (e.button !== 0) return;
+  if (e.button !== 0 || e.isPrimary === false || !canPlay() && !preview) return;
   const id = tileAt(e.clientX, e.clientY);
   if (!id) return;
   e.preventDefault();
   dragging = true;
+  boardGesture = { id, pointerId: e.pointerId, moved: false, edit: selection.includes(id) && game.state.tiles.find((t) => t.id === id).letter === "?" };
   $("board").setPointerCapture(e.pointerId);
-  choose(id);
+  if (!boardGesture.edit) choose(id);
 };
 $("board").onpointermove = (e) => {
-  if (dragging) choose(tileAt(e.clientX, e.clientY));
+  if (!dragging || boardGesture?.pointerId !== e.pointerId) return;
+  const id = tileAt(e.clientX, e.clientY);
+  if (!id || id === boardGesture.id && !boardGesture.moved) return;
+  if (!boardGesture.moved && boardGesture.edit) choose(boardGesture.id);
+  boardGesture.moved = true;
+  choose(id);
 };
-for (const event of ["pointerup", "pointercancel", "lostpointercapture"]) $("board").addEventListener(event, () => {
+$("board").addEventListener("pointerup", (e) => {
+  if (boardGesture?.pointerId !== e.pointerId) return;
+  const gesture = boardGesture;
+  boardGesture = null;
   dragging = false;
+  if ($("board").hasPointerCapture(e.pointerId)) $("board").releasePointerCapture(e.pointerId);
+  if (gesture.edit && !gesture.moved) openJoker(gesture.id);
+  else openPendingJoker();
+});
+for (const event of ["pointercancel", "lostpointercapture"]) $("board").addEventListener(event, () => {
+  dragging = false;
+  boardGesture = null;
 });
 $("board").onkeydown = (e) => {
   const id = e.target.closest("[data-id]")?.dataset.id;
   if (!id) return;
   if (e.key === "Enter" || e.key === " ") {
     e.preventDefault();
-    choose(id);
+    const edit = selection.includes(id) && game.state.tiles.find((t) => t.id === id).letter === "?";
+    if (!edit) choose(id);
     $("board").querySelector(`[data-id="${id}"]`)?.focus();
+    if (edit) openJoker(id);
+    else openPendingJoker();
   } else if (e.key === "Escape") {
     e.preventDefault();
     clearWord();
@@ -11622,7 +11921,6 @@ $("board").onkeydown = (e) => {
     if (canPlay() || preview) {
       delete jokers[selection.pop()];
       drawBoard();
-      renderJokers();
       renderSelection();
       $("board").querySelector(`[data-id="${id}"]`)?.focus();
     }

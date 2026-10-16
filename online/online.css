@@ -1020,29 +1020,6 @@ input:read-only {
 #selection-help.invalid {
   color: var(--danger);
 }
-#jokers {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin: 0 0 10px;
-}
-#jokers:empty {
-  display: none;
-}
-#jokers label {
-  font-size: 10px;
-  color: var(--muted);
-  text-align: center;
-}
-#jokers input {
-  max-width: 52px;
-  min-height: 44px;
-  height: 44px;
-  padding: 4px;
-  margin-top: 4px;
-  text-align: center;
-  font: 24px var(--serif);
-}
 .score-preview {
   display: flex;
   align-items: center;
@@ -1995,3 +1972,36 @@ input:read-only {
 /* Linked WC monogram; the same paths are used by the Android launcher. */
 .brand-mark{width:38px;height:38px;flex-shrink:0;border-radius:11px}
 .brand-mark svg{width:100%;height:100%;display:block}
+
+/* Letter lens: a blank tile becomes a letter without opening a phone keyboard. */
+#word { display:flex; flex-wrap:wrap; align-items:center; gap:1px; }
+.word-joker { display:inline-grid; place-items:center; vertical-align:baseline; padding:0 3px; margin:0 2px; min-width:34px; height:40px; border:0; border-bottom:3px solid var(--green, #385340); border-radius:7px 7px 3px 3px; background:#e5e9d9; color:inherit; font:inherit; line-height:1; cursor:pointer; }
+.word-joker:focus-visible { outline:2px solid #385340; outline-offset:3px; }
+.tile.joker-tile.selected polygon { stroke-width:3; }
+.joker-lens { overflow:hidden; }
+.joker-lens .sheet-header { background:#fffdf7; }
+.lens-content { padding:6px 0 22px; background:#fffdf7; }
+.lens-stage { position:relative; display:grid; place-items:center; height:190px; overflow:hidden; }
+.lens-neighborhood { position:absolute; width:250px; height:250px; opacity:.42; transform:rotate(-6deg); }
+.lens-neighbor polygon { fill:#eee8dc; stroke:#d5cbbb; stroke-width:1; }
+.lens-neighbor.owner1 polygon { fill:#c6d1b5; }
+.lens-neighbor.owner2 polygon { fill:#cfbdac; }
+.lens-neighbor text { fill:#62594b; font-size:18px; text-anchor:middle; font-weight:650; }
+.lens-tile { position:relative; width:86px; height:92px; display:grid; place-items:center; border-radius:22px; background:#fffdf7; border:2px solid #6d825e; box-shadow:0 14px 30px #302d262b,0 3px 0 #d6decc; transform:rotate(3deg); }
+.lens-tile strong { font-size:48px; line-height:1; font-weight:750; color:#385340; }
+.lens-tile small { position:absolute; right:13px; bottom:9px; color:#6a725e; font-size:12px; }
+.lens-word { display:flex; justify-content:center; align-items:center; flex-wrap:wrap; gap:3px; min-height:36px; padding:0 20px 12px; font-size:23px; font-weight:700; letter-spacing:.04em; color:#827867; }
+.lens-current { color:#385340; border-bottom:2px solid #6d825e; min-width:20px; text-align:center; }
+.lens-other-joker { min-width:20px; min-height:24px; background:#eceee4; border-radius:4px; text-align:center; }
+.lens-picker { position:relative; margin:0 0 12px; isolation:isolate; }
+.lens-window { position:absolute; left:calc(50% - 26px); top:0; width:52px; height:56px; border:1px solid #a8b89b; border-radius:13px; background:#e8eedf; z-index:-1; }
+.lens-rail { display:flex; box-sizing:border-box; width:100%; overflow-x:auto; overscroll-behavior-x:contain; scroll-snap-type:x mandatory; scrollbar-width:none; padding:0 calc(50% - 26px); touch-action:pan-x; -webkit-overflow-scrolling:touch; }
+.lens-rail::-webkit-scrollbar { display:none; }
+.lens-letter { flex:0 0 52px; width:52px; height:56px; padding:0; display:grid; place-items:center; border:0; background:transparent; color:#918674; font-size:25px; font-weight:600; scroll-snap-align:center; cursor:pointer; }
+.lens-letter[aria-selected=true] { color:#385340; font-weight:800; font-size:32px; }
+.lens-letter:focus-visible { outline:2px solid #385340; outline-offset:-4px; border-radius:13px; }
+.lens-controls { display:flex; align-items:center; justify-content:center; gap:18px; padding:0 20px; }
+.lens-use { min-width:170px; justify-content:center; }
+.lens-flight { position:fixed; display:grid; place-items:center; z-index:10000; border-radius:20px; color:#385340; background:#fffdf7; border:2px solid #6d825e; pointer-events:none; font-size:48px; font-weight:750; }
+@media (max-height:650px) { .lens-stage { height:140px; } .lens-neighborhood { width:200px; height:200px; } .lens-content { padding-bottom:12px; } }
+@media (max-width:799px) { .joker-lens { padding-bottom:env(safe-area-inset-bottom); } }
