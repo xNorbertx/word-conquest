@@ -1,5 +1,8 @@
 # Faster joker studies
 
+[Published gallery](https://xnorbertx.github.io/word-conquest/previews/jokers-fast/) — no sign-in needed.
+Rendered phone review is pending browser access; see the verification note below.
+
 Three independent HTML/CSS/JS prototypes for a quicker follow-up to the approved
 Letter lens. They are isolated from the web app and Android, with fictional games
 and no network APIs, accounts, analytics, browser storage or external assets.

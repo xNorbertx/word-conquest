@@ -19,13 +19,18 @@ fields: **Open lens** (full alphabet, one tap), **Word keys** (QWERTY, one tap),
   combinations passed; JS/CSS parsed without warnings. Fixtures validated 4 samples.
   No network/storage/analytics, new dependencies or production imports.
 - **Rendered phone verification is still blocked:** browser inventory is empty,
-  creating an IAB tab reports unavailable, and opening a local preview is queued.
+  both IAB and Chrome tab creation report unavailable, and opening a local preview
+  is queued.
   Requested browser access from the owner. DOM checks do not establish appearance.
   Requested review sizes: 320×568, 360×640, 393×852, 430×932 and short landscape.
 - The production web app/APK and original preview gallery remain unchanged.
   No backend deploy, data changes, app release or new costs for these studies.
 
-Publication evidence is recorded after the hosted assets have been verified.
+[Preview gallery](https://xnorbertx.github.io/word-conquest/previews/jokers-fast/) published from source `21eafe8`,
+Pages `25c78e2`. Hosting reports built; all seven public assets
+match the checked source after line-ending normalization, without sign-in. Only
+`previews/jokers-fast/` changed on the hosting branch. This confirms publication,
+not the outstanding rendered mobile review. Local preview is on port 4179.
 
 ## Compact Games toolbar — 17 October 2026, 0.9.2
 
