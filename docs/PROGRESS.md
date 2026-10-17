@@ -1,5 +1,23 @@
 # Implementation and verification - updated 17 October 2026
 
+## Login concepts — 17 October 2026, review pending
+
+- Three isolated concepts in design/login-concepts: **Letter tiles**, **Castle
+  mark**, and **Territory**. The game name replaces the slogans and introductions.
+  Essential login actions stay, with a separate 1–2–3 review switch.
+- Uses the actual board tile/castle geometry, WC monogram, familiar colours and
+  serif typography. Solid backgrounds, safe-area padding, 16px input text and
+  short-screen adjustments. No external assets or services.
+- CSS/JS parse, local HTTP responses, heading/label/link checks and SVG artwork
+  inspection pass. Responsive dimensions/text metrics reviewed at 320–430px.
+  Browser inventory is empty and IAB is unavailable, so rendered-phone appearance
+  and real keyboard/touch checks are not claimed.
+- Preview controls cannot authenticate, send requests or store credentials; the
+  CSP blocks connections/forms. Production web/API/APK and earlier galleries stay
+  intact. No new costs. Owner selection precedes production implementation.
+- Publication verification pending at
+  https://xnorbertx.github.io/word-conquest/previews/login/.
+
 ## Expanded Swedish vocabulary — 17 October 2026, released 0.11.0
 
 - Released 991,634 playable forms: the existing 400,901-word list is retained;
