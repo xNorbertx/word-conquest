@@ -29,7 +29,23 @@ DOM scenarios still pass. CSS parses without warnings. Selected palette pairs me
 4.5:1 text contrast (including small tile values) and 3:1 castle-marker contrast.
 These are programmatic checks, not rendered-phone inspection.
 
-Release verification pending.
+Release verification:
+
+- [Web](https://xnorbertx.github.io/word-conquest/online/) published from source `133da47`, Pages `a343ce2`.
+  All ten public assets match the tested build after line-ending normalization.
+  Only the online HTML/CSS/client bundle changed; the root prototype and both
+  joker galleries are preserved.
+- [Android 0.10.0-133da47](https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-25028715), code `25028715`, passed the
+  [pipeline](https://github.com/xNorbertx/word-conquest/actions/runs/39049278894), including 150 regression tests and original suites.
+  Stable signing certificate, package/version, notification permission, WC icons,
+  theme bootstrap/switch/controller, compiled native Appearance plugin and matching
+  packaged HTML/CSS verified. No private keys or local fixtures are included.
+- [Direct APK](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25028715/word-conquest-android.apk) is available without sign-in; anonymous download
+  matches SHA-256 `c6f622a1224888898c67a44d3dbf5df7e7b7a8976ee57d2c28a0b0846ae80037` (4,977,170 bytes).
+  Local APK: `dist/word-conquest-0.10.0.apk`; install over the existing pilot.
+- Browser inventory remains empty. Rendered phone and physical native-bar
+  acceptance are not claimed. No backend deployment, app-store submission,
+  new permissions, infrastructure or costs.
 
 ## Compact game screen — 17 October 2026, 0.9.4
 

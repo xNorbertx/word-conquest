@@ -66,16 +66,16 @@ Install the new APK to receive client changes. Backend improvements are already
 compatible with older APKs. First visits still need network access; physical Seeker
 startup/resume timing remains a device acceptance check. No paid service was added.
 
-Verified pilot build: [0.9.4-ba55394](https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-25021039) (version code `25021039`),
-from the successful [pipeline run](https://github.com/xNorbertx/word-conquest/actions/runs/39040058619). The signature matches the existing
-pilot. Package/version, notification permission, WC icons, bounded zoom controller,
-removed game-screen copy and matching packaged HTML/CSS are verified. Anonymous
-download matches SHA-256 `838ec8c1096f11f6d8e084d8682278c9aab3aa77a0312f357d1cddb002a1aafb`.
-Local APK: `dist/word-conquest-0.9.4.apk`. Install over the existing pilot.
-[Download the APK directly](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25021039/word-conquest-android.apk); no GitHub sign-in is needed.
-All 143 regression tests and original suites pass. Ten production DOM checks pass.
-Browser access is unavailable, so rendered iPhone/Android and physical touch checks
-remain open. Backend and game data are unchanged; no app-store submission or costs.
+Verified pilot build: [0.10.0-133da47](https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-25028715) (version code `25028715`),
+from the successful [pipeline run](https://github.com/xNorbertx/word-conquest/actions/runs/39049278894). The signature matches the existing
+pilot. Package/version, notification permission, WC icons, theme bootstrap/switch,
+compiled Appearance bridge and matching packaged HTML/CSS are verified.
+Anonymous download matches SHA-256 `c6f622a1224888898c67a44d3dbf5df7e7b7a8976ee57d2c28a0b0846ae80037`.
+Local APK: `dist/word-conquest-0.10.0.apk`. Install over the existing pilot.
+[Download the APK directly](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25028715/word-conquest-android.apk); no GitHub sign-in is needed.
+All 150 regression tests and original suites pass, alongside account/game DOM and
+palette contrast checks. Browser access remains unavailable; rendered appearance
+and physical system-bar acceptance are unverified. No new permissions or costs.
 
 Version 0.7.1 removes the waiting-turn card, the Record section on You, and
 table-themed wording. Results/statistics remain stored on the backend. The WC
