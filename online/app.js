@@ -2890,7 +2890,7 @@ function createSnapshotCache(storage, { namespace = "", now = Date.now, ttl = 7 
 }
 
 // package.json
-var version = "0.11.0";
+var version = "0.11.1";
 
 // online/app.js
 init_dist();
@@ -10839,6 +10839,7 @@ function screen(name, { route = true, replace = false } = {}) {
   currentView = name;
   for (const id of screens) $(id).hidden = id !== name;
   const inGame = name === "game";
+  document.body.classList.toggle("auth-view", name === "auth");
   document.body.classList.toggle("game-view", inGame);
   if (!inGame) boardViewport.setZoom(false);
   $("back").hidden = !inGame;
@@ -11912,21 +11913,21 @@ function showDelete() {
 function setAuthMode(mode) {
   authMode = mode;
   const signup = mode === "signup", forgot = mode === "recover";
-  $("auth-heading").replaceChildren();
-  if (signup) $("auth-heading").textContent = "Create your account.";
-  else if (forgot) $("auth-heading").textContent = "Let us get you back in.";
-  else $("auth-heading").append(document.createTextNode("Your next good word"), node("br"), document.createTextNode("is waiting."));
-  $("auth-intro").textContent = signup ? "Invite a friend. See where the words take you." : forgot ? "We will email you a link to reset your password." : "A friendly game, at your own pace.";
-  $("password-label").hidden = forgot;
+  $("auth-heading").textContent = signup ? "Create account" : forgot ? "Reset password" : "Sign in";
+  $("auth-heading").hidden = mode === "signin";
   $("password-field").hidden = forgot;
   $("password").required = !forgot;
   $("password").minLength = signup ? 12 : 1;
   $("password").autocomplete = signup ? "new-password" : "current-password";
   $("password-hint").hidden = !signup;
-  $("recover").hidden = signup;
+  $("auth-recovery").hidden = signup || forgot;
+  if (signup) $("password").setAttribute("aria-describedby", "password-hint");
+  else $("password").removeAttribute("aria-describedby");
+  $("password").type = "password";
+  $("show-password").setAttribute("aria-label", "Show password");
+  $("show-password").setAttribute("aria-pressed", "false");
   $("auth-submit").replaceChildren(node("span", signup ? "Create account" : forgot ? "Send reset link" : "Sign in"), icon("arrow"));
-  $("auth-switch-text").textContent = signup ? "Already have an account?" : forgot ? "Remembered it?" : "New here?";
-  $("signup").textContent = signup || forgot ? "Sign in" : "Create an account";
+  $("signup").textContent = signup || forgot ? "Sign in" : "Create account";
 }
 $("auth-form").onsubmit = (e) => {
   e.preventDefault();
@@ -11966,6 +11967,7 @@ $("show-password").onclick = () => {
   const showing = $("password").type === "password";
   $("password").type = showing ? "text" : "password";
   $("show-password").setAttribute("aria-label", showing ? "Hide password" : "Show password");
+  $("show-password").setAttribute("aria-pressed", String(showing));
 };
 $("recovery-form").onsubmit = (e) => {
   e.preventDefault();
