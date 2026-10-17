@@ -30,6 +30,13 @@ See [Android installation](docs/ANDROID.md) and [0.3.0 UX review](docs/UX.md). H
 36-turn and owner playtests passed; multi-day/device acceptance, backup restoration
 and operational monitoring remain open. The local prototype below is unchanged.
 
+### Prepared Swedish vocabulary update (0.11.0)
+
+Adds SALDO full forms and accent handling (é→e, with Å/Ä/Ö preserved), retaining all
+existing accepted words. New Swedish games use a separately pinned dictionary;
+older games and letter/scoring balance stay unchanged. SAOL export access and
+publication are pending. See [source and release status](docs/LANGUAGES.md).
+
 ### Game languages (0.8.0)
 
 Choose English or Svenska before sharing an invitation or inviting from Friends.

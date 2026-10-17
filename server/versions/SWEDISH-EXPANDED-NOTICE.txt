@@ -1,0 +1,34 @@
+Expanded Swedish dictionary (Word Conquest 0.11.0)
+
+Sources:
+
+1. The original Word Conquest Swedish dictionary, derived from Martin Lindhe's
+   wordlist_swedish (MIT; copyright 2014 Martin Lindhe). Its complete MIT notice
+   is included above / in SWEDISH-LICENSE.txt. Existing accepted words are retained,
+   and accented forms from the same pinned source are restored with board spellings.
+   https://github.com/martinlindhe/wordlist_swedish/tree/c1c4464df5d2232fcdd04f2b17bc491aba3cda27
+
+2. Språkbanken (2017). SALDO's morphology (updated 2017-09-19).
+   Enriched and distributed by Språkbanken, University of Gothenburg.
+   https://doi.org/10.23695/agcm-ny22
+   https://sprakbanken.se/en/resources/saldom
+   Licensed under Creative Commons Attribution 4.0 International:
+   https://creativecommons.org/licenses/by/4.0/
+
+Changes made by Word Conquest: select listed lowercase full word forms; exclude
+SALDO proper names, abbreviations, multiword entries, affixes and compound-only
+fragments; normalize Unicode to NFC; remove decomposable accents except those
+on the Swedish letters å/ä/ö; retain only 3–69 A–Z/Å/Ä/Ö letters; merge with the
+original list, deduplicate and sort. Examples: é/è/ê/ë → e, ü → u, ñ → n, ç → c.
+Punctuation, spaces and foreign letters without a decomposable board spelling
+are not removed or guessed. No new compounds or inflections are invented.
+
+The resulting list contains 991,634 unique playable forms. New games pin its
+version; previous games retain their original dictionary. Letter distribution
+and scoring are unchanged. Uncommon or offensive words may be present.
+
+This release does not include SAOL data and is not the Wordfeud dictionary.
+Språkbanken and the source authors do not endorse Word Conquest.
+The SALDO-derived material retains its CC BY 4.0 permissions; no additional
+restrictions are imposed on those data. The licence text follows / is provided
+in CC-BY-4.0.txt.

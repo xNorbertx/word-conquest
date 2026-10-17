@@ -8,6 +8,11 @@ See [implementation and verification status](docs/PROGRESS.md) and the single
 [manual setup checklist](docs/SETUP.md). Boxes remain unchecked until their hosted
 and real-device acceptance checks pass, not merely because source code was written.
 
+Swedish vocabulary 0.11.0 is prepared and tested: 991,634 forms, SALDO supplementation,
+accent folding with Å/Ä/Ö preserved, immutable prior games and unchanged balance.
+SAOL export access and the owner's choice about an interim release are pending.
+See PROGRESS.md and LANGUAGES.md.
+
 Dark mode 0.10.0 adds a saved device preference under You, a complete night palette
 and matching Android activity/system bars. Light mode remains the default.
 Rendered-phone acceptance remains open; see PROGRESS.md for verification.
@@ -78,6 +83,7 @@ First milestone: invite a friend and reliably finish a game over several days.
 - [ ] Mobile notifications: native push for turns/invitations, preferences, and links to the relevant game; verify permissions, background delivery and logout/token cleanup on devices.
 - [ ] Opponent-move recap: show the word, traced path, captures, score changes, and replaced letters when returning to a game.
 - [ ] Swedish games (0.8.0): choose English/Svenska before link or friend invitations, show language on game cards, use a pinned Swedish dictionary and 29-letter board/jokers. Automated gameplay and save/retry checks pass; hosted verification and physical Swedish playtest acceptance are recorded in PROGRESS.md. See [language policy](docs/LANGUAGES.md).
+- [ ] Expanded Swedish dictionary: SALDO plus accent handling prepared and regression-tested in 0.11.0. Obtain the openly licensed SAOL headword export from Språkbanken (documented API denied access), merge as a later pinned version, and confirm Swedish vocabulary quality through playtests.
 - [ ] English dictionary validation: choose a word list with suitable usage rights. Define treatment of inflections, slang, proper nouns, abbreviations, and offensive words. Explain rejected words clearly.
 - [ ] Game lifecycle rules: define resignation, draws, inactive opponents, and abandonment, including their effect on statistics. Make the ending and final-reply rule clear.
 - [ ] Results for future analytics: preserve wins, losses, draws, highest final score and best word/turn in backend records without duplicate results. Owner removed the Record UI from You in 0.7.1; a separate analytics experience is deferred.

@@ -30,7 +30,7 @@ test('Swedish dictionary is pinned, normalized, licensed, and uses listed forms 
 });
 test('compressed deployment dictionaries inflate to the exact pinned content',async()=>{
  const {dictionaryWords}=await import('../server/dictionaries.mjs');
- for(const file of ['dictionary-v1.json','dictionary-sv-v1.json']){const original=fs.readFileSync('server/versions/'+file),packed=require('node:zlib').gzipSync(original,{level:9}).toString('base64');assert.ok(packed.length<original.length/2);assert.deepEqual(await dictionaryWords(packed),JSON.parse(original));}
+ for(const file of ['dictionary-v1.json','dictionary-sv-v1.json']){const original=fs.readFileSync('server/versions/'+file),packed=require('../scripts/dictionary-pack.cjs').packDictionary(JSON.parse(original));assert.ok(packed.data.length<original.length/2);assert.deepEqual([...await dictionaryWords(packed)],JSON.parse(original));}
  await assert.rejects(()=>dictionaryWords('broken payload'));
 });
 test('Swedish alphabet, categories, weights, board generation and replacement letters agree',()=>{

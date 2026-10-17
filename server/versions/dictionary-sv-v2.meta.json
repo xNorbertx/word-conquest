@@ -1,0 +1,34 @@
+{
+  "version": "swedish-expanded-v2-112709e5233b",
+  "language": "sv",
+  "sha256": "112709e5233bbad00e3ee4d4f6b287e54d9114a766daea91ec1821f85c67caea",
+  "words": 991634,
+  "sources": [
+    {
+      "name": "Martin Lindhe Swedish list",
+      "legacyVersion": "swedish-lindhe-v1-f214ceab2ae3",
+      "legacySha256": "f214ceab2ae3d5fc328a278537979c8833ab851dafc8d0a5214be47530d629fa",
+      "sha256": "ed072a895de54b96fa256e7d6480408c61fc75d1160bfc6bcad0c95b83b3d194",
+      "acceptedForms": 402666,
+      "license": "MIT",
+      "url": "https://github.com/martinlindhe/wordlist_swedish/tree/c1c4464df5d2232fcdd04f2b17bc491aba3cda27"
+    },
+    {
+      "name": "SALDO's morphology",
+      "date": "2017-09-19",
+      "sha256": "8e484c61722e6ac1b40812aa09d9bea56852c178a95754d7406e752943ea05b2",
+      "entries": 128036,
+      "acceptedForms": 845100,
+      "license": "CC-BY-4.0",
+      "url": "https://svn.spraakbanken.gu.se/sb-arkiv/pub/lmf/saldom/saldom.xml",
+      "doi": "https://doi.org/10.23695/agcm-ny22",
+      "attribution": "Språkbanken (2017). SALDO’s morphology. Enriched and distributed by Språkbanken."
+    }
+  ],
+  "addedWords": 590733,
+  "policy": "Union of the retained legacy Swedish list, accent-normalized Lindhe source and listed SALDO full forms. SALDO excludes proper nouns, abbreviations, multiword entries and compound-only/affix forms. Lowercase NFC sources only, 3–69 board letters. Decomposable accents are removed (é→e, ü→u, ñ→n, ç→c); å/ä/ö remain distinct. No punctuation deletion, inferred compounds or runtime stemming. Not an official SAOL/Wordfeud list; uncommon/offensive words can occur.",
+  "saol": {
+    "included": false,
+    "reason": "Catalogue lists CC-BY-4.0; documented Karp-s API denied access to saol15-ord on 2026-10-17. Awaiting authorised export."
+  }
+}

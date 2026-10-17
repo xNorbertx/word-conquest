@@ -90,7 +90,7 @@ the inherited lowercased list may include ambiguous entries. Offensive words are
 filtered in this private adult pilot. Public/family positioning would require a reviewed,
 versioned policy/list and abuse controls. No public opponents or free-text messages ship.
 
-Swedish games use exact membership in a pinned MIT-licensed Martin Lindhe list,
+Earlier Swedish games use exact membership in a pinned MIT-licensed Martin Lindhe list,
 filtered to lowercase A–Z/Å/Ä/Ö forms of 3–69 letters. Listed inflections and
 compounds count; no generated compounds or accent folding. The author excludes
 names, but the list is not a curated tournament/moderation dictionary. Each game
@@ -98,3 +98,9 @@ retains its original language/rules/dictionary. No words are sent to an external
 dictionary provider; validation remains inside the existing backend. The last
 game-language choice is stored locally for the signed-in account and removed on
 account deletion. See [source, filtering and balance details](LANGUAGES.md).
+
+Prepared 0.11.0: new Swedish games retain that list and add its normalized accented
+entries plus SALDO full forms (CC BY 4.0). Decomposable accents use plain board
+letters; Å/Ä/Ö stay distinct. SALDO proper names, abbreviations, multiword entries
+and compound-only/affix fragments are excluded. SAOL is not included pending export
+access. No account data is sent to either lexical source. See LANGUAGES.md.

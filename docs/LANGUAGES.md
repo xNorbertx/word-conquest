@@ -1,6 +1,45 @@
 # Game languages
 
-## Current openings — 0.9.0
+## Expanded Swedish dictionary — prepared 0.11.0
+
+New clients select autumn-sv-v3 for Swedish games. This changes dictionary selection
+only: the v2 board layout, alphabet, weights, point values and replacements remain.
+The new pinned list contains **991,634** forms under
+`swedish-expanded-v2-112709e5233b`. Earlier Swedish games retain v1's 400,901 forms.
+Both players need 0.11.0 or the updated web client for new-version games.
+
+The list combines the existing dictionary, accent-normalized entries from the same
+pinned Martin Lindhe source, and [SALDO's morphology](https://sprakbanken.se/en/resources/saldom)
+(2017-09-19, CC BY 4.0, Språkbanken). It retains all previously accepted words.
+SALDO contributes listed complete forms from ordinary word classes; proper names,
+abbreviations, multiword entries, compound-only forms and affixes are excluded.
+Ordinary inflections of short lemmas are included when the resulting word has at
+least three letters. The import adds no guessed inflections or compounds.
+
+Lowercase source forms use NFC. Decomposable Latin accents are folded, e.g.
+moskéerna→MOSKEERNA, café→CAFE, müsli→MUSLI, while Å/Ä/Ö remain separate letters.
+Spaces, hyphens and punctuation are never silently joined. Non-decomposable foreign
+letters such as ø/æ/œ are excluded. The 29-letter board and joker picker need no
+additional characters; displayed words use their board spelling.
+
+**SAOL is not yet included.** Its catalogue metadata lists the headword resource
+saol15-ord under CC BY 4.0, but the documented public API refused access.
+Publication of this SALDO/accents increment awaits the owner's choice. To complete
+the originally requested SAOL+SALDO union, obtain an authorised export from
+sb-info@svenska.gu.se, audit its fields/licence and release another immutable version.
+This is not a claim of Wordfeud-compatible vocabulary. SALDO's archived snapshot
+can still omit recent words; reviewed corrections belong in subsequent versions.
+
+Reproduce the snapshot with the exact SALDO XML and Lindhe swe_wordlist URLs/hashes
+in dictionary-sv-v2.meta.json:
+
+`node scripts/pin-swedish-expanded.cjs <saldom.xml> <swe_wordlist> [output-directory]`
+
+The script verifies hashes and entry count, then refuses to overwrite different
+released output. No download runs during builds or gameplay. Source notices,
+modifications and CC BY 4.0 text are shipped in Dictionary licences.
+
+## Original balanced openings — 0.9.0
 
 New English games use autumn-v4; new Swedish games use autumn-sv-v2. Both use
 the same pinned opening-v4 generator: one joker in each starting block and one

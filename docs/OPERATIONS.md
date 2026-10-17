@@ -16,7 +16,14 @@ or costs, and no changes to game invitation capabilities or gameplay rules.
 
 ## Balanced openings and Letter lens — 0.9.0
 
-Current defaults: autumn-v4 (English) and autumn-sv-v2 (Swedish). New pinned
+Prepared 0.11.0 defaults: autumn-v4 (English) and autumn-sv-v3 (Swedish).
+Do not deploy until the owner resolves the SAOL-blocked interim-release choice.
+For an approved release: run tests/build, deploy game-api before publishing the
+web/APK client. No schema migration is required. Keep both Swedish dictionaries
+and all older rule versions available; do not roll the API back to a version that
+cannot load autumn-sv-v3 once new games exist. Client rollback can retain the newer
+compatible API. Reverting the default requires preserving new-version support.
+Current live defaults before that release: autumn-v4 and autumn-sv-v2. New pinned
 opening-v4.mjs handles generation only; move legality/scoring/replacements still
 dispatch to the existing language engines. The integrity manifest covers the
 new generator/configs. Never edit these files after deployment: introduce another

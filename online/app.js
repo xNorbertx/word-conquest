@@ -322,7 +322,12 @@ function showRules(){
   const content=steps.map(([title,copy],i)=>{const row=node('div',undefined,'rule-step'),text=node('div');text.append(node('h3',title),node('p',copy));row.append(node('span',i+1,'step-number'),text);return row;});
   const legend=node('div',undefined,'rule-legend');for(const [className,label]of [['owner-dot','Sage player'],['owner-ring','Walnut player']]){const item=node('span');item.append(node('span',undefined,className),node('span',label));legend.append(item);}content.push(legend,act('About the dictionary',showDictionary,'text-button'));showSheet('A little word. A little world.',content);
 }
-function showDictionary(){const link=node('a','Dictionary licences','text-link');link.href='dictionary-license.txt';link.target='_blank';link.rel='noopener';const content=[node('p',config.language==='sv'&&currentView==='game'?'Swedish words use Martin Lindhe’s Swedish word list. Listed inflections and compounds are allowed; Å, Ä and Ö are distinct letters.':'English uses the Letterpress-derived word list. Swedish uses Martin Lindhe’s Swedish word list, with Å, Ä and Ö. Listed inflections and compounds are allowed.')];content.push(node('p','Each game keeps its original dictionary. Lists may include uncommon or offensive words.'),link);showSheet('Words we play.',content);}
+function showDictionary(){
+  const link=node('a','Dictionary licences','text-link');link.href='dictionary-license.txt';link.target='_blank';link.rel='noopener';
+  const swedish=currentView==='game'&&config.language==='sv',expanded=config.dictionaryNormalization==='latin-accents-v1';
+  const text=swedish?(expanded?'Swedish uses SALDO and the original Swedish list. Accents such as é use the plain letter; Å, Ä and Ö stay distinct.':'This game uses the original Martin Lindhe Swedish list. Å, Ä and Ö are distinct letters.'):'English uses the Letterpress-derived list. New Swedish games combine SALDO with the original Swedish list.';
+  showSheet('Words we play.',[node('p',text),node('p','Listed inflections and compounds count. Each game keeps its original dictionary. Uncommon or offensive words may occur.'),link]);
+}
 function showHistory(){
   const actor=user?.id,id=game.id,names=[...game.names],content=node('div'),list=node('ol',undefined,'move-list'),note=node('p','Loading moves…','menu-note');
   let moves=[...history],cursor,loading=false;

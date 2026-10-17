@@ -1,5 +1,42 @@
 # Implementation and verification - updated 17 October 2026
 
+## Expanded Swedish vocabulary — 17 October 2026, prepared 0.11.0
+
+- Prepared 991,634 playable forms: the existing 400,901-word list is retained;
+  accented entries from its pinned upstream source and listed SALDO full forms
+  add 590,733 entries. MOSKEERNA, OBOKAD and OBOKAT are covered.
+- Import normalizes decomposable Latin accents (é/è/ê/ë→e, ü→u, ñ→n, ç→c),
+  preserving å/ä/ö. It never removes punctuation/spaces or guesses compounds.
+  SALDO proper nouns, abbreviations, multiword entries, affixes and compound-only
+  c/ci/cm/sms forms are excluded. Short lemmas such as gå still supply longer forms.
+- New Swedish games pin autumn-sv-v3 / swedish-expanded-v2-112709e5233b.
+  Earlier Swedish versions still load their original dictionary. Alphabet,
+  opening layout, letter weights, scoring and replacement draws are unchanged.
+- Reproducible import checks both source hashes and all 128,036 SALDO entries.
+  Output integrity and source attribution/licence notices ship with web/APK builds.
+  Dictionaries remain lazily loaded on the server; no external lookup during play.
+- **SAOL access blocker:** catalogue/API metadata marks saol15-ord CC-BY-4.0,
+  but the documented Karp-s search API refused access on 17 October. No SAOL data
+  is included and no alternative access route was attempted. Ask
+  sb-info@svenska.gu.se for an authorised machine-readable export of saol15-ord
+  (https://doi.org/10.23695/eqtv-ee68). Store supplied data locally; no credentials
+  in chat. Full SAOL/Wordfeud compatibility is not claimed.
+- Owner was asked whether to publish this SALDO/accents increment first or hold
+  for SAOL. **Publication remains pending that answer.** No hosted game modified.
+
+Verification: 158 regression tests and the original engine/scoring/supply suites
+pass; production build passes. Coverage includes accent distinctions, fragment
+filtering, source integrity, all retained words, reported missing words, server
+scoring/jokers, old/new dictionary routing, creation retries and old-client gates.
+The compact server bundle is 1.98 MB. Its exact membership index was checked
+against every pinned word in all three dictionaries. A local bundled-API smoke
+test accepted old English/Swedish and the three reported Swedish words; peak
+process RSS was 114 MiB with all dictionaries loaded (a local Node measurement,
+not hosted Edge verification). Run `npm run build` then
+`node --expose-gc scripts/check-dictionary-bundle.cjs` to repeat it.
+The client bundle is about 508 KB and contains no word lists. No migration,
+new service, dependency or recurring cost is required.
+
 ## Dark mode — 17 October 2026, 0.10.0
 
 - Added **You → Dark mode**, a single labelled switch. The existing light theme

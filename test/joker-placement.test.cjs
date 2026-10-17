@@ -15,7 +15,7 @@ test('800 seeded English/Swedish boards have one spaced joker per corner castle,
  }assert.equal(seen.size,4);for(const positions of seen.values())assert.ok(positions.size>=3,'Randomized offsets in every corner');}
 });
 test('new opening defaults are pinned by language; old version generation is byte-for-byte unchanged',async()=>{
- assert.equal(l.LANGUAGES.en.rulesVersion,'autumn-v4');assert.equal(l.LANGUAGES.sv.rulesVersion,'autumn-sv-v2');
+ assert.equal(l.LANGUAGES.en.rulesVersion,'autumn-v4');assert.equal(l.LANGUAGES.sv.rulesVersion,'autumn-sv-v3');
  for(const [version,file] of [['autumn-v1','engine-v1'],['autumn-v2','engine-v1'],['autumn-v3','engine-v2'],['autumn-sv-v1','engine-sv-v2']]){
   const engine=(await import('../server/versions/'+file+'.mjs')).default,c=d.configFor(version);for(const seed of [1,81,999])assert.deepEqual(d.Engine.newGame(c,random(seed)),engine.newGame(c,random(seed)));
  }
