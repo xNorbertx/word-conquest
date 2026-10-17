@@ -12,8 +12,11 @@
   CSS/JS parse, HTML structure/links and isolated preview handlers pass. Portrait
   dimensions reviewed at 320×568 through 430×932. Browser inventory remains empty:
   phone browser rendering, keyboard behaviour and touch comfort are unverified.
-- Publication pending at the [round 2 gallery](https://xnorbertx.github.io/word-conquest/previews/login-v2/).
-  Existing app, backend, Android and round 1 stay intact. No new costs.
+- [Published round 2 gallery](https://xnorbertx.github.io/word-conquest/previews/login-v2/):
+  source 3820a74, Pages 651f5c6. All six public files match the committed
+  source. Live web/prototype and all six first-round files also match their
+  original assets. No backend or Android changes, and no new costs. Owner selection
+  is pending.
 
 ## Login concepts — 17 October 2026, first round
 

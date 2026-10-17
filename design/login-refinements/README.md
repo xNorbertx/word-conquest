@@ -5,7 +5,8 @@ the **Territory** layout (round 1 option 3), the tile-built title (option 1), an
 the WC/castle identity (option 2). No slogans or introductory product copy.
 
 Gallery: https://xnorbertx.github.io/word-conquest/previews/login-v2/
-Publication pending. These are concepts for selection, not the live login.
+Published and verified: all six public files match source 3820a74; Pages commit
+651f5c6. These are concepts for selection, not the live login.
 
 1. **Crest** — a centred WC castle, larger sage WORD tiles and an ivory/walnut
    CONQUEST row. The quietest, most symmetrical treatment; softly outlined fields.
