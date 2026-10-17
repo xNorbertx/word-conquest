@@ -15,8 +15,10 @@
 - Preview controls cannot authenticate, send requests or store credentials; the
   CSP blocks connections/forms. Production web/API/APK and earlier galleries stay
   intact. No new costs. Owner selection precedes production implementation.
-- Publication verification pending at
-  https://xnorbertx.github.io/word-conquest/previews/login/.
+- [Published phone gallery](https://xnorbertx.github.io/word-conquest/previews/login/):
+  source a7e546b, Pages 3b5b738. All six public files match the committed
+  source; existing web/prototype assets are unchanged. No Android build or backend
+  deployment was triggered. The three designs await the owner's selection.
 
 ## Expanded Swedish vocabulary — 17 October 2026, released 0.11.0
 

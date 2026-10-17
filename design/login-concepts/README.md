@@ -5,7 +5,7 @@ game name and essential sign-in controls. The small Preview / 1–2–3 bar belo
 the review gallery, not the proposed app screen.
 
 Gallery URL: https://xnorbertx.github.io/word-conquest/previews/login/
-Publication verification is pending.
+Published and verified: all six public files match source a7e546b; Pages commit 3b5b738. The production app is unchanged.
 
 1. **Letter tiles** — WORD and CONQUEST form the wordmark in the board's clipped
    tiles. Sage, walnut, ownership markers and one gold castle carry the identity.
