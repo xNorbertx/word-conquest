@@ -4,8 +4,9 @@
 
 Board-tile title, forest header, small WC castle and simple underline fields.
 The large background logo and introductory slogans are removed. Sign-in,
-registration and password recovery use the existing backend. Publication status:
-[progress and verification](docs/PROGRESS.md).
+registration and password recovery use the existing backend. Released on the
+[web](https://xnorbertx.github.io/word-conquest/online/) and in the [Android APK](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25044686/word-conquest-android.apk).
+See [verification and device-check limits](docs/PROGRESS.md).
 
 A territory word game with a preserved local prototype and a separate online implementation.
 

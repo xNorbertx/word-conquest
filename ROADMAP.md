@@ -8,9 +8,9 @@ See [implementation and verification status](docs/PROGRESS.md) and the single
 [manual setup checklist](docs/SETUP.md). Boxes remain unchecked until their hosted
 and real-device acceptance checks pass, not merely because source code was written.
 
-Login 0.11.1 implements approved concept 3 without the background logo. Release
-verification is in progress; see [status](docs/PROGRESS.md). Physical-phone visual
-acceptance remains open.
+Login 0.11.1 is released on web and Android: approved concept 3 without the
+background logo. All 158 tests, auth DOM checks, web assets and signed APK checks
+pass; see [evidence](docs/PROGRESS.md). Physical-phone visual acceptance remains open.
 
 Swedish vocabulary 0.11.0 is released on web and Android: 991,634 forms, SALDO
 supplementation and accent folding with Å/Ä/Ö preserved. All 158 regression tests,

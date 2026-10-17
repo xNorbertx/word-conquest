@@ -1,6 +1,6 @@
 # Implementation and verification - updated 17 October 2026
 
-## Approved login — 17 October 2026, prepared 0.11.1
+## Approved login — 17 October 2026, released 0.11.1
 
 - Owner selected round 2 option 3 and requested removal of the background logo.
   Implemented the tile-built Word Conquest title, forest header, small WC castle
@@ -14,7 +14,15 @@
   succeeds. Production auth DOM checks cover sign-in, signup confirmation, reset,
   masking/toggle, duplicate submits, failure recovery and shell navigation. Saved
   theme checks and CSS parse pass. Production title/castle SVG rendered and viewed.
-- Publication pending. No backend, schema, gameplay, native
+- [Web](https://xnorbertx.github.io/word-conquest/online/) published from source `8fb5c72`, Pages
+  `0b0aabd`. All ten public assets match the build; only online app files
+  changed and the root prototype/design galleries remain available.
+- [Android 0.11.1-8fb5c72](https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-25044686) passed [CI](https://github.com/xNorbertx/word-conquest/actions/runs/39068411819).
+  Verified stable signing, package/version, native WC icons and Appearance bridge,
+  exact packaged HTML/CSS/JavaScript/dictionary notices and an anonymous download.
+  [APK](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25044686/word-conquest-android.apk), version code `25044686`, SHA-256
+  `25e48143ec871ce1cfebb33ecd5085722412e3e00b7ba085a42180f59b57f6d5`. Local copy: `dist/word-conquest-0.11.1.apk`.
+- No backend, schema, gameplay, native
   permissions, dependency or service changes. Original prototype and galleries
   remain available. Actual browser/device rendering is unavailable in this session.
 
