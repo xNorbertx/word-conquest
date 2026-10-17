@@ -1,6 +1,21 @@
 # Implementation and verification - updated 17 October 2026
 
-## Login concepts — 17 October 2026, review pending
+## Login refinements — 17 October 2026, round 2 for review
+
+- The owner requested a new synthesis: Territory layout (round 1 option 3),
+  tile-built name (option 1), and WC/castle identity (option 2). Three new concepts
+  in design/login-refinements: **Crest**, **Connected**, and **Monogram**.
+- Each combines a forest header and ivory form with a distinct arrangement of
+  the real board tiles and shared WC paths. No slogans or introductory copy.
+  Review navigation is separate from the proposed app interface.
+- Source artwork rendered and inspected; connected-board tile alignment refined.
+  CSS/JS parse, HTML structure/links and isolated preview handlers pass. Portrait
+  dimensions reviewed at 320×568 through 430×932. Browser inventory remains empty:
+  phone browser rendering, keyboard behaviour and touch comfort are unverified.
+- Publication pending at the [round 2 gallery](https://xnorbertx.github.io/word-conquest/previews/login-v2/).
+  Existing app, backend, Android and round 1 stay intact. No new costs.
+
+## Login concepts — 17 October 2026, first round
 
 - Three isolated concepts in design/login-concepts: **Letter tiles**, **Castle
   mark**, and **Territory**. The game name replaces the slogans and introductions.
@@ -18,7 +33,8 @@
 - [Published phone gallery](https://xnorbertx.github.io/word-conquest/previews/login/):
   source a7e546b, Pages 3b5b738. All six public files match the committed
   source; existing web/prototype assets are unchanged. No Android build or backend
-  deployment was triggered. The three designs await the owner's selection.
+  deployment was triggered. The owner requested the second round above, combining
+  elements from all three; no first-round design was approved for implementation.
 
 ## Expanded Swedish vocabulary — 17 October 2026, released 0.11.0
 

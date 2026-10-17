@@ -64,7 +64,10 @@ The [login gallery](login-concepts/index.html) explores Letter tiles, Castle mar
 and Territory. All show only the game name and essential sign-in controls; no
 slogans or introductory copy. The board's actual clipped tiles, gold castle shape
 and WC mark provide the visual identity. See [prototype notes and verification](login-concepts/README.md).
-Owner selection is pending; the production login has not been replaced.
+The owner requested a second round combining option 3's layout, option 1's tile
+lettering and option 2's WC/castle identity. The [refined gallery](login-refinements/index.html)
+contains **Crest**, **Connected**, and **Monogram**. See [refinement notes and verification](login-refinements/README.md).
+Selection is pending; the production login has not been replaced.
 
 ## Reference source
 
