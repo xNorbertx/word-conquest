@@ -48,6 +48,15 @@ joker tiles; 0.9.0 implements it in the app.
 See [prototype controls and tradeoffs](joker-interactions/README.md), or open the
 [published phone preview](https://xnorbertx.github.io/word-conquest/previews/jokers/).
 
+## Faster joker selection — 17 October 2026, for review
+
+The [second joker gallery](joker-speed/index.html) explores three ways to remove
+alphabet scrolling: Open lens (all letters at once), Word keys (QWERTY), and Big
+letters (two taps with oversized targets). All retain blank jokers and support
+English/Swedish and multiple jokers. These are independent concepts; no production
+change is selected yet. See [interaction notes](joker-speed/README.md) and
+[verification status](../docs/PROGRESS.md).
+
 ## Reference source
 
 Created with the built-in image generation tool, refining the Paper & Ink concept.

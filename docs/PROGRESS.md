@@ -1,5 +1,31 @@
 # Implementation and verification - updated 17 October 2026
 
+## Faster joker studies — 17 October 2026, review in progress
+
+The owner likes the Letter lens but finds scrolling to a letter too slow. Three
+new isolated prototypes explore direct selection, with blank jokers and no text
+fields: **Open lens** (full alphabet, one tap), **Word keys** (QWERTY, one tap), and
+**Big letters** (letter group then oversized keys, two taps).
+
+- Sources: [design/joker-speed](../design/joker-speed/README.md). Fixtures use
+  current English/Swedish rules and dictionaries with checked scoring. English and
+  Swedish, one/two jokers, edits, cancellation, reset and valid sample play work.
+- Letter selection is immediate, advances to the next blank, and can be edited.
+  Native dialogs provide focus containment/Escape; reduced motion is respected.
+- Mobile uses a continuous ivory root/body/game/sheet, without nested phone frames,
+  texture/gradient layers or partially transparent paper. One viewport backdrop,
+  safe-area padding, dynamic height and decoration reduction protect small screens.
+- Functional checks: 18 interaction scenarios plus all 165 concept/language/letter
+  combinations passed; JS/CSS parsed without warnings. Fixtures validated 4 samples.
+  No network/storage/analytics, new dependencies or production imports.
+- **Rendered phone verification is still blocked:** browser inventory is empty,
+  creating an IAB tab reports unavailable, and opening a local preview is queued.
+  Requested browser access from the owner. DOM checks do not establish appearance.
+  Requested review sizes: 320×568, 360×640, 393×852, 430×932 and short landscape.
+- The production web app/APK and original preview gallery remain unchanged.
+  No backend deploy, data changes, app release or new costs for these studies.
+
+Publication evidence is recorded after the hosted assets have been verified.
 
 ## Compact Games toolbar — 17 October 2026, 0.9.2
 
