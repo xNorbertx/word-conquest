@@ -2015,3 +2015,108 @@ body.joker-picking { overflow:hidden; }
   .score strong { font-size:28px; }
   .game-screen .turn-pill { font-size:14px; }
 }
+
+
+/* Night palette: charcoal, cream, sage and walnut. Geometry stays identical. */
+:root[data-theme="dark"] {
+  color-scheme:dark;
+  --ink:#eee9dc; --muted:#aeb4a3; --green:#acc799; --green-soft:#303e2c;
+  --sage:#405439; --walnut:#604631; --ochre:#d6b56f; --line:#3c4437;
+  --paper:#252923; --bg:#191d18; --danger:#efaa98;
+  --night-walnut:#dfb99b; --night-walnut-soft:#3c3026;
+  --night-tile:#2b3027; --night-tile-edge:#68705c; --night-values:#d4d6c9;
+  --night-castle:#413825; --night-gold:#d6b56f;
+}
+#dark-mode:focus-visible { outline-offset:-3px; }
+.theme-switch { position:relative; display:block; flex:0 0 42px; width:42px; height:26px; border:1px solid #8b947f; border-radius:20px; background:var(--line); }
+.theme-switch::after { content:''; position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:var(--paper); box-shadow:0 1px 3px #0002; }
+#dark-mode[aria-checked="true"] .theme-switch { background:var(--green); border-color:var(--green); }
+#dark-mode[aria-checked="true"] .theme-switch::after { transform:translateX(16px); }
+:root[data-theme="dark"] body { background:var(--bg); }
+:root[data-theme="dark"] .primary:hover:not(:disabled) { background:#c2d9b2; }
+:root[data-theme="dark"] .primary.danger:hover:not(:disabled) { background:#f4bcad; }
+:root[data-theme="dark"] .secondary:hover { background:#3b4d34; }
+:root[data-theme="dark"] input,:root[data-theme="dark"] .friend-search { border-color:var(--night-tile-edge); }
+:root[data-theme="dark"] input:focus { border-color:var(--green); }
+:root[data-theme="dark"] input::placeholder { color:var(--muted); opacity:1; }
+:root[data-theme="dark"] input:autofill { -webkit-text-fill-color:var(--ink); box-shadow:0 0 0 1000px var(--paper) inset; }
+:root[data-theme="dark"] .friend-search input { border:0; }
+:root[data-theme="dark"] .friend-game-invite,:root[data-theme="dark"] .push-prompt,:root[data-theme="dark"] .inline-notice { border-color:#586c49; }
+:root[data-theme="dark"] .segmented { background:#20251d; border-color:var(--line); }
+:root[data-theme="dark"] .game-card:hover,:root[data-theme="dark"] .game-card.has-turn { border-color:#788c65; }
+:root[data-theme="dark"] .avatar { color:var(--green); background:var(--green-soft); }
+:root[data-theme="dark"] .avatar.walnut { color:var(--night-walnut); background:var(--night-walnut-soft); }
+:root[data-theme="dark"] .avatar.ghost { color:var(--muted); border-color:var(--night-tile-edge); background:transparent; }
+:root[data-theme="dark"] .game-language::before { color:var(--muted); }
+:root[data-theme="dark"] .card-status.waiting { color:var(--night-walnut); background:var(--night-walnut-soft); }
+:root[data-theme="dark"] .empty-state { border-color:var(--night-tile-edge); }
+:root[data-theme="dark"] .empty-art { border-color:var(--night-tile-edge); color:var(--green); }
+:root[data-theme="dark"] .main-nav { background:var(--paper); }
+:root[data-theme="dark"] .main-nav button,:root[data-theme="dark"] .quiet-footer,:root[data-theme="dark"] .settings-row>.icon:last-child { color:var(--muted); }
+:root[data-theme="dark"] .main-nav button[aria-current=page] { color:var(--green); }
+:root[data-theme="dark"] .badge { color:var(--bg); }
+:root[data-theme="dark"] .activity-item.unread,:root[data-theme="dark"] .settings-row:hover { background:#2c3527; }
+:root[data-theme="dark"] .welcome-art>span { color:var(--ink); background:var(--sage); border-color:#7c926a; box-shadow:0 3px 0 #303e2c; }
+:root[data-theme="dark"] .welcome-art>span:nth-child(2) { background:var(--night-castle); border-color:#927e52; box-shadow:0 3px 0 #342d20; }
+:root[data-theme="dark"] .welcome-art>span:nth-child(4) { background:var(--walnut); border-color:#a48569; box-shadow:0 3px 0 #3c3026; }
+:root[data-theme="dark"] .stack-form label { color:var(--muted); }
+:root[data-theme="dark"] .score { --player-ink:var(--green); --player-tint:var(--green-soft); }
+:root[data-theme="dark"] .score.walnut { --player-ink:var(--night-walnut); --player-tint:var(--night-walnut-soft); }
+:root[data-theme="dark"] .score.is-turn { border-color:#879b73; }
+:root[data-theme="dark"] .score.walnut.is-turn { border-color:#b49071; }
+:root[data-theme="dark"] .owner-dot { background:var(--green); }
+:root[data-theme="dark"] .owner-ring { border-color:var(--night-walnut); }
+:root[data-theme="dark"] .turn-pill[data-side="walnut"] { color:var(--night-walnut); }
+:root[data-theme="dark"] .supply-track { background:var(--line); }
+:root[data-theme="dark"] .supply-track>span { background:var(--green); }
+:root[data-theme="dark"] #game-table { --own-ink:var(--green); --own-fill:#4d613e; --own-soft:var(--green-soft); }
+:root[data-theme="dark"] #game-table[data-side="walnut"] { --own-ink:var(--night-walnut); --own-fill:#6e4f37; --own-soft:var(--night-walnut-soft); }
+:root[data-theme="dark"] #board .tile>polygon:first-child { fill:var(--night-tile); stroke:var(--night-tile-edge); }
+:root[data-theme="dark"] #board .tile.owner1>polygon:first-child { fill:var(--sage); stroke:#7c926a; }
+:root[data-theme="dark"] #board .tile.owner2>polygon:first-child { fill:var(--walnut); stroke:#a48569; }
+:root[data-theme="dark"] #board .tile.your-tile>polygon:first-child { stroke:var(--own-ink); }
+:root[data-theme="dark"] #board .tile text { fill:var(--ink); }
+:root[data-theme="dark"] #board .tile .value { fill:var(--night-values); }
+:root[data-theme="dark"] #board .tile .marker { fill:var(--green); }
+:root[data-theme="dark"] #board .tile.owner2 .marker { fill:none; stroke:var(--night-walnut); }
+:root[data-theme="dark"] #board .tile .step { fill:var(--ink); }
+:root[data-theme="dark"] #board .tile.last-move>polygon:first-child { stroke:var(--green); }
+:root[data-theme="dark"] #board .tile.castle-tile>polygon:first-child { stroke:var(--night-gold); }
+:root[data-theme="dark"] #board .tile.castle-tile.owner0>polygon:first-child { fill:var(--night-castle); }
+:root[data-theme="dark"] #board .tile.selected>polygon:first-child { fill:var(--own-fill); stroke:var(--own-ink); }
+:root[data-theme="dark"] #board .tile:focus-visible>polygon:first-child { stroke:var(--night-gold); }
+:root[data-theme="dark"] #board .castle-pulse { stroke:var(--night-gold); }
+:root[data-theme="dark"] #game-table.is-scoring { --motion-ink:var(--green); --motion-target:var(--green); }
+:root[data-theme="dark"] #game-table.is-scoring[data-motion-player="2"] { --motion-ink:var(--night-walnut); }
+:root[data-theme="dark"] #game-table.is-scoring[data-motion-target="2"] { --motion-target:var(--night-walnut); }
+:root[data-theme="dark"] .is-scoring #board .tile.motion-word-tile>polygon:first-child { stroke:var(--motion-ink); }
+:root[data-theme="dark"] .is-scoring #board .tile.motion-source>polygon:first-child,:root[data-theme="dark"] .is-scoring #board .tile.motion-loss>polygon:first-child { stroke:var(--motion-target); }
+:root[data-theme="dark"] .is-scoring #board .tile.motion-castle>polygon:first-child { stroke:var(--night-gold); }
+:root[data-theme="dark"] #score-motion[data-side="walnut"] { color:var(--night-walnut); }
+:root[data-theme="dark"] .score-point { border-color:#879b73; }
+:root[data-theme="dark"] .score-point.side-2 { color:var(--night-walnut); background:var(--night-walnut-soft); border-color:#b49071; }
+:root[data-theme="dark"] .score-point.gold { color:var(--night-gold); background:var(--night-castle); border-color:var(--night-gold); }
+:root[data-theme="dark"] .recap-row .recap-symbol { background:var(--green-soft); color:var(--green); }
+:root[data-theme="dark"] .pending-card,:root[data-theme="dark"] .connection-banner { background:var(--night-castle); border-color:#927e52; color:#e3c88d; }
+:root[data-theme="dark"] .invite-dots { color:var(--muted); }
+:root[data-theme="dark"] .sheet::backdrop,:root[data-theme="dark"] .joker-keyboard::backdrop { background:#080b08b3; }
+:root[data-theme="dark"] .tile-change { background:var(--night-tile); }
+:root[data-theme="dark"] .tile-change.captured { background:var(--green-soft); border-color:#788c65; }
+:root[data-theme="dark"] .toast { background:#30432b; color:var(--ink); }
+:root[data-theme="dark"] .toast.error { background:#56372c; }
+:root[data-theme="dark"] .toast .icon-button:hover { background:#ffffff10; }
+:root[data-theme="dark"] .form-alert { background:#422e26; border-color:#966e5b; }
+:root[data-theme="dark"] .word-joker { background:var(--green-soft); border-color:var(--green); }
+:root[data-theme="dark"] .word-joker:focus-visible { outline-color:var(--green); }
+:root[data-theme="dark"] .sheet.joker-keyboard { border-color:var(--line); }
+:root[data-theme="dark"] .joker-keyboard-header .icon-button { background:var(--green-soft); }
+:root[data-theme="dark"] .joker-word-slot { background:var(--green-soft); border-color:#788c65; }
+:root[data-theme="dark"] .joker-word-slot.current { background:#3d5033; border-color:var(--green); }
+:root[data-theme="dark"] .joker-word-slot.assigned::after { border-color:var(--green); }
+:root[data-theme="dark"] .joker-blank { background:var(--green); }
+:root[data-theme="dark"] .joker-keyboard-pad { background:#20251d; border-color:var(--line); }
+:root[data-theme="dark"] .joker-key { border-color:#58634e; border-bottom-color:#58634e; }
+:root[data-theme="dark"] .joker-key[aria-pressed=true],:root[data-theme="dark"] .joker-key:active { background:#3d5033; border-color:var(--green); }
+:root[data-theme="dark"] .joker-key-row.extra { border-color:var(--line); }
+:root[data-theme="dark"] .joker-letter-flight { background:var(--green-soft); }
+@media(hover:hover) { :root[data-theme="dark"] .joker-key:hover { background:#3d5033; border-color:var(--green); } }

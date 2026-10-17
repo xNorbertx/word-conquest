@@ -1,5 +1,13 @@
 # Autumn Sunday UX revision - 4 October 2026
 
+## Dark mode — 0.10.0
+
+You → Dark mode is an immediate, persistent device-level switch. Light remains
+the default. Warm charcoal surfaces, cream type, sage/walnut territory and gold
+castles preserve the Autumn Sunday identity. Ownership shapes and selected-path
+geometry are unchanged. Dialogs, forms, status messages and scoring/joker motion
+use the same palette. Native system bar icons/background follow the setting.
+
 ## Current game screen — 0.9.4
 
 The phone game fits the available viewport with safe-area padding. The word bar

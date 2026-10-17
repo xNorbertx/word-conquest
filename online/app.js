@@ -3,7 +3,8 @@ import {gameSummary} from '../server/game-summary.mjs';
 import {createHomeRequests} from './home-requests.mjs';
 import {createSnapshotCache} from './snapshot-cache.mjs';
 import {version as appVersion} from '../package.json';
-import {Capacitor} from '@capacitor/core';
+import {Capacitor,registerPlugin} from '@capacitor/core';
+import {createTheme} from './theme.mjs';
 import {App} from '@capacitor/app';
 import {createClient} from '@supabase/supabase-js';
 import {createPushControls} from './push.js';
@@ -21,6 +22,8 @@ import {$,svg,icon,node,button,setting,notify,showSheet,closeSheet,ask,initUI,cl
 import {seatOf,isFinished,opponentName,gameStatus,visibleGames,timeAgo,invitationToken,activityText,friendlyError} from './presentation.mjs';
 
 initUI();$('app-version').textContent=appVersion;
+const appearance=Capacitor.getPlatform()==='android'?registerPlugin('Appearance'):null;
+createTheme({root:document.documentElement,button:$('dark-mode'),meta:document.querySelector('meta[name="theme-color"]'),onChange:theme=>appearance?.set({dark:theme==='dark'})});
 const mark=svg('svg',{viewBox:monogram.viewBox,'aria-hidden':'true'});
 for(const p of monogram.paths)mark.append(svg('path',{d:p.d,fill:'none',stroke:'currentColor','stroke-width':p.width,'stroke-linecap':'round','stroke-linejoin':'round'}));
 document.querySelector('.brand-mark').replaceChildren(mark);

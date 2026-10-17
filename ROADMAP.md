@@ -8,6 +8,10 @@ See [implementation and verification status](docs/PROGRESS.md) and the single
 [manual setup checklist](docs/SETUP.md). Boxes remain unchecked until their hosted
 and real-device acceptance checks pass, not merely because source code was written.
 
+Dark mode 0.10.0 adds a saved device preference under You, a complete night palette
+and matching Android activity/system bars. Light mode remains the default.
+Rendered-phone acceptance remains open; see PROGRESS.md for verification.
+
 Game screen 0.9.4 replaces the word panel with a compact word/undo/Play bar,
 fits the board to available mobile height and makes zoom pan in both directions.
 Physical iPhone/Seeker acceptance remains; see PROGRESS.md for verification.

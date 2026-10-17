@@ -1,5 +1,9 @@
 # Android pilot and build pipeline
 
+Version 0.10.0 adds You → Dark mode. The chosen theme stays on this device and
+updates the game, dialogs, joker keyboard and Android system bars. The native
+bridge is included in the APK; install over the existing pilot.
+
 Version 0.9.4 adds the compact game screen and bounded board zoom. Drag to pan
 when zoomed; tap tiles to spell. The fitted board retains drag-to-spell.
 Install the new APK over the existing pilot; no account or server changes.

@@ -1,5 +1,36 @@
 # Implementation and verification - updated 17 October 2026
 
+## Dark mode — 17 October 2026, 0.10.0
+
+- Added **You → Dark mode**, a single labelled switch. The existing light theme
+  remains the default. The preference is local to this browser/app installation,
+  survives sign-out and reopening, and does not alter account/game data.
+- An early head script applies the saved palette before CSS/body rendering;
+  browser chrome follows the theme colour. A blocked/full local store still allows
+  toggling for the session. Other tabs and browser history restore stay in sync.
+- Warm charcoal and cream replace ivory; sage/walnut ownership, shape markers and
+  gold castles stay distinct. Games, Friends, You, auth, forms, menus, errors,
+  score bubbles, selected tiles and the English/Swedish joker keyboard are covered.
+  Layout and gameplay remain unchanged.
+- Android Appearance bridge updates system bar icons, WebView and inset backgrounds,
+  and restores the local native mirror on create/resume. Rapid toggle calls remain
+  ordered. The OS launch splash retains the existing ivory branding.
+  Uses the existing AndroidX dependency and [system-bar appearance API](https://developer.android.com/develop/ui/views/layout/edge-to-edge-manually).
+- Browser inventory is still empty: no rendered-device/phone screenshot claim.
+  Theme persistence, failure handling, native ordering and palette contrast are
+  checked programmatically; physical phone appearance remains an acceptance check.
+- No backend, schema, rule, dictionary, permission, analytics, dependency or cost
+  changes. Original prototype and both joker design galleries stay available.
+
+Local verification: **150 regression tests** and original engine/scoring/supply
+suites pass; production and isolated fixture builds pass. Actual account DOM checks
+verify the switch, icon, persistence and browser colour. Ten English/Swedish game
+DOM scenarios still pass. CSS parses without warnings. Selected palette pairs meet
+4.5:1 text contrast (including small tile values) and 3:1 castle-marker contrast.
+These are programmatic checks, not rendered-phone inspection.
+
+Release verification pending.
+
 ## Compact game screen — 17 October 2026, 0.9.4
 
 - The composer is one row: selected letters, undo and Play. Removed the Your word

@@ -51,4 +51,4 @@ fs.writeFileSync(res+'/values/styles.xml',`<resources>
 
 const javaDir='android/app/src/main/java/com/wordconquest/app';
 fs.mkdirSync(javaDir,{recursive:true});
-for(const name of ['MainActivity.java','NotificationSettingsPlugin.java'])fs.copyFileSync('native/android/'+name,javaDir+'/'+name);
+for(const name of ['MainActivity.java','NotificationSettingsPlugin.java','AppearancePlugin.java'])fs.copyFileSync('native/android/'+name,javaDir+'/'+name);
