@@ -8,6 +8,10 @@ See [implementation and verification status](docs/PROGRESS.md) and the single
 [manual setup checklist](docs/SETUP.md). Boxes remain unchecked until their hosted
 and real-device acceptance checks pass, not merely because source code was written.
 
+Game screen 0.9.4 replaces the word panel with a compact word/undo/Play bar,
+fits the board to available mobile height and makes zoom pan in both directions.
+Physical iPhone/Seeker acceptance remains; see PROGRESS.md for verification.
+
 Jokers 0.9.3 implement the approved Word keys design: immediate QWERTY selection,
 Swedish Å/Ä/Ö, automatic next joker and no visible instruction text. The old
 scrolling Letter lens is replaced; backend rules and existing games are unchanged.

@@ -13,6 +13,7 @@ import {scoreMotionPlan,createScoreLedger} from './score-motion.mjs';
 import {createBoardScoreMotion} from './score-motion.js';
 import {tilePoints,castleLabel} from './board-geometry.mjs';
 import {createJokerKeyboard,canAssignJoker} from './joker-keyboard.mjs';
+import {createBoardViewport} from './board-viewport.mjs';
 import {LANGUAGES,languageFor,languageLabel} from '../server/languages.mjs';
 import {Engine,config as defaultConfig,configFor,RULES_VERSION,SUPPORTED_RULES,rulesLabel,captureRule,castleRule} from '../server/domain.mjs';
 let config=defaultConfig;
@@ -45,10 +46,15 @@ const gameRequests=createHomeRequests(key=>api({action:'game',gameId:key.split('
 const scoreLedger=createScoreLedger(localStorage);
 const scoreMotion=createBoardScoreMotion({onComplete:()=>{if(game&&currentView==='game')renderGame();}});
 const jokerKeyboard=createJokerKeyboard();
+const boardViewport=createBoardViewport({viewport:$('board-scroll'),board:$('board'),button:$('zoom'),icon,
+  stamp:()=>currentView+'/'+game?.id+'/'+game?.revision,enabled:()=>currentView==='game'&&!scoreMotion.active,
+  getFocus:()=>{const tile=game?.state.tiles.find(t=>t.id===selection.at(-1));return tile?{x:(tile.q*64+295)/590,y:(tile.r*64+295)/590}:null;},
+  onTap:id=>{if(!canPlay()&&!preview)return;const edit=selection.includes(id)&&game.state.tiles.find(t=>t.id===id)?.letter==='?';if(edit)openJoker(id);else{choose(id);openPendingJoker();}}
+});
 function screen(name,{route=true,replace=false}={}){
   scoreMotion.cancel(false);
   closeSheet();currentView=name;for(const id of screens)$(id).hidden=id!==name;
-  const inGame=name==='game';document.body.classList.toggle('game-view',inGame);
+  const inGame=name==='game';document.body.classList.toggle('game-view',inGame);if(!inGame)boardViewport.setZoom(false);
   $('back').hidden=!inGame;$('game-heading').hidden=!inGame;$('game-menu').hidden=!inGame;$('help-button').hidden=inGame;
   $('main-nav').hidden=!user||!['home','friends','activity','account'].includes(name);
   for(const [id,view]of [['home-button','home'],['friends-button','friends'],['account-button','account']]){if(view===name||view==='account'&&name==='activity')$(id).setAttribute('aria-current','page');else $(id).removeAttribute('aria-current');}
@@ -157,6 +163,7 @@ async function showInvite(){
 }
 async function decideInvite(choice){const token=invitationToken(localStorage.getItem('wc-invitation')||'');const result=await api({action:'invitation',choice,token});localStorage.removeItem('wc-invitation');closeSheet();if(choice==='accept'&&result.game.status==='active')await openGame(result.game.id);else {await showHome();status('Invitation declined.');}}
 async function openGame(id,quiet=false,{route=true}={}){
+  if(!quiet)boardViewport.setZoom(false);
   const ticket=quiet?navigation:++navigation,request=quiet?gameLoad:++gameLoad,actor=user?.id;
   const cached=!quiet&&snapshots.game(actor,id);
   if(cached){preview=false;config=configFor(cached.game.rules_version);game=cached.game;history=cached.history;invite=null;gameFresh=false;selection=[];jokers={};highlightLast=false;focusTile=null;screen('game',{route});renderGame();}
@@ -178,7 +185,7 @@ async function openGame(id,quiet=false,{route=true}={}){
   const gameConfig=configFor(result.game.rules_version);if(!gameConfig)throw apiError('Update Word Conquest to play this game.','client_update_required',409);
   preview=false;config=gameConfig;game=result.game;history=result.history;invite=result.invitation;gameFresh=true;rememberGame(game);
   if(changed){selection=[];jokers={};highlightLast=false;focusTile=null;}
-  if(!quiet){$('board').classList.remove('enlarged');$('zoom').setAttribute('aria-pressed','false');if(!cached)screen('game',{route});}
+  if(!quiet&&!cached)screen('game',{route});
   if(changed||!quiet||!wasFresh){renderGame();animateScore(previousRevision);}
   offlineNotice(!navigator.onLine);return true;
 }
@@ -189,7 +196,7 @@ function animateScore(previousRevision=null,{replay=false}={}){
   const plan=claimed&&scoreMotionPlan(game,move,config);
   if(!plan||document.hidden)return;
   closeSheet();$('toast').hidden=true;
-  $('board').classList.remove('enlarged');$('zoom').setAttribute('aria-pressed','false');$('zoom').setAttribute('aria-label','Enlarge board');$('zoom').replaceChildren(icon('expand'));
+  boardViewport.setZoom(false);
   // Keep the source tiles and score destinations in view before motion begins.
   $('game-table').scrollIntoView({block:'start',behavior:'instant'});
   void scoreMotion.play(plan,{seat:seatOf(game,user.id),names:game.names});
@@ -223,7 +230,7 @@ function openPendingJoker(){
 }
 function renderWord(){
   const heading=$('word');heading.replaceChildren();
-  if(!selection.length){heading.textContent='Find your word.';return;}
+  if(!selection.length)return;
   for(const [i,id] of selection.entries()){
     const tile=game.state.tiles.find(t=>t.id===id);
     if(tile.letter!=='?'){heading.append(node('span',tile.letter));continue;}
@@ -232,20 +239,11 @@ function renderWord(){
     slot.disabled=!preview&&!canPlay();heading.append(slot);
   }
 }
-function selectionHint(error){
-  if(!gameFresh)return 'Checking for updates…';
-  if(pending())return 'Your move is waiting to be confirmed.';if(!selection.length)return Engine.canReenter(game.state,config)?'No territory left? Start on any tile.':`Start on one of your ${seatOf(game,user?.id)===2?'brown':'green'} tiles.`;
-  if(selection.some(id=>game.state.tiles.find(t=>t.id===id).letter==='?'&&!jokers[id]))return 'Choose a letter for your joker.';
-  if(selection.length<config.minimumWordLength)return `Add ${config.minimumWordLength-selection.length} more ${config.minimumWordLength-selection.length===1?'letter':'letters'}.`;
-  return error||'Ready when you are.';
-}
 function renderSelection(){
   const error=Engine.validatePath(game.state,selection,{...config,dictionaryEnabled:false},true,null,jokers);
-  renderWord();$('word').classList.toggle('placeholder',!selection.length);$('submit-word').disabled=!canPlay()||!!error;$('clear-word').disabled=!selection.length||busy||!!pending();
-  $('selection-help').textContent=preview?'Board preview. Moves are not saved.':selectionHint(error);$('selection-help').classList.toggle('invalid',!!error&&selection.length>=config.minimumWordLength&&!selection.some(id=>game.state.tiles.find(t=>t.id===id).letter==='?'&&!jokers[id]));
-  $('score-preview').hidden=!selection.length;
-  if(selection.length){const s=Engine.scoreMove(game.state,selection,config);$('score-preview').replaceChildren(node('span',`${s.wordPoints} word points + ${s.territoryGain} land${s.castleIncome?` + ${s.castleIncome} income`:''}`),icon('info'));$('submit-label').textContent=`Play word · ${s.totalGain}`;}else $('submit-label').textContent='Play word';
-  if(busy)$('submit-label').textContent='Saving...';
+  renderWord();$('submit-word').disabled=!canPlay()||!!error;$('clear-word').disabled=!selection.length||busy||!!pending();
+  $('word').scrollLeft=$('word').scrollWidth;
+  $('submit-label').textContent=busy?'Saving…':'Play';
   $('pending').hidden=!pending();$('pending-message').textContent=busy?'Saving your move...':'Move not confirmed yet. Retry when connected.';$('retry').disabled=busy;
 }
 function renderGame(){
@@ -275,8 +273,7 @@ function renderGame(){
   const addressed=!!invite?.recipient;$('share').querySelector('h1').textContent=addressed?`Invitation for ${invite.recipient_name}.`:'Invite a friend.';$('share').querySelector('.muted').textContent=addressed?'Your invitation is waiting in their Games tab.':'Share your invitation to get the game going.';$('share-invite').hidden=addressed;$('share').querySelector('.copy-field').hidden=addressed;
   $('composer').hidden=(!myTurn()&&!preview)||isFinished(game)||!!pending()&&!busy;$('game-result').hidden=!isFinished(game);
   $('draw-offer').hidden=!game.draw_by||game.draw_by===user?.id||game.status!=='active';
-  const colour=seat===1?'green':'brown',context=highlightLast?'Last word highlighted':preview?'Explore the board':isFinished(game)?'Your final territory':ownTurn?(Engine.canReenter(game.state,config)?'No territory left. Start anywhere.':`Start on your ${colour} tiles`):`Your tiles · ${colour}`;
-  $('board-context').replaceChildren(node('span',undefined,seat===1?'owner-dot':'owner-ring'),node('span',context));
+
   if(isFinished(game)){$('result-title').textContent=game.status==='completed'?gameStatus(game,user?.id)+'.':game.status==='abandoned'?'A game left unfinished.':'Invitation cancelled.';$('result-description').textContent=game.status==='completed'?`${totals[seat-1].total} to ${totals[seat===1?1:0].total}. A little word, a little world.`:'This game ended without a result.';}
   const last=history[0]?.recap;$('recap').hidden=!last;
   if(last){const copy=node('span'),symbol=node('span',undefined,'recap-symbol');symbol.append(icon('history'));copy.append(node('small','LAST MOVE'),node('strong',last.word?`${game.names[last.player-1]} played ${last.word}`:activityText(last.action,game.names[last.player-1])));$('recap').replaceChildren(symbol,copy,node('span',last.score?`+${last.score.wordPoints}`:''));}
@@ -315,7 +312,6 @@ async function action(kind){
 }
 function scoreLines(rows){const container=node('div',undefined,'score-lines');for(const [label,value,total]of rows){const line=node('div',undefined,'score-line'+(total?' total':''));line.append(node('span',label),node('strong',value));container.append(line);}return container;}
 function showScore(player){const s=Engine.scoreBreakdown(game.state,config)[player-1];showSheet(player===seatOf(game,user?.id)?'Your score':`${game.names[player-1]}'s score`,[scoreLines([['Word points',s.words],['Current territory',s.territory],...(config.castleIncome?[['Castle income earned',s.income]]:[]),['Total',s.total,true]]),node('p',config.castleIncome?'Word points and earned castle income stay yours. Current territory changes with ownership. Income pays after both players move, including the final round.':'Word points stay yours. Territory points change when tiles are captured.')]);}
-function showWordScore(){if(!selection.length)return;const s=Engine.scoreMove(game.state,selection,config);const content=[scoreLines([['Letter points',s.letters],['Length bonus',s.lengthBonus],['New territory',s.territoryGain],...(s.castleIncome?[['Castle income this round',s.castleIncome]]:[]),['Added to your score',s.totalGain,true]])];if(s.enemyLoss)content.push(node('p',`Your opponent also loses ${s.enemyLoss} territory points.`));if(s.incomeAwarded?.[2-game.state.player])content.push(node('p',`Your opponent also earns ${s.incomeAwarded[2-game.state.player]} castle income this round.`));showSheet('A good word adds up.',content);}
 function showRules(){
   const config=currentView==='game'&&game?(configFor(game.rules_version)||defaultConfig):defaultConfig;
   const steps=[['Find a word',`Start on a tile you own. Connect at least ${config.minimumWordLength} letters in any of the eight directions. Use each tile once. No territory left? Start anywhere.`],['Make it yours',`${captureRule(config)} Neutral tiles in your word become yours too. Ordinary tiles score ${config.normalTerritoryPoints} for territory. ${castleRule(config)}`],['Every letter counts','Small numbers are letter points. Longer words earn a bonus. Jokers can be any letter. Ordinary letters in a played word are replaced; jokers stay wild.'],['Take your time',`Both players share ${config.letterBudget} letters. When they run out, the player who went second gets a final reply if needed. The highest final score wins. Refreshing your letters uses your turn.`]];
@@ -462,12 +458,11 @@ $('push-prompt-enable').onclick=()=>run(async()=>{if(push.snapshot().state==='bl
 $('new-game').onclick=showNewGame;$('blocked-players').onclick=()=>run(showBlockedPlayers);$('edit-profile').onclick=editProfile;$('push-settings').onclick=showPush;
 $('help-button').onclick=showRules;for(const b of document.querySelectorAll('[data-sheet]'))b.onclick=()=>b.dataset.sheet==='rules'?showRules():showPrivacy();
 $('game-menu').onclick=showGameMenu;$('share-invite').onclick=()=>run(shareInvite);$('copy-invite').onclick=()=>run(copyInvite);$('cancel-invite').onclick=()=>run(quitGame);
-$('player-score-1').onclick=()=>{scoreMotion.cancel();showScore(1);};$('player-score-2').onclick=()=>{scoreMotion.cancel();showScore(2);};$('score-preview').onclick=showWordScore;$('recap').onclick=showRecap;
+$('player-score-1').onclick=()=>{scoreMotion.cancel();showScore(1);};$('player-score-2').onclick=()=>{scoreMotion.cancel();showScore(2);};$('recap').onclick=showRecap;
 $('accept-draw').onclick=()=>run(()=>confirmAction('accept_draw'));
 $('setup-signout').onclick=$('signout').onclick=()=>run(async()=>{await push.disable(false);notificationGame=null;await db.auth.signOut();game=null;homeData=null;selection=[];$('password').value='';$('setup-username').value='';status('Signed out.');});
 $('read-inbox').onclick=()=>run(async()=>{await api({action:'read_notifications'});await fetchHome();renderActivity();status('All caught up.');});
 $('submit-word').onclick=()=>run(()=>action('word'));$('retry').onclick=()=>run(sendPending);$('clear-word').onclick=clearWord;
-$('zoom').onclick=()=>{const expanded=$('board').classList.toggle('enlarged');$('zoom').setAttribute('aria-pressed',expanded);$('zoom').setAttribute('aria-label',expanded?'Fit board':'Enlarge board');$('zoom').replaceChildren(icon(expanded?'shrink':'expand'));};
 const tileAt=(x,y)=>document.elementFromPoint(x,y)?.closest('[data-id]')?.dataset.id;
 let boardGesture=null;
 $('board').onpointerdown=e=>{
@@ -485,10 +480,10 @@ $('board').addEventListener('pointerup',e=>{if(boardGesture?.pointerId!==e.point
 for(const event of ['pointercancel','lostpointercapture'])$('board').addEventListener(event,()=>{dragging=false;boardGesture=null;});
 $('board').onkeydown=e=>{
   const id=e.target.closest('[data-id]')?.dataset.id;if(!id)return;
-  if(e.key==='Enter'||e.key===' '){e.preventDefault();const edit=selection.includes(id)&&game.state.tiles.find(t=>t.id===id).letter==='?';if(!edit)choose(id);$('board').querySelector(`[data-id="${id}"]`)?.focus();if(edit)openJoker(id);else openPendingJoker();}
-  else if(e.key==='Escape'){e.preventDefault();clearWord();$('board').querySelector(`[data-id="${id}"]`)?.focus();}
-  else if(e.key==='Backspace'){e.preventDefault();if(canPlay()||preview){delete jokers[selection.pop()];drawBoard();renderSelection();$('board').querySelector(`[data-id="${id}"]`)?.focus();}}
-  else if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();const tile=game.state.tiles.find(t=>t.id===id),[dq,dr]={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0]}[e.key];const next=game.state.tiles.find(t=>t.q===tile.q+dq&&t.r===tile.r+dr);if(next){focusTile=next.id;drawBoard();$('board').querySelector(`[data-id="${next.id}"]`)?.focus();}}
+  if(e.key==='Enter'||e.key===' '){e.preventDefault();const edit=selection.includes(id)&&game.state.tiles.find(t=>t.id===id).letter==='?';if(!edit)choose(id);$('board').querySelector(`[data-id="${id}"]`)?.focus({preventScroll:true});if(edit)openJoker(id);else openPendingJoker();}
+  else if(e.key==='Escape'){e.preventDefault();clearWord();$('board').querySelector(`[data-id="${id}"]`)?.focus({preventScroll:true});}
+  else if(e.key==='Backspace'){e.preventDefault();if(canPlay()||preview){delete jokers[selection.pop()];drawBoard();renderSelection();$('board').querySelector(`[data-id="${id}"]`)?.focus({preventScroll:true});}}
+  else if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();const tile=game.state.tiles.find(t=>t.id===id),[dq,dr]={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0]}[e.key];const next=game.state.tiles.find(t=>t.q===tile.q+dq&&t.r===tile.r+dr);if(next){focusTile=next.id;drawBoard();$('board').querySelector(`[data-id="${next.id}"]`)?.focus({preventScroll:true});}}
 };
 $('preview-button').onclick=()=>{preview=true;config=defaultConfig;game={id:'preview',rules_version:RULES_VERSION,state:{...Engine.newGame(config),player:1,startingPlayer:1},status:'active',players:[],names:['You','Alex'],revision:0};history=[];invite=null;selection=[];jokers={};screen('game',{route:false});renderGame();};
 async function enterApp(){

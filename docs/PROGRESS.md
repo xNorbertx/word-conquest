@@ -1,5 +1,35 @@
 # Implementation and verification - updated 17 October 2026
 
+## Compact game screen — 17 October 2026, 0.9.4
+
+- The composer is one row: selected letters, undo and Play. Removed the Your word
+  heading, starting-tile copy, minimum-length hints, calculation and ready text.
+  Actual rejection/offline/pending feedback remains; rules and detailed totals are
+  still available in the game menu and score cards.
+- Phone layout budgets the visible viewport height, including safe areas and browser
+  chrome. Header/cards/gaps are smaller, recent move is one compact row, long words
+  scroll inside the composer, and score playback uses a compact caption. Short
+  landscape phones use side-by-side board/controls. Accessibility text enlargement
+  can still scroll the page rather than clip required controls.
+- Zoom now has a bounded two-dimensional viewport. Drag to pan to every corner;
+  tap a tile to select it or edit its joker. Fit mode retains drag-to-spell. Zoom
+  opens around the last selected tile or board centre, keeps its centre on resize,
+  and resets for another game or score playback. Keyboard focus reveals its tile.
+- Cancellation, changed game/revision and disabled interaction cannot commit a late
+  zoom tap. Panning remains available when waiting for the opponent.
+- Browser inventory remains empty, so rendered iPhone/Android inspection and
+  physical touch acceptance are not claimed. Controller regressions, fixture build,
+  production assets and signed APK verification are tracked below when complete.
+- No gameplay, backend, migration, infrastructure or cost changes. Original local
+  prototype and both joker galleries remain available.
+
+Local verification: all **143 regression tests** and original engine/scoring/supply
+suites pass. Ten production DOM scenarios cover English/Swedish selection, jokers,
+clear, waiting, stale, pending and finished states; CSS parses without warnings.
+Production and isolated fixture builds pass. These are not rendered-layout tests.
+
+Release verification pending.
+
 ## Word keys joker picker — 17 October 2026, 0.9.3
 
 The owner selected option 2 from the faster joker gallery and requested no visible

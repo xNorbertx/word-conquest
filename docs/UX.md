@@ -1,5 +1,16 @@
 # Autumn Sunday UX revision - 4 October 2026
 
+## Current game screen — 0.9.4
+
+The phone game fits the available viewport with safe-area padding. The word bar
+contains only selected letters, undo and Play. Score details stay behind the score
+cards; rules/history remain in the overflow menu. Zoom is a bounded pan area:
+drag to move around, tap to select; fit mode keeps drag-to-spell. Zooming centres
+on the current word or board centre. Long words scroll within the word bar.
+
+Jokers use the approved **Word keys** picker (0.9.3): immediate QWERTY letters,
+Swedish extras, automatic next blank and no instruction/confirmation text.
+
 ## Letter lens — 0.9.0
 
 Approved prototype: option 3, with empty joker tiles instead of a symbol. Selected

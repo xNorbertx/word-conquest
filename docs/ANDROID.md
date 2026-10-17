@@ -1,5 +1,9 @@
 # Android pilot and build pipeline
 
+Version 0.9.4 adds the compact game screen and bounded board zoom. Drag to pan
+when zoomed; tap tiles to spell. The fitted board retains drag-to-spell.
+Install the new APK over the existing pilot; no account or server changes.
+
 Version 0.9.3 replaces the scrolling joker lens with the approved Word keys.
 Tap a letter to assign it immediately; the next blank opens automatically.
 Only the word, keys and close icon are visible. Swedish has an Å/Ä/Ö row.
