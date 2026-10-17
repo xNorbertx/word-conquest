@@ -2848,7 +2848,7 @@ function createSnapshotCache(storage, { namespace = "", now = Date.now, ttl = 7 
 }
 
 // package.json
-var version = "0.9.2";
+var version = "0.9.3";
 
 // online/app.js
 init_dist();
@@ -9766,11 +9766,11 @@ function notify(message, error = false) {
   if (!error) toastTimer = setTimeout(() => $("toast").hidden = true, 4e3);
 }
 function closeSheet() {
-  if ($("joker-lens")?.open) $("joker-lens").close();
+  if ($("joker-keyboard")?.open) $("joker-keyboard").close();
   if ($("sheet").open) $("sheet").close();
 }
 function showSheet(title, content) {
-  if ($("joker-lens")?.open) $("joker-lens").close();
+  if ($("joker-keyboard")?.open) $("joker-keyboard").close();
   $("sheet-title").textContent = title;
   $("sheet-content").replaceChildren(...Array.isArray(content) ? content : [content]);
   hydrateIcons($("sheet-content"));
@@ -9815,8 +9815,8 @@ function initUI() {
   });
 }
 function closeTopDialog() {
-  if ($("joker-lens")?.open) {
-    $("joker-lens").close();
+  if ($("joker-keyboard")?.open) {
+    $("joker-keyboard").close();
     return true;
   }
   if ($("confirm-dialog").open) {
@@ -10344,24 +10344,35 @@ function castleLabel(tile, config3) {
   return `${name}: ${config3.castleIncome ? `+${centre ? config3.castleIncome.center : config3.castleIncome.side} each round, ` : ""}${value} territory points`;
 }
 
-// online/joker-lens.mjs
-var STEP = 52;
-var lensIndex = (scrollLeft, length) => Math.max(0, Math.min(length - 1, Math.round(scrollLeft / STEP)));
+// online/joker-keyboard.mjs
+var KEY_ROWS = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"];
+function jokerKeyRows(alphabet) {
+  const letters = [.../* @__PURE__ */ new Set([...alphabet])], standard = KEY_ROWS.join("");
+  return [letters.filter((letter2) => !standard.includes(letter2)), ...KEY_ROWS.map((row2) => [...row2].filter((letter2) => letters.includes(letter2)))].filter((row2) => row2.length);
+}
 function canAssignJoker(snapshot, current) {
   return !!current && current.editable && snapshot.gameId === current.gameId && snapshot.revision === current.revision && current.path.includes(snapshot.tileId) && current.tiles.some((t) => t.id === snapshot.tileId && t.letter === "?");
 }
-function createJokerLens() {
-  const dialog = node("dialog", void 0, "sheet joker-lens");
-  dialog.id = "joker-lens";
-  dialog.setAttribute("aria-labelledby", "joker-lens-title");
+function createJokerKeyboard() {
+  const dialog = node("dialog", void 0, "sheet joker-keyboard");
+  dialog.id = "joker-keyboard";
+  dialog.setAttribute("aria-label", "Joker letter");
   document.body.append(dialog);
-  let session = null, rail = null, index2 = 0, options = [], letters = [], hero, word, confirm;
-  const close = () => {
+  let session = null, keys = [];
+  const lock = (on) => document.body.classList.toggle("joker-picking", on);
+  const target = (id) => document.getElementById("board")?.querySelector(`[data-id="${id}"]`);
+  function close() {
+    const id = session?.tileId;
     session = null;
     if (dialog.open) dialog.close();
-  };
+    lock(false);
+    if (id) target(id)?.focus({ preventScroll: true });
+  }
   dialog.addEventListener("close", () => {
-    if (!dialog.open) session = null;
+    if (!dialog.open) {
+      session = null;
+      lock(false);
+    }
   });
   dialog.addEventListener("cancel", (e) => {
     e.preventDefault();
@@ -10372,119 +10383,127 @@ function createJokerLens() {
     const r = dialog.getBoundingClientRect();
     if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) close();
   });
-  function paint() {
-    if (!session) return;
-    const candidate = letters[index2];
-    hero.textContent = candidate;
-    confirm.lastElementChild.textContent = "Use " + candidate;
-    options.forEach((option, i) => {
-      option.setAttribute("aria-selected", i === index2);
-      option.tabIndex = i === index2 ? 0 : -1;
-    });
-    word.replaceChildren(...session.path.map((id) => {
-      const tile = session.tiles.find((t) => t.id === id), value = id === session.tileId ? candidate : tile.letter === "?" ? session.assignments[id] || "" : tile.letter;
-      const slot = node("span", value, id === session.tileId ? "lens-current" : tile.letter === "?" ? "lens-other-joker" : "");
-      if (!value) slot.setAttribute("aria-label", "Unassigned joker");
-      return slot;
-    }));
+  function valid(active) {
+    return dialog.open && session === active && active.valid(active.tileId);
   }
-  function select(next, { focus = false } = {}) {
-    index2 = Math.max(0, Math.min(letters.length - 1, next));
-    rail.scrollTo({ left: index2 * STEP, behavior: "instant" });
+  function focusKey() {
+    (keys.find((key) => key.getAttribute("aria-pressed") === "true") || keys[0])?.focus({ preventScroll: true });
+  }
+  function selectTile(id, active) {
+    if (!valid(active)) {
+      if (session === active) close();
+      return;
+    }
+    if (!active.path.includes(id) || !active.tiles.some((t) => t.id === id && t.letter === "?") || !active.valid(id)) return;
+    session = { ...active, tileId: id };
     paint();
-    if (focus) options[index2].focus({ preventScroll: true });
+    focusKey();
   }
-  function sync() {
-    if (!session) return;
-    index2 = lensIndex(rail.scrollLeft, letters.length);
-    paint();
+  function fly(letter2, from, id) {
+    const to = target(id)?.getBoundingClientRect();
+    if (!from?.width || !to?.width || typeof Element.prototype.animate !== "function" || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const flying = node("span", letter2, "joker-letter-flight");
+    document.body.append(flying);
+    Object.assign(flying.style, { left: from.left + "px", top: from.top + "px", width: from.width + "px", height: from.height + "px" });
+    flying.animate([{ opacity: 1, transform: "translate(0,0) scale(1)" }, { opacity: 0, transform: `translate(${to.left + to.width / 2 - from.left - from.width / 2}px,${to.top + to.height / 2 - from.top - from.height / 2}px) scale(.7)` }], { duration: 230, easing: "cubic-bezier(.2,.8,.2,1)" }).finished.catch(() => {
+    }).finally(() => flying.remove());
   }
-  function commit() {
-    if (!session) return;
-    sync();
-    const active = session, candidate = letters[index2];
-    if (!active.valid()) {
+  function commit(letter2, source, active) {
+    if (session !== active) return;
+    if (!valid(active)) {
       close();
       return;
     }
-    const from = hero.getBoundingClientRect();
-    close();
-    active.onCommit(candidate);
-    const target = document.getElementById("board")?.querySelector(`[data-id="${active.tileId}"]`), to = target?.getBoundingClientRect();
-    if (to?.width && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      const flying = node("span", candidate, "lens-flight");
-      document.body.append(flying);
-      Object.assign(flying.style, { left: from.left + "px", top: from.top + "px", width: from.width + "px", height: from.height + "px" });
-      const animation = flying.animate([{ opacity: 1, transform: "translate(0,0) scale(1)" }, { opacity: 0, transform: `translate(${to.left + to.width / 2 - from.left - from.width / 2}px,${to.top + to.height / 2 - from.top - from.height / 2}px) scale(.42)` }], { duration: 330, easing: "cubic-bezier(.2,.8,.2,1)" });
-      animation.finished.catch(() => {
-      }).finally(() => flying.remove());
+    if (!active.alphabet.includes(letter2)) return;
+    const from = source?.getBoundingClientRect();
+    if (active.onCommit(active.tileId, letter2) === false) {
+      close();
+      return;
     }
-    target?.focus({ preventScroll: true });
+    if (session !== active) return;
+    const assignments = { ...active.assignments, [active.tileId]: letter2 };
+    const next = active.path.find((id) => active.tiles.some((t) => t.id === id && t.letter === "?") && !assignments[id]);
+    if (next && active.valid(next)) {
+      session = { ...active, assignments, tileId: next };
+      paint();
+      focusKey();
+    } else {
+      close();
+      fly(letter2, from, active.tileId);
+    }
   }
-  function open(next) {
-    close();
-    if (!next.valid()) return;
-    session = next;
-    letters = [...next.alphabet];
-    index2 = Math.max(0, letters.indexOf(next.assignments[next.tileId] || "A"));
-    const header = node("div", void 0, "sheet-header"), title = node("h2", "Make it yours.");
-    title.id = "joker-lens-title";
-    const dismiss = button("Close", close, "icon-button", "close");
+  function paint() {
+    const active = session;
+    const header = node("div", void 0, "joker-keyboard-header");
+    const dismiss = button("", close, "icon-button", "close");
     dismiss.setAttribute("aria-label", "Close letter picker");
     dismiss.querySelector("span").hidden = true;
-    header.append(title, dismiss);
-    const content = node("div", void 0, "lens-content"), stage = node("div", void 0, "lens-stage"), tile = next.tiles.find((t) => t.id === next.tileId);
-    const nearby = svg("svg", { viewBox: `${tile.q * 64 - 98} ${tile.r * 64 - 98} 196 196`, class: "lens-neighborhood", "aria-hidden": "true" });
-    for (const t of next.tiles.filter((t2) => Math.max(Math.abs(t2.q - tile.q), Math.abs(t2.r - tile.r)) <= 1)) {
-      const g = svg("g", { class: "lens-neighbor owner" + t.owner });
-      g.append(svg("polygon", { points: tilePoints(t) }), svg("text", { x: t.q * 64, y: t.r * 64 + 5 }, t.letter === "?" ? "" : t.letter));
-      nearby.append(g);
-    }
-    const bigTile = node("div", void 0, "lens-tile");
-    hero = node("strong");
-    bigTile.append(hero, node("small", "0"));
-    stage.append(nearby, bigTile);
-    word = node("div", void 0, "lens-word");
-    word.setAttribute("aria-label", "Word preview");
-    const picker = node("div", void 0, "lens-picker"), window2 = node("div", void 0, "lens-window");
-    window2.setAttribute("aria-hidden", "true");
-    rail = node("div", void 0, "lens-rail");
-    rail.setAttribute("role", "listbox");
-    rail.setAttribute("aria-label", "Joker letter");
-    rail.setAttribute("aria-orientation", "horizontal");
-    options = letters.map((letter2, i) => {
-      const option = button(letter2, () => select(i, { focus: true }), "lens-letter");
-      option.setAttribute("role", "option");
-      rail.append(option);
-      return option;
-    });
-    rail.addEventListener("scroll", sync, { passive: true });
-    rail.addEventListener("keydown", (e) => {
-      const nextIndex = e.key === "ArrowRight" ? index2 + 1 : e.key === "ArrowLeft" ? index2 - 1 : e.key === "Home" ? 0 : e.key === "End" ? letters.length - 1 : letters.indexOf(e.key.toUpperCase());
-      if (nextIndex < 0 && !["ArrowLeft"].includes(e.key)) return;
-      if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key) || letters.includes(e.key.toUpperCase())) {
-        e.preventDefault();
-        select(nextIndex, { focus: true });
+    header.append(dismiss);
+    const word = node("div", void 0, "joker-keyboard-word");
+    word.setAttribute("role", "group");
+    word.setAttribute("aria-label", "Selected word");
+    active.path.forEach((id, index2) => {
+      const tile = active.tiles.find((t) => t.id === id);
+      if (tile.letter !== "?") {
+        word.append(node("span", tile.letter, "joker-fixed-letter"));
+        return;
       }
+      const value = active.assignments[id] || "";
+      const slot = button(value, () => selectTile(id, active), "joker-word-slot" + (id === active.tileId ? " current" : "") + (value ? " assigned" : ""));
+      slot.setAttribute("aria-label", `Joker at position ${index2 + 1}${value ? ", " + value : ", blank"}`);
+      slot.setAttribute("aria-pressed", id === active.tileId);
+      if (!value) slot.lastElementChild.className = "joker-blank";
+      word.append(slot);
     });
-    picker.append(window2, rail);
-    const controls = node("div", void 0, "lens-controls"), previous = button("Previous letter", () => select(index2 - 1), "icon-button", "back"), nextLetter = button("Next letter", () => select(index2 + 1), "icon-button", "chevron");
-    for (const control of [previous, nextLetter]) {
-      control.setAttribute("aria-label", control.textContent);
-      control.querySelector("span").hidden = true;
+    const keyboard = node("div", void 0, "joker-keyboard-pad");
+    keyboard.setAttribute("role", "group");
+    keyboard.setAttribute("aria-label", "Letters");
+    keys = [];
+    for (const letters of jokerKeyRows(active.alphabet)) {
+      const extra = letters.some((letter2) => !KEY_ROWS.join("").includes(letter2));
+      const row2 = node("div", void 0, "joker-key-row" + (extra ? " extra" : "") + (letters.join("") === "ZXCVBNM" ? " lower" : ""));
+      for (const letter2 of letters) {
+        const key = button(letter2, () => commit(letter2, key, active), "joker-key");
+        key.setAttribute("aria-label", "Choose " + letter2);
+        key.setAttribute("aria-pressed", active.assignments[active.tileId] === letter2);
+        keys.push(key);
+        row2.append(key);
+      }
+      keyboard.append(row2);
     }
-    confirm = button("Use letter", commit, "primary lens-use");
-    controls.append(previous, confirm, nextLetter);
-    content.append(stage, word, picker, controls);
-    dialog.replaceChildren(header, content);
+    dialog.replaceChildren(header, word, keyboard);
+  }
+  dialog.addEventListener("keydown", (e) => {
+    if (!session || e.ctrlKey || e.metaKey || e.altKey || e.isComposing || e.repeat) return;
+    const letter2 = e.key.toUpperCase();
+    if ([...e.key].length === 1 && session.alphabet.includes(letter2)) {
+      e.preventDefault();
+      commit(letter2, null, session);
+      return;
+    }
+    const at = keys.indexOf(document.activeElement);
+    if (at < 0) return;
+    const index2 = e.key === "Home" ? 0 : e.key === "End" ? keys.length - 1 : e.key === "ArrowLeft" ? Math.max(0, at - 1) : e.key === "ArrowRight" ? Math.min(keys.length - 1, at + 1) : -1;
+    if (index2 >= 0) {
+      e.preventDefault();
+      keys[index2].focus({ preventScroll: true });
+    }
+  });
+  function open(next) {
+    if (!next.valid(next.tileId)) {
+      close();
+      return;
+    }
+    session = { ...next, path: [...next.path], assignments: { ...next.assignments } };
     paint();
-    dialog.showModal();
-    select(index2, { focus: true });
+    if (!dialog.open) dialog.showModal();
+    lock(true);
+    focusKey();
   }
   return { open, close, validate() {
-    if (session && !session.valid()) close();
+    if (session && (!dialog.open || !session.valid(session.tileId))) close();
   }, get active() {
-    return !!session;
+    return !!session && dialog.open;
   } };
 }
 
@@ -10613,7 +10632,7 @@ var scoreLedger = createScoreLedger(localStorage);
 var scoreMotion = createBoardScoreMotion({ onComplete: () => {
   if (game && currentView === "game") renderGame();
 } });
-var jokerLens = createJokerLens();
+var jokerKeyboard = createJokerKeyboard();
 function screen(name, { route = true, replace = false } = {}) {
   scoreMotion.cancel(false);
   closeSheet();
@@ -11081,21 +11100,22 @@ function drawBoard() {
   board.append(svg("path", { class: "path", d: segments }));
 }
 function openJoker(id) {
-  const snapshot = { gameId: game?.id, revision: game?.revision, tileId: id };
-  const valid = () => currentView === "game" && canAssignJoker(snapshot, { gameId: game?.id, revision: game?.revision, editable: preview || canPlay(), path: selection, tiles: game?.state.tiles || [] });
-  if (!valid()) return;
-  jokerLens.open({
+  const snapshot = { gameId: game?.id, revision: game?.revision };
+  const valid = (tileId) => currentView === "game" && canAssignJoker({ ...snapshot, tileId }, { gameId: game?.id, revision: game?.revision, editable: preview || canPlay(), path: selection, tiles: game?.state.tiles || [] });
+  if (!valid(id)) return;
+  jokerKeyboard.open({
     tileId: id,
     tiles: game.state.tiles,
     path: [...selection],
     assignments: { ...jokers },
     alphabet: config2.alphabet || LANGUAGES.en.alphabet,
     valid,
-    onCommit: (letter2) => {
-      if (!valid()) return;
-      jokers[id] = letter2;
+    onCommit: (tileId, letter2) => {
+      if (!valid(tileId)) return false;
+      jokers[tileId] = letter2;
       drawBoard();
       renderSelection();
+      return true;
     }
   });
 }
@@ -11151,7 +11171,7 @@ function renderSelection() {
 }
 function renderGame() {
   scoreMotion.cancel(false);
-  jokerLens.validate();
+  jokerKeyboard.validate();
   const totals = engine_default.scoreBreakdown(game.state, config2), seat = seatOf(game, user?.id) || 1;
   const active = game.status === "active", ownTurn = preview || myTurn(), unconfirmed = !!pending();
   const other = opponentName(game, user?.id);
@@ -11240,7 +11260,7 @@ function clearWord() {
   selection = [];
   jokers = {};
   highlightLast = false;
-  jokerLens.close();
+  jokerKeyboard.close();
   renderGame();
 }
 async function sendPending() {
