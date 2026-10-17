@@ -2848,10 +2848,57 @@ function createSnapshotCache(storage, { namespace = "", now = Date.now, ttl = 7 
 }
 
 // package.json
-var version = "0.9.4";
+var version = "0.10.0";
 
 // online/app.js
 init_dist();
+
+// online/theme.mjs
+var THEME_KEY = "wc-theme";
+var THEME_COLOURS = { light: "#f6f3eb", dark: "#191d18" };
+function createTheme({ root, button: button2, meta, storage = () => localStorage, events = window, onChange = () => {
+} }) {
+  let theme = root.dataset.theme === "dark" ? "dark" : "light", queue = Promise.resolve();
+  const normalise = (value) => value === "dark" ? "dark" : "light";
+  function apply(value, persist = false) {
+    theme = normalise(value);
+    root.dataset.theme = theme;
+    button2.setAttribute("aria-checked", String(theme === "dark"));
+    meta?.setAttribute("content", THEME_COLOURS[theme]);
+    if (persist) try {
+      storage().setItem(THEME_KEY, theme);
+    } catch {
+    }
+    const chosen = theme;
+    queue = queue.then(() => onChange(chosen)).catch(() => {
+    });
+  }
+  function restore() {
+    let saved = theme;
+    try {
+      saved = storage().getItem(THEME_KEY);
+    } catch {
+    }
+    apply(saved);
+  }
+  restore();
+  button2.onclick = () => apply(theme === "dark" ? "light" : "dark", true);
+  events.addEventListener("storage", (event) => {
+    if (event.key !== THEME_KEY && event.key !== null) return;
+    try {
+      if (event.storageArea && event.storageArea !== storage()) return;
+    } catch {
+      return;
+    }
+    restore();
+  });
+  events.addEventListener("pageshow", (event) => {
+    if (event.persisted) restore();
+  });
+  return { get theme() {
+    return theme;
+  }, settled: () => queue };
+}
 
 // node_modules/@capacitor/app/dist/esm/index.js
 init_dist();
@@ -9668,6 +9715,7 @@ function createPushControls(options) {
 // online/ui.js
 var $ = (id) => document.getElementById(id);
 var paths = {
+  moon: ["M20.5 13.1A8.5 8.5 0 0 1 10.9 3.5 8.5 8.5 0 1 0 20.5 13.1Z"],
   castle: ["M4 20V9h3V4h3v5h4V4h3v5h3v11H4Z", "M10 20v-6h4v6"],
   territory: ["m7 3 10 0 4 4v10l-4 4H7l-4-4V7Z", "M8 12h8", "M12 8v8"],
   capture: ["m7 3 10 0 4 4v10l-4 4H7l-4-4V7Z", "M8 12h8"],
@@ -10656,6 +10704,8 @@ function friendlyError(error) {
 var config2 = config;
 initUI();
 $("app-version").textContent = version;
+var appearance = Capacitor.getPlatform() === "android" ? registerPlugin("Appearance") : null;
+createTheme({ root: document.documentElement, button: $("dark-mode"), meta: document.querySelector('meta[name="theme-color"]'), onChange: (theme) => appearance?.set({ dark: theme === "dark" }) });
 var mark = svg("svg", { viewBox: monogram_default.viewBox, "aria-hidden": "true" });
 for (const p of monogram_default.paths) mark.append(svg("path", { d: p.d, fill: "none", stroke: "currentColor", "stroke-width": p.width, "stroke-linecap": "round", "stroke-linejoin": "round" }));
 document.querySelector(".brand-mark").replaceChildren(mark);
