@@ -24,7 +24,22 @@ QWERTY letter buttons and a close icon. Swedish adds a separate Å/Ä/Ö row.
 - No backend, migration, dictionary, scoring, board distribution or account changes.
   Both design galleries and the original prototype remain available.
 
-Release verification pending.
+Release verification:
+
+- All **135 regression tests** and original engine/scoring/supply suites pass.
+  Production and isolated fixture builds pass. No browser/phone rendering claim.
+- [Web](https://xnorbertx.github.io/word-conquest/online/) published from source `489b0f8`, Pages `22c47f3`.
+  All ten public assets match the tested build after line-ending normalization.
+  Only `online/app.js` and `online/online.css` changed on the hosting branch;
+  root prototype and both design galleries are preserved.
+- [Android 0.9.3-489b0f8](https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-25018969), code `25018969`, passed
+  [CI](https://github.com/xNorbertx/word-conquest/actions/runs/39037654134). Verified stable signing certificate, package/version, notification
+  permission, WC icons, Word keys markers, removal of the old rail, and matching
+  packaged HTML/CSS. No private keys or local fixtures are included.
+  [Direct APK](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25018969/word-conquest-android.apk) is downloadable without sign-in and matches SHA-256
+  `077ca565c6edad26a0f239043dfe80c07cf0053a4d883e6bfb51ad3bdcb439d9` (4,970,878 bytes).
+  Local APK: `dist/word-conquest-0.9.3.apk`; install over the existing pilot.
+- No backend deployment, migration, app-store submission, infrastructure or new costs.
 
 ## Faster joker studies — 17 October 2026, review in progress
 

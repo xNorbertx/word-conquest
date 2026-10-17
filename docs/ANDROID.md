@@ -58,16 +58,16 @@ Install the new APK to receive client changes. Backend improvements are already
 compatible with older APKs. First visits still need network access; physical Seeker
 startup/resume timing remains a device acceptance check. No paid service was added.
 
-Verified pilot build: [0.9.2-c138151](https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-24963455) (version code `24963455`),
-from the successful [pipeline run](https://github.com/xNorbertx/word-conquest/actions/runs/38974808904). The signature matches the existing
-pilot. Verified package/version, notification permission, WC icons, compact Games
-toolbar and matching packaged HTML/CSS. Anonymous download matches SHA-256
-`372625d814aafbf3f9e7092293186fe6d53c32d4db68c4cc6b67a649d778ac32`.
-Local APK: `dist/word-conquest-0.9.2.apk`. Install over the existing pilot.
-[Download the APK directly](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-24963455/word-conquest-android.apk); no GitHub sign-in is needed.
-All 132 regression tests and original suites pass in CI. No backend or gameplay
-change, data migration, app-store submission or new costs. Phone layout acceptance
-remains open because browser inspection was unavailable during this turn.
+Verified pilot build: [0.9.3-489b0f8](https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-25018969) (version code `25018969`),
+from the successful [pipeline run](https://github.com/xNorbertx/word-conquest/actions/runs/39037654134). The signature matches the existing
+pilot. Package/version, notification permission, WC icons, Word keys, removed rail
+and matching packaged HTML/CSS are verified. Anonymous download matches SHA-256
+`077ca565c6edad26a0f239043dfe80c07cf0053a4d883e6bfb51ad3bdcb439d9`.
+Local APK: `dist/word-conquest-0.9.3.apk`. Install over the existing pilot.
+[Download the APK directly](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25018969/word-conquest-android.apk); no GitHub sign-in is needed.
+All 135 regression tests and original suites pass. Browser access is unavailable,
+so this turn does not claim a fresh rendered-phone check. Backend and game data
+are unchanged; no app-store submission or new costs.
 
 Version 0.7.1 removes the waiting-turn card, the Record section on You, and
 table-themed wording. Results/statistics remain stored on the backend. The WC
