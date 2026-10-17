@@ -1,4 +1,30 @@
-# Implementation and verification - updated 17 October 2026
+# Implementation and verification - updated 18 October 2026
+
+## Scoring simplification study — 18 October 2026
+
+- Research-only comparison of current English autumn-v4, the owner's proposed
+  banked captures / gentler word bonus / five letter tiers / defended castles,
+  and first-claim-land and words-plus-castles variations. No production gameplay,
+  backend, dictionary, user data or APK changes.
+- Completed 4,800 full games / 115,790 turns across main, mixed-style, sparse,
+  exhaustive familiar-word and shallow reply-planning stages. Both starting
+  orders for each board. Added 1,536 continuations from 32 predetermined choices.
+- Main scores from words / ordinary land / castle value / income: current
+  60.9 / 11.4 / 3.8 / 24.0%; proposal 54.5 / 22.4 / 0 / 23.1%; first-claim
+  56.5 / 19.4 / 0 / 24.1%; words-plus-castles 69.4 / 0 / 0 / 30.6%.
+- Recommendation is human-testing words-plus-defended-castles against the
+  proposal. First-player, comeback and expert-word-search sensitivity remain
+  unresolved; no claim that the simplest system is proven fair or more fun.
+- Ten research tests pass. Every baseline move reconciles with production
+  scoring. Experimental scores never decrease. All 2,048 main games replayed
+  exactly in a separate letter/accounting audit. No truncated searches.
+- Report model selector, eight complete replays, score tables, navigation,
+  CSS and asset/data invariants pass. PNG/SVG charts visually inspected.
+  Browser preview unavailable; physical-phone rendering not claimed verified.
+- [Written findings](research/scoring-2026-10-18/FINDINGS.md),
+  [methods and reproduction](research/scoring-2026-10-18/README.md),
+  [interactive report](research/scoring-2026-10-18/index.html).
+  Report publication pending; no new infrastructure or ongoing cost.
 
 ## Focus and sign-out — 17 October 2026, released 0.11.2
 

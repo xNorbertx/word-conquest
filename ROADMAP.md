@@ -1,12 +1,18 @@
 # Word Conquest — app roadmap
 
-Updated: 17 October 2026
+Updated: 18 October 2026
 
 This is an acceptance checklist. The original local two-player prototype remains
 available; a separate online implementation now exists. Rules remain experimental.
 See [implementation and verification status](docs/PROGRESS.md) and the single
 [manual setup checklist](docs/SETUP.md). Boxes remain unchecked until their hosted
 and real-device acceptance checks pass, not merely because source code was written.
+
+Scoring simplification research is complete: four systems, 4,800 English games
+and 1,536 decision continuations. [Findings](docs/research/scoring-2026-10-18/FINDINGS.md)
+recommend human-testing the proposal against words-plus-defended-castles. Rule
+selection, starting-order fairness and implementation remain pending; live scoring
+is unchanged. A later implementation needs a new pinned rules version.
 
 Focus/sign-out 0.11.2 is released on web and Android: touch focus boxes removed,
 keyboard focus retained, and sign-out confirmation added. All 158 tests, DOM checks,
