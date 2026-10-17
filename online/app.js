@@ -2642,6 +2642,9 @@ var rules_v4_default = Object.freeze({ ...rules_v3_default, jokerPlacement: "cas
 // server/versions/rules-sv-v2.mjs
 var rules_sv_v2_default = Object.freeze({ ...rules_sv_v1_default, jokerPlacement: "castle-neighbors-v1" });
 
+// server/versions/rules-sv-v3.mjs
+var rules_sv_v3_default = Object.freeze({ ...rules_sv_v2_default, dictionaryNormalization: "latin-accents-v1" });
+
 // server/rules.mjs
 var RULES_VERSION = "autumn-v4";
 var rules = Object.freeze({
@@ -2650,12 +2653,13 @@ var rules = Object.freeze({
   "autumn-v3": Object.freeze({ ...rules_v3_default, dictionaryEnabled: true }),
   "autumn-sv-v1": Object.freeze({ ...rules_sv_v1_default, dictionaryEnabled: true }),
   "autumn-v4": Object.freeze({ ...rules_v4_default, dictionaryEnabled: true }),
-  "autumn-sv-v2": Object.freeze({ ...rules_sv_v2_default, dictionaryEnabled: true })
+  "autumn-sv-v2": Object.freeze({ ...rules_sv_v2_default, dictionaryEnabled: true }),
+  "autumn-sv-v3": Object.freeze({ ...rules_sv_v3_default, dictionaryEnabled: true })
 });
 var SUPPORTED_RULES = Object.freeze(Object.keys(rules));
 var configFor = (version6) => typeof version6 === "string" && Object.hasOwn(rules, version6) ? rules[version6] : null;
 var config = rules[RULES_VERSION];
-var rulesLabel = (version6) => ({ "autumn-v1": "Classic \xB7 3 captures", "autumn-v2": "Unlimited captures", "autumn-v3": "Castle income 2 / 4", "autumn-sv-v1": "Castle income 2 / 4", "autumn-v4": "Castle income 2 / 4", "autumn-sv-v2": "Castle income 2 / 4" })[version6] || "Other rules";
+var rulesLabel = (version6) => ({ "autumn-v1": "Classic \xB7 3 captures", "autumn-v2": "Unlimited captures", "autumn-v3": "Castle income 2 / 4", "autumn-sv-v1": "Castle income 2 / 4", "autumn-v4": "Castle income 2 / 4", "autumn-sv-v2": "Castle income 2 / 4", "autumn-sv-v3": "Castle income 2 / 4" })[version6] || "Other rules";
 var captureRule = (rules2) => Number.isFinite(rules2.maxEnemyTilesPerWord) ? `Capture up to ${rules2.maxEnemyTilesPerWord} opponent tiles per word.` : "No capture limit: every opponent tile in your word becomes yours.";
 var castleRule = (rules2) => rules2.castleIncome ? `Side castles earn ${rules2.castleIncome.side} each round; the centre earns ${rules2.castleIncome.center}. Final castle values are ${rules2.castlePoints} and ${rules2.centerCastlePoints}.` : `Castles are worth ${rules2.castlePoints} territory points.`;
 
@@ -2668,15 +2672,53 @@ var dictionary_v1_meta_default = {
   policy: "Exact lowercase ASCII entries, 3\u201369 letters. Inflections and slang accepted only when listed. No runtime stemming or additions. May contain offensive and archaic words; no family-safe claim."
 };
 
+// server/versions/dictionary-sv-v2.meta.json
+var dictionary_sv_v2_meta_default = {
+  version: "swedish-expanded-v2-112709e5233b",
+  language: "sv",
+  sha256: "112709e5233bbad00e3ee4d4f6b287e54d9114a766daea91ec1821f85c67caea",
+  words: 991634,
+  sources: [
+    {
+      name: "Martin Lindhe Swedish list",
+      legacyVersion: "swedish-lindhe-v1-f214ceab2ae3",
+      legacySha256: "f214ceab2ae3d5fc328a278537979c8833ab851dafc8d0a5214be47530d629fa",
+      sha256: "ed072a895de54b96fa256e7d6480408c61fc75d1160bfc6bcad0c95b83b3d194",
+      acceptedForms: 402666,
+      license: "MIT",
+      url: "https://github.com/martinlindhe/wordlist_swedish/tree/c1c4464df5d2232fcdd04f2b17bc491aba3cda27"
+    },
+    {
+      name: "SALDO's morphology",
+      date: "2017-09-19",
+      sha256: "8e484c61722e6ac1b40812aa09d9bea56852c178a95754d7406e752943ea05b2",
+      entries: 128036,
+      acceptedForms: 845100,
+      license: "CC-BY-4.0",
+      url: "https://svn.spraakbanken.gu.se/sb-arkiv/pub/lmf/saldom/saldom.xml",
+      doi: "https://doi.org/10.23695/agcm-ny22",
+      attribution: "Spr\xE5kbanken (2017). SALDO\u2019s morphology. Enriched and distributed by Spr\xE5kbanken."
+    }
+  ],
+  addedWords: 590733,
+  policy: "Union of the retained legacy Swedish list, accent-normalized Lindhe source and listed SALDO full forms. SALDO excludes proper nouns, abbreviations, multiword entries and compound-only/affix forms. Lowercase NFC sources only, 3\u201369 board letters. Decomposable accents are removed (\xE9\u2192e, \xFC\u2192u, \xF1\u2192n, \xE7\u2192c); \xE5/\xE4/\xF6 remain distinct. No punctuation deletion, inferred compounds or runtime stemming. Not an official SAOL/Wordfeud list; uncommon/offensive words can occur.",
+  saol: {
+    included: false,
+    reason: "Catalogue lists CC-BY-4.0; documented Karp-s API denied access to saol15-ord on 2026-10-17. Awaiting authorised export."
+  }
+};
+
 // server/languages.mjs
 var LANGUAGES = Object.freeze({
   en: Object.freeze({ code: "en", label: "English", rulesVersion: RULES_VERSION, alphabet: "ABCDEFGHIJKLMNOPQRSTUVWXYZ", dictionary: dictionary_v1_meta_default }),
-  sv: Object.freeze({ code: "sv", label: "Svenska", rulesVersion: "autumn-sv-v2", alphabet: "ABCDEFGHIJKLMNOPQRSTUVWXYZ\xC5\xC4\xD6", dictionary: dictionary_sv_v1_meta_default })
+  sv: Object.freeze({ code: "sv", label: "Svenska", rulesVersion: "autumn-sv-v3", alphabet: "ABCDEFGHIJKLMNOPQRSTUVWXYZ\xC5\xC4\xD6", dictionary: dictionary_sv_v2_meta_default })
 });
 var languageFor = (code) => typeof code === "string" && Object.hasOwn(LANGUAGES, code) ? LANGUAGES[code] : null;
 var languageForRules = (version6) => {
   const c = configFor(version6);
-  return c ? languageFor(c.language || "en") : null;
+  if (!c) return null;
+  const language = languageFor(c.language || "en");
+  return language?.code === "sv" && version6 !== "autumn-sv-v3" ? Object.freeze({ ...language, rulesVersion: version6, dictionary: dictionary_sv_v1_meta_default }) : language;
 };
 var languageLabel = (version6) => languageForRules(version6)?.label || "Unknown language";
 
@@ -2848,7 +2890,7 @@ function createSnapshotCache(storage, { namespace = "", now = Date.now, ttl = 7 
 }
 
 // package.json
-var version = "0.10.0";
+var version = "0.11.0";
 
 // online/app.js
 init_dist();
@@ -11493,9 +11535,9 @@ function showDictionary() {
   link.href = "dictionary-license.txt";
   link.target = "_blank";
   link.rel = "noopener";
-  const content = [node("p", config2.language === "sv" && currentView === "game" ? "Swedish words use Martin Lindhe\u2019s Swedish word list. Listed inflections and compounds are allowed; \xC5, \xC4 and \xD6 are distinct letters." : "English uses the Letterpress-derived word list. Swedish uses Martin Lindhe\u2019s Swedish word list, with \xC5, \xC4 and \xD6. Listed inflections and compounds are allowed.")];
-  content.push(node("p", "Each game keeps its original dictionary. Lists may include uncommon or offensive words."), link);
-  showSheet("Words we play.", content);
+  const swedish = currentView === "game" && config2.language === "sv", expanded = config2.dictionaryNormalization === "latin-accents-v1";
+  const text = swedish ? expanded ? "Swedish uses SALDO and the original Swedish list. Accents such as \xE9 use the plain letter; \xC5, \xC4 and \xD6 stay distinct." : "This game uses the original Martin Lindhe Swedish list. \xC5, \xC4 and \xD6 are distinct letters." : "English uses the Letterpress-derived list. New Swedish games combine SALDO with the original Swedish list.";
+  showSheet("Words we play.", [node("p", text), node("p", "Listed inflections and compounds count. Each game keeps its original dictionary. Uncommon or offensive words may occur."), link]);
 }
 function showHistory() {
   const actor = user?.id, id = game.id, names = [...game.names], content = node("div"), list = node("ol", void 0, "move-list"), note = node("p", "Loading moves\u2026", "menu-note");
