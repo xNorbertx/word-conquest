@@ -17,9 +17,9 @@ export function notify(message,error=false){
   $('toast-text').textContent=message;$('toast').classList.toggle('error',error);$('toast').firstElementChild.replaceWith(icon(error?'info':'check'));$('toast').hidden=false;
   if(!error)toastTimer=setTimeout(()=>$('toast').hidden=true,4000);
 }
-export function closeSheet(){if($('joker-lens')?.open)$('joker-lens').close();if($('sheet').open)$('sheet').close();}
+export function closeSheet(){if($('joker-keyboard')?.open)$('joker-keyboard').close();if($('sheet').open)$('sheet').close();}
 export function showSheet(title,content){
-  if($('joker-lens')?.open)$('joker-lens').close();
+  if($('joker-keyboard')?.open)$('joker-keyboard').close();
   $('sheet-title').textContent=title;$('sheet-content').replaceChildren(...(Array.isArray(content)?content:[content]));hydrateIcons($('sheet-content'));
   if(!$('sheet').open)$('sheet').showModal();$('sheet-content').scrollTop=0;
 }
@@ -29,5 +29,5 @@ export function ask({title,message,label='Confirm',cancel='Keep playing',danger=
 }
 function finishConfirm(answer){$('confirm-dialog').close();const resolve=confirmResolve;confirmResolve=null;resolve?.(answer);}
 export function initUI(){hydrateIcons();$('close-sheet').onclick=closeSheet;$('dismiss-toast').onclick=()=>$('toast').hidden=true;$('confirm-cancel').onclick=()=>finishConfirm(false);$('confirm-ok').onclick=()=>finishConfirm(true);$('confirm-dialog').addEventListener('cancel',e=>{e.preventDefault();finishConfirm(false);});for(const d of [$('sheet'),$('confirm-dialog')])d.addEventListener('click',e=>{if(e.target!==d)return;const r=d.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom){if(d===$('sheet'))closeSheet();else finishConfirm(false);}});}
-export function closeTopDialog(){if($('joker-lens')?.open){$('joker-lens').close();return true;}if($('confirm-dialog').open){finishConfirm(false);return true;}if($('sheet').open){closeSheet();return true;}return false;}
+export function closeTopDialog(){if($('joker-keyboard')?.open){$('joker-keyboard').close();return true;}if($('confirm-dialog').open){finishConfirm(false);return true;}if($('sheet').open){closeSheet();return true;}return false;}
 export function emptyState(title,copy,symbol='leaf'){const box=node('div',undefined,'empty-state'),art=node('div',undefined,'empty-art');art.append(icon(symbol));box.append(art,node('h2',title),node('p',copy));return box;}

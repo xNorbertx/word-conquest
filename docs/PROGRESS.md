@@ -1,5 +1,31 @@
 # Implementation and verification - updated 17 October 2026
 
+## Word keys joker picker — 17 October 2026, 0.9.3
+
+The owner selected option 2 from the faster joker gallery and requested no visible
+instructions or other extra text. The production picker now contains only the word,
+QWERTY letter buttons and a close icon. Swedish adds a separate Å/Ä/Ö row.
+
+- A tap immediately assigns a letter; no rail, title, subtitle, helper copy or
+  confirmation step. Blank jokers remain blank until chosen and retain zero points.
+- The next unassigned joker opens automatically in the same dialog. Word slots can
+  be edited independently; closing keeps previous assignments. All letters remain
+  available, with no dictionary-based suggestions or gameplay changes.
+- Native modal focus/Escape, Android Back and navigation dismissal are integrated.
+  Screen-reader labels remain, without visible instruction text. Long words wrap
+  within a bounded area; safe-area padding and opaque ivory avoid nested backgrounds.
+- Old buttons from a prior choice cannot assign the next joker; held physical keys,
+  modifiers and composition events are ignored. Game/revision/turn/selection guards
+  recheck before every assignment; stale dialogs close without changing the board.
+- Targeted controller and gesture checks pass. Full build/regression/release
+  verification is recorded below after completion. Browser inventory is still empty;
+  this turn does not claim rendered-phone inspection. The owner reviewed and selected
+  the prototype on their phone.
+- No backend, migration, dictionary, scoring, board distribution or account changes.
+  Both design galleries and the original prototype remain available.
+
+Release verification pending.
+
 ## Faster joker studies — 17 October 2026, review in progress
 
 The owner likes the Letter lens but finds scrolling to a letter too slow. Three

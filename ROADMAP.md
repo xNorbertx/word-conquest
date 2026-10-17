@@ -8,9 +8,9 @@ See [implementation and verification status](docs/PROGRESS.md) and the single
 [manual setup checklist](docs/SETUP.md). Boxes remain unchecked until their hosted
 and real-device acceptance checks pass, not merely because source code was written.
 
-Faster joker concepts are in `design/joker-speed`: direct alphabet, QWERTY and
-large grouped letters. Functional checks pass; rendered phone review is pending
-browser access before design selection. The live Letter lens remains unchanged.
+Jokers 0.9.3 implement the approved Word keys design: immediate QWERTY selection,
+Swedish Å/Ä/Ö, automatic next joker and no visible instruction text. The old
+scrolling Letter lens is replaced; backend rules and existing games are unchanged.
 
 Games 0.9.2 places Playing/Finished and New game in one row, with no welcome
 greeting or waiting-turn summary.

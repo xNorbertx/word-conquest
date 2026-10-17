@@ -12,7 +12,7 @@ import {requireUsername,signUpAccount} from './username.mjs';
 import {scoreMotionPlan,createScoreLedger} from './score-motion.mjs';
 import {createBoardScoreMotion} from './score-motion.js';
 import {tilePoints,castleLabel} from './board-geometry.mjs';
-import {createJokerLens,canAssignJoker} from './joker-lens.mjs';
+import {createJokerKeyboard,canAssignJoker} from './joker-keyboard.mjs';
 import {LANGUAGES,languageFor,languageLabel} from '../server/languages.mjs';
 import {Engine,config as defaultConfig,configFor,RULES_VERSION,SUPPORTED_RULES,rulesLabel,captureRule,castleRule} from '../server/domain.mjs';
 let config=defaultConfig;
@@ -44,7 +44,7 @@ const homeRequests=createHomeRequests(()=>api({action:'home'}));
 const gameRequests=createHomeRequests(key=>api({action:'game',gameId:key.split('/')[1]}));
 const scoreLedger=createScoreLedger(localStorage);
 const scoreMotion=createBoardScoreMotion({onComplete:()=>{if(game&&currentView==='game')renderGame();}});
-const jokerLens=createJokerLens();
+const jokerKeyboard=createJokerKeyboard();
 function screen(name,{route=true,replace=false}={}){
   scoreMotion.cancel(false);
   closeSheet();currentView=name;for(const id of screens)$(id).hidden=id!==name;
@@ -210,11 +210,11 @@ function drawBoard(){
   const centers=selection.map(id=>pos(game.state.tiles.find(t=>t.id===id)));const segments=centers.slice(1).map((b,i)=>{const a=centers[i],length=Math.hypot(b.x-a.x,b.y-a.y),dx=(b.x-a.x)/length*15,dy=(b.y-a.y)/length*15;return `M${a.x+dx},${a.y+dy} L${b.x-dx},${b.y-dy}`;}).join(' ');board.append(svg('path',{class:'path',d:segments}));
 }
 function openJoker(id){
-  const snapshot={gameId:game?.id,revision:game?.revision,tileId:id};
-  const valid=()=>currentView==='game'&&canAssignJoker(snapshot,{gameId:game?.id,revision:game?.revision,editable:preview||canPlay(),path:selection,tiles:game?.state.tiles||[]});
-  if(!valid())return;
-  jokerLens.open({tileId:id,tiles:game.state.tiles,path:[...selection],assignments:{...jokers},alphabet:config.alphabet||LANGUAGES.en.alphabet,valid,
-    onCommit:letter=>{if(!valid())return;jokers[id]=letter;drawBoard();renderSelection();}
+  const snapshot={gameId:game?.id,revision:game?.revision};
+  const valid=tileId=>currentView==='game'&&canAssignJoker({...snapshot,tileId},{gameId:game?.id,revision:game?.revision,editable:preview||canPlay(),path:selection,tiles:game?.state.tiles||[]});
+  if(!valid(id))return;
+  jokerKeyboard.open({tileId:id,tiles:game.state.tiles,path:[...selection],assignments:{...jokers},alphabet:config.alphabet||LANGUAGES.en.alphabet,valid,
+    onCommit:(tileId,letter)=>{if(!valid(tileId))return false;jokers[tileId]=letter;drawBoard();renderSelection();return true;}
   });
 }
 function openPendingJoker(){
@@ -249,7 +249,7 @@ function renderSelection(){
   $('pending').hidden=!pending();$('pending-message').textContent=busy?'Saving your move...':'Move not confirmed yet. Retry when connected.';$('retry').disabled=busy;
 }
 function renderGame(){
-  scoreMotion.cancel(false);jokerLens.validate();
+  scoreMotion.cancel(false);jokerKeyboard.validate();
   const totals=Engine.scoreBreakdown(game.state,config),seat=seatOf(game,user?.id)||1;
   const active=game.status==='active',ownTurn=preview||myTurn(),unconfirmed=!!pending();
   const other=opponentName(game,user?.id);
@@ -288,7 +288,7 @@ function choose(id){
   else {const error=Engine.validatePath(game.state,[...selection,id],config,false);if(error){if(!dragging)status(error,true);return;}selection.push(id);}
   highlightLast=false;focusTile=id;drawBoard();renderSelection();
 }
-function clearWord(){if(busy||pending())return;selection=[];jokers={};highlightLast=false;jokerLens.close();renderGame();}
+function clearWord(){if(busy||pending())return;selection=[];jokers={};highlightLast=false;jokerKeyboard.close();renderGame();}
 async function sendPending(){
   const command=pending();if(!command||busy)return;const sentGame=game.id,sentUser=user.id,storageKey=pendingKey();busy=true;++gameLoad;gameRequests.reset();renderGame();
   try{
