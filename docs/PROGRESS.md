@@ -1,5 +1,25 @@
 # Implementation and verification - updated 17 October 2026
 
+## Focus and sign-out — 17 October 2026, prepared 0.11.2
+
+- Removed the global ochre focus rectangles and login input outline. Touch,
+  mouse and pen use no focus box. Deliberate keyboard navigation retains a small
+  sage cue; board keyboard focus follows the tile polygon rather than a rectangle.
+  Castle decoration, player colours and selected-word feedback are unchanged.
+- Both account and username-setup Sign out buttons open a compact Sign out?
+  confirmation with Cancel / Sign out. Cancel, Escape, Android Back and backdrop
+  dismissal perform no sign-out or push changes. Duplicate taps are guarded.
+- Confirmed sign-out checks SDK errors before clearing UI state. Successful
+  sign-out resets the form to Sign in; failure remains retryable. Other confirmation
+  dialogs retain their existing message when present.
+- All 158 tests and the engine/scoring/supply suites pass; build succeeds. Actual
+  production DOM checks cover both entry points, cancel/Escape/Back/backdrop,
+  repeat taps, confirmation, SDK errors and subsequent message-based dialogs.
+  Touch/mouse/pen/keyboard transitions and CSS parse pass.
+- Publication pending. Client-only change, no backend rollout,
+  new permissions, dependencies or service costs. Real phone rendering remains an
+  acceptance check because browser/device access is unavailable here.
+
 ## Approved login — 17 October 2026, released 0.11.1
 
 - Owner selected round 2 option 3 and requested removal of the background logo.

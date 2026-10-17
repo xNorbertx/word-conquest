@@ -8,6 +8,9 @@ See [implementation and verification status](docs/PROGRESS.md) and the single
 [manual setup checklist](docs/SETUP.md). Boxes remain unchecked until their hosted
 and real-device acceptance checks pass, not merely because source code was written.
 
+Focus/sign-out 0.11.2 removes touch focus boxes and adds sign-out confirmation.
+Verification and publication are tracked in [PROGRESS](docs/PROGRESS.md).
+
 Login 0.11.1 is released on web and Android: approved concept 3 without the
 background logo. All 158 tests, auth DOM checks, web assets and signed APK checks
 pass; see [evidence](docs/PROGRESS.md). Physical-phone visual acceptance remains open.

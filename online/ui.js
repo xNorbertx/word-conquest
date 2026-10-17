@@ -25,8 +25,8 @@ export function showSheet(title,content){
   if(!$('sheet').open)$('sheet').showModal();$('sheet-content').scrollTop=0;
 }
 let confirmResolve=null;
-export function ask({title,message,label='Confirm',cancel='Keep playing',danger=false,symbol='help'}){
-  closeSheet();$('confirm-title').textContent=title;$('confirm-message').textContent=message;$('confirm-ok').textContent=label;$('confirm-ok').classList.toggle('danger',danger);$('confirm-cancel').textContent=cancel;$('confirm-icon').replaceChildren(icon(symbol));$('confirm-dialog').showModal();return new Promise(resolve=>confirmResolve=resolve);
+export function ask({title,message='',label='Confirm',cancel='Keep playing',danger=false,symbol='help'}){
+  closeSheet();$('confirm-title').textContent=title;$('confirm-message').textContent=message;$('confirm-message').hidden=!message;$('confirm-ok').textContent=label;$('confirm-ok').classList.toggle('danger',danger);$('confirm-cancel').textContent=cancel;$('confirm-icon').replaceChildren(icon(symbol));$('confirm-dialog').showModal();return new Promise(resolve=>confirmResolve=resolve);
 }
 function finishConfirm(answer){$('confirm-dialog').close();const resolve=confirmResolve;confirmResolve=null;resolve?.(answer);}
 export function initUI(){hydrateIcons();$('close-sheet').onclick=closeSheet;$('dismiss-toast').onclick=()=>$('toast').hidden=true;$('confirm-cancel').onclick=()=>finishConfirm(false);$('confirm-ok').onclick=()=>finishConfirm(true);$('confirm-dialog').addEventListener('cancel',e=>{e.preventDefault();finishConfirm(false);});for(const d of [$('sheet'),$('confirm-dialog')])d.addEventListener('click',e=>{if(e.target!==d)return;const r=d.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom){if(d===$('sheet'))closeSheet();else finishConfirm(false);}});}

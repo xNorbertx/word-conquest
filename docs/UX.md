@@ -1,5 +1,12 @@
 # Autumn Sunday UX revision - 4 October 2026
 
+## Focus and sign-out — 0.11.2
+
+Touch/mouse interaction has no focus rectangles. Keyboard navigation uses a quiet
+sage indicator, with polygon-only focus on board tiles. The global brown outline
+is retired. Both Sign out entry points ask Sign out? with Cancel / Sign out;
+dismissing the dialog leaves the session and notifications untouched.
+
 ## Approved login — 0.11.1
 
 Round 2 concept 3 is approved with its large background WC removed. The game name

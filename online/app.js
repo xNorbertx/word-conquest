@@ -5,6 +5,7 @@ import {createSnapshotCache} from './snapshot-cache.mjs';
 import {version as appVersion} from '../package.json';
 import {Capacitor,registerPlugin} from '@capacitor/core';
 import {createTheme} from './theme.mjs';
+import {trackFocusInput} from './focus.mjs';
 import {App} from '@capacitor/app';
 import {createClient} from '@supabase/supabase-js';
 import {createPushControls} from './push.js';
@@ -21,7 +22,7 @@ let config=defaultConfig;
 import {$,svg,icon,node,button,setting,notify,showSheet,closeSheet,ask,initUI,closeTopDialog,emptyState} from './ui.js';
 import {seatOf,isFinished,opponentName,gameStatus,visibleGames,timeAgo,invitationToken,activityText,friendlyError} from './presentation.mjs';
 
-initUI();$('app-version').textContent=appVersion;
+trackFocusInput();initUI();$('app-version').textContent=appVersion;
 const appearance=Capacitor.getPlatform()==='android'?registerPlugin('Appearance'):null;
 createTheme({root:document.documentElement,button:$('dark-mode'),meta:document.querySelector('meta[name="theme-color"]'),onChange:theme=>appearance?.set({dark:theme==='dark'})});
 const mark=svg('svg',{viewBox:monogram.viewBox,'aria-hidden':'true'});
@@ -35,7 +36,7 @@ let user=null,game=null,history=[],invite=null,selection=[],jokers={},busy=false
 let currentView='loading',homeData=null,filter='active',polling=false,gameLoad=0,homeLoad=0,notificationGame=null,authReady=false,navigation=0;
 let liveChannel=null,liveUser=null,refreshQueued=false,highlightLast=false,focusTile=null,authMode='signin',authBusy=false;
 let lastRequestId=null,lastProblem=null,usernameSetupBusy=false;
-let gameFresh=false,entering=false;
+let gameFresh=false,entering=false,signingOut=false;
 const snapshots=createSnapshotCache(localStorage,{namespace:cfg.supabaseUrl+(cfg.cacheScope||'')});
 const native=Capacitor.isNativePlatform();
 const publicApp='https://xnorbertx.github.io/word-conquest/online/';
@@ -469,7 +470,15 @@ $('help-button').onclick=showRules;for(const b of document.querySelectorAll('[da
 $('game-menu').onclick=showGameMenu;$('share-invite').onclick=()=>run(shareInvite);$('copy-invite').onclick=()=>run(copyInvite);$('cancel-invite').onclick=()=>run(quitGame);
 $('player-score-1').onclick=()=>{scoreMotion.cancel();showScore(1);};$('player-score-2').onclick=()=>{scoreMotion.cancel();showScore(2);};$('recap').onclick=showRecap;
 $('accept-draw').onclick=()=>run(()=>confirmAction('accept_draw'));
-$('setup-signout').onclick=$('signout').onclick=()=>run(async()=>{await push.disable(false);notificationGame=null;await db.auth.signOut();game=null;homeData=null;selection=[];$('password').value='';$('setup-username').value='';status('Signed out.');});
+async function confirmSignOut(){
+  if(signingOut)return;signingOut=true;
+  try{
+    if(!await ask({title:'Sign out?',label:'Sign out',cancel:'Cancel',symbol:'logout'}))return;
+    await push.disable(false);const {error}=await db.auth.signOut();if(error)throw error;
+    notificationGame=null;game=null;homeData=null;selection=[];$('password').value='';$('setup-username').value='';setAuthMode('signin');status('Signed out.');
+  }finally{signingOut=false;}
+}
+$('setup-signout').onclick=$('signout').onclick=()=>run(confirmSignOut);
 $('read-inbox').onclick=()=>run(async()=>{await api({action:'read_notifications'});await fetchHome();renderActivity();status('All caught up.');});
 $('submit-word').onclick=()=>run(()=>action('word'));$('retry').onclick=()=>run(sendPending);$('clear-word').onclick=clearWord;
 const tileAt=(x,y)=>document.elementFromPoint(x,y)?.closest('[data-id]')?.dataset.id;
