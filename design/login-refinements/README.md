@@ -1,5 +1,9 @@
 # Login refinements — round 2
 
+**Selected:** option 3, with the oversized background logo removed. The small
+castle stamp stays. Implemented for 0.11.1; see [release status](../../docs/PROGRESS.md).
+The gallery below preserves the original three proposals for comparison.
+
 Three independent phone-first previews combining the owner's requested elements:
 the **Territory** layout (round 1 option 3), the tile-built title (option 1), and
 the WC/castle identity (option 2). No slogans or introductory product copy.

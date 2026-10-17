@@ -1,5 +1,13 @@
 # Autumn Sunday UX revision - 4 October 2026
 
+## Approved login — 0.11.1
+
+Round 2 concept 3 is approved with its large background WC removed. The game name
+is built from real octagonal tiles above an ivory form. A small WC castle crosses
+the boundary. Sign-in shows only the essential controls and privacy/support link;
+signup/reset add a short mode heading. No slogans or duplicate navigation brand.
+The saved dark preference also applies. Username onboarding remains separate.
+
 ## Dark mode — 0.10.0
 
 You → Dark mode is an immediate, persistent device-level switch. Light remains

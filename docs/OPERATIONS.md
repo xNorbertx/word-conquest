@@ -1,5 +1,12 @@
 # Run, deploy and maintain
 
+## Login appearance — 0.11.1
+
+Client-only release: run tests/build, publish dist/online to the existing Pages
+branch and verify the signed CI APK. No Supabase deployment or migration is needed.
+Rollback by reverting the Pages commit or installing the preceding pilot. Existing
+accounts, redirects, username onboarding, dictionaries and sessions are unchanged.
+
 ## Username-only friend discovery — 0.9.1
 
 Apply 202610170001_username_only_friends.sql, then deploy game-api before clients.

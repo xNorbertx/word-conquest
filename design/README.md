@@ -67,7 +67,8 @@ and WC mark provide the visual identity. See [prototype notes and verification](
 The owner requested a second round combining option 3's layout, option 1's tile
 lettering and option 2's WC/castle identity. The [refined gallery](login-refinements/index.html)
 contains **Crest**, **Connected**, and **Monogram**. See [refinement notes and verification](login-refinements/README.md).
-Selection is pending; the production login has not been replaced.
+The owner selected round 2 option 3 with the oversized background WC removed.
+Version 0.11.1 implements it, retaining the small castle stamp; see [release status](../docs/PROGRESS.md).
 
 ## Reference source
 

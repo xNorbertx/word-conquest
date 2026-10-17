@@ -1,5 +1,12 @@
 # Word Conquest
 
+### Approved login update (0.11.1)
+
+Board-tile title, forest header, small WC castle and simple underline fields.
+The large background logo and introductory slogans are removed. Sign-in,
+registration and password recovery use the existing backend. Publication status:
+[progress and verification](docs/PROGRESS.md).
+
 A territory word game with a preserved local prototype and a separate online implementation.
 
 ## Online web and Android pilot

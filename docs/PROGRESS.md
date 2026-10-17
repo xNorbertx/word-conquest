@@ -1,5 +1,23 @@
 # Implementation and verification - updated 17 October 2026
 
+## Approved login — 17 October 2026, prepared 0.11.1
+
+- Owner selected round 2 option 3 and requested removal of the background logo.
+  Implemented the tile-built Word Conquest title, forest header, small WC castle
+  stamp and underline fields. No slogans, duplicate header brand or review controls.
+- Real Supabase sign-in, signup and reset handlers are retained. Signup still
+  requires 12 characters and username selection happens after account creation.
+  Mode changes mask the password; the toggle exposes its pressed state.
+- Light/dark surfaces, safe-area padding, short-screen adjustments, scrollable
+  forms, autofill labels and the quiet privacy/support link remain available.
+- All 158 regression tests and original engine/scoring/supply suites pass; build
+  succeeds. Production auth DOM checks cover sign-in, signup confirmation, reset,
+  masking/toggle, duplicate submits, failure recovery and shell navigation. Saved
+  theme checks and CSS parse pass. Production title/castle SVG rendered and viewed.
+- Publication pending. No backend, schema, gameplay, native
+  permissions, dependency or service changes. Original prototype and galleries
+  remain available. Actual browser/device rendering is unavailable in this session.
+
 ## Login refinements — 17 October 2026, round 2 for review
 
 - The owner requested a new synthesis: Territory layout (round 1 option 3),
@@ -15,8 +33,8 @@
 - [Published round 2 gallery](https://xnorbertx.github.io/word-conquest/previews/login-v2/):
   source 3820a74, Pages 651f5c6. All six public files match the committed
   source. Live web/prototype and all six first-round files also match their
-  original assets. No backend or Android changes, and no new costs. Owner selection
-  is pending.
+  original assets. The owner selected option 3 without its background WC;
+  implementation and release are recorded above.
 
 ## Login concepts — 17 October 2026, first round
 
