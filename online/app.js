@@ -2848,7 +2848,7 @@ function createSnapshotCache(storage, { namespace = "", now = Date.now, ttl = 7 
 }
 
 // package.json
-var version = "0.9.3";
+var version = "0.9.4";
 
 // online/app.js
 init_dist();
@@ -10507,6 +10507,93 @@ function createJokerKeyboard() {
   } };
 }
 
+// online/board-viewport.mjs
+function createBoardViewport({ viewport, board, button: button2, icon: icon2, onTap, getFocus, stamp, enabled = () => true }) {
+  let expanded = false, gesture = null, size = 0, width = 0, height = 0;
+  const clamp = (n, max) => Math.max(0, Math.min(Math.max(0, max), n));
+  function position(x, y) {
+    viewport.scrollLeft = clamp(x, viewport.scrollWidth - viewport.clientWidth);
+    viewport.scrollTop = clamp(y, viewport.scrollHeight - viewport.clientHeight);
+  }
+  function cancel() {
+    const id = gesture?.pointerId;
+    gesture = null;
+    viewport.classList.remove("panning");
+    if (id != null && viewport.hasPointerCapture(id)) viewport.releasePointerCapture(id);
+  }
+  function resize(focus) {
+    if (!expanded) return;
+    const w = viewport.clientWidth, h = viewport.clientHeight;
+    if (!w || !h) return;
+    const centre = focus || { x: size ? (viewport.scrollLeft + width / 2) / size : 0.5, y: size ? (viewport.scrollTop + height / 2) / size : 0.5 };
+    size = Math.max(660, Math.min(w, h) * 1.8);
+    width = w;
+    height = h;
+    board.style.width = size + "px";
+    board.style.height = size + "px";
+    position(centre.x * size - w / 2, centre.y * size - h / 2);
+  }
+  function setZoom(value) {
+    cancel();
+    expanded = !!value;
+    viewport.classList.toggle("zoomed", expanded);
+    board.classList.toggle("enlarged", expanded);
+    button2.setAttribute("aria-pressed", String(expanded));
+    button2.setAttribute("aria-label", expanded ? "Fit board" : "Enlarge board");
+    button2.replaceChildren(icon2(expanded ? "shrink" : "expand"));
+    if (expanded) resize(getFocus?.() || { x: 0.5, y: 0.5 });
+    else {
+      board.style.removeProperty("width");
+      board.style.removeProperty("height");
+      position(0, 0);
+      size = width = height = 0;
+    }
+  }
+  const tileAt2 = (e) => e.target.closest?.("[data-id]")?.dataset.id;
+  function down(e) {
+    if (!expanded || !enabled() || e.button !== 0 || e.isPrimary === false) return;
+    e.preventDefault();
+    e.stopPropagation();
+    cancel();
+    gesture = { pointerId: e.pointerId, x: e.clientX, y: e.clientY, left: viewport.scrollLeft, top: viewport.scrollTop, tile: tileAt2(e), stamp: stamp(), moved: false };
+    viewport.setPointerCapture(e.pointerId);
+  }
+  function move(e) {
+    if (!gesture || gesture.pointerId !== e.pointerId) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const dx = e.clientX - gesture.x, dy = e.clientY - gesture.y;
+    if (!gesture.moved && Math.hypot(dx, dy) < 7) return;
+    gesture.moved = true;
+    viewport.classList.add("panning");
+    position(gesture.left - dx, gesture.top - dy);
+  }
+  function up(e) {
+    if (!gesture || gesture.pointerId !== e.pointerId) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const previous = gesture;
+    cancel();
+    if (!previous.moved && Math.hypot(e.clientX - previous.x, e.clientY - previous.y) < 7 && previous.tile && previous.stamp === stamp() && enabled()) onTap(previous.tile);
+  }
+  viewport.addEventListener("pointerdown", down, true);
+  viewport.addEventListener("pointermove", move, true);
+  viewport.addEventListener("pointerup", up, true);
+  for (const event of ["pointercancel", "lostpointercapture"]) viewport.addEventListener(event, cancel);
+  viewport.addEventListener("focusin", (e) => {
+    if (!expanded || !e.target.closest?.("[data-id]")) return;
+    const tile = e.target.getBoundingClientRect(), box = viewport.getBoundingClientRect(), margin = 8;
+    const dx = tile.left < box.left + margin ? tile.left - box.left - margin : tile.right > box.right - margin ? tile.right - box.right + margin : 0;
+    const dy = tile.top < box.top + margin ? tile.top - box.top - margin : tile.bottom > box.bottom - margin ? tile.bottom - box.bottom + margin : 0;
+    position(viewport.scrollLeft + dx, viewport.scrollTop + dy);
+  });
+  if (typeof ResizeObserver !== "undefined") new ResizeObserver(() => resize()).observe(viewport);
+  button2.onclick = () => setZoom(!expanded);
+  return { setZoom, resize, get expanded() {
+    return expanded;
+  } };
+}
+
 // online/presentation.mjs
 var seatOf = (game2, userId) => game2.players.indexOf(userId) + 1;
 var isFinished = (game2) => !["active", "invited"].includes(game2.status);
@@ -10633,6 +10720,27 @@ var scoreMotion = createBoardScoreMotion({ onComplete: () => {
   if (game && currentView === "game") renderGame();
 } });
 var jokerKeyboard = createJokerKeyboard();
+var boardViewport = createBoardViewport({
+  viewport: $("board-scroll"),
+  board: $("board"),
+  button: $("zoom"),
+  icon,
+  stamp: () => currentView + "/" + game?.id + "/" + game?.revision,
+  enabled: () => currentView === "game" && !scoreMotion.active,
+  getFocus: () => {
+    const tile = game?.state.tiles.find((t) => t.id === selection.at(-1));
+    return tile ? { x: (tile.q * 64 + 295) / 590, y: (tile.r * 64 + 295) / 590 } : null;
+  },
+  onTap: (id) => {
+    if (!canPlay() && !preview) return;
+    const edit = selection.includes(id) && game.state.tiles.find((t) => t.id === id)?.letter === "?";
+    if (edit) openJoker(id);
+    else {
+      choose(id);
+      openPendingJoker();
+    }
+  }
+});
 function screen(name, { route = true, replace = false } = {}) {
   scoreMotion.cancel(false);
   closeSheet();
@@ -10640,6 +10748,7 @@ function screen(name, { route = true, replace = false } = {}) {
   for (const id of screens) $(id).hidden = id !== name;
   const inGame = name === "game";
   document.body.classList.toggle("game-view", inGame);
+  if (!inGame) boardViewport.setZoom(false);
   $("back").hidden = !inGame;
   $("game-heading").hidden = !inGame;
   $("game-menu").hidden = !inGame;
@@ -10972,6 +11081,7 @@ async function decideInvite(choice) {
   }
 }
 async function openGame(id, quiet = false, { route = true } = {}) {
+  if (!quiet) boardViewport.setZoom(false);
   const ticket = quiet ? navigation : ++navigation, request = quiet ? gameLoad : ++gameLoad, actor = user?.id;
   const cached = !quiet && snapshots.game(actor, id);
   if (cached) {
@@ -11043,11 +11153,7 @@ async function openGame(id, quiet = false, { route = true } = {}) {
     highlightLast = false;
     focusTile = null;
   }
-  if (!quiet) {
-    $("board").classList.remove("enlarged");
-    $("zoom").setAttribute("aria-pressed", "false");
-    if (!cached) screen("game", { route });
-  }
+  if (!quiet && !cached) screen("game", { route });
   if (changed || !quiet || !wasFresh) {
     renderGame();
     animateScore(previousRevision);
@@ -11063,10 +11169,7 @@ function animateScore(previousRevision = null, { replay = false } = {}) {
   if (!plan || document.hidden) return;
   closeSheet();
   $("toast").hidden = true;
-  $("board").classList.remove("enlarged");
-  $("zoom").setAttribute("aria-pressed", "false");
-  $("zoom").setAttribute("aria-label", "Enlarge board");
-  $("zoom").replaceChildren(icon("expand"));
+  boardViewport.setZoom(false);
   $("game-table").scrollIntoView({ block: "start", behavior: "instant" });
   void scoreMotion.play(plan, { seat: seatOf(game, user.id), names: game.names });
 }
@@ -11126,10 +11229,7 @@ function openPendingJoker() {
 function renderWord() {
   const heading = $("word");
   heading.replaceChildren();
-  if (!selection.length) {
-    heading.textContent = "Find your word.";
-    return;
-  }
+  if (!selection.length) return;
   for (const [i, id] of selection.entries()) {
     const tile = game.state.tiles.find((t) => t.id === id);
     if (tile.letter !== "?") {
@@ -11142,29 +11242,13 @@ function renderWord() {
     heading.append(slot);
   }
 }
-function selectionHint(error) {
-  if (!gameFresh) return "Checking for updates\u2026";
-  if (pending()) return "Your move is waiting to be confirmed.";
-  if (!selection.length) return engine_default.canReenter(game.state, config2) ? "No territory left? Start on any tile." : `Start on one of your ${seatOf(game, user?.id) === 2 ? "brown" : "green"} tiles.`;
-  if (selection.some((id) => game.state.tiles.find((t) => t.id === id).letter === "?" && !jokers[id])) return "Choose a letter for your joker.";
-  if (selection.length < config2.minimumWordLength) return `Add ${config2.minimumWordLength - selection.length} more ${config2.minimumWordLength - selection.length === 1 ? "letter" : "letters"}.`;
-  return error || "Ready when you are.";
-}
 function renderSelection() {
   const error = engine_default.validatePath(game.state, selection, { ...config2, dictionaryEnabled: false }, true, null, jokers);
   renderWord();
-  $("word").classList.toggle("placeholder", !selection.length);
   $("submit-word").disabled = !canPlay() || !!error;
   $("clear-word").disabled = !selection.length || busy || !!pending();
-  $("selection-help").textContent = preview ? "Board preview. Moves are not saved." : selectionHint(error);
-  $("selection-help").classList.toggle("invalid", !!error && selection.length >= config2.minimumWordLength && !selection.some((id) => game.state.tiles.find((t) => t.id === id).letter === "?" && !jokers[id]));
-  $("score-preview").hidden = !selection.length;
-  if (selection.length) {
-    const s = engine_default.scoreMove(game.state, selection, config2);
-    $("score-preview").replaceChildren(node("span", `${s.wordPoints} word points + ${s.territoryGain} land${s.castleIncome ? ` + ${s.castleIncome} income` : ""}`), icon("info"));
-    $("submit-label").textContent = `Play word \xB7 ${s.totalGain}`;
-  } else $("submit-label").textContent = "Play word";
-  if (busy) $("submit-label").textContent = "Saving...";
+  $("word").scrollLeft = $("word").scrollWidth;
+  $("submit-label").textContent = busy ? "Saving\u2026" : "Play";
   $("pending").hidden = !pending();
   $("pending-message").textContent = busy ? "Saving your move..." : "Move not confirmed yet. Retry when connected.";
   $("retry").disabled = busy;
@@ -11178,14 +11262,14 @@ function renderGame() {
   $("game-table").dataset.side = seat === 1 ? "sage" : "walnut";
   $("game-table").dataset.seat = seat;
   [1, 2].forEach((p) => {
-    const mine = p === seat, name = game.names?.[p - 1] || (mine ? "You" : "Your friend"), colour2 = p === 1 ? "Sage green" : "Walnut brown", card = $("player-score-" + p);
+    const mine = p === seat, name = game.names?.[p - 1] || (mine ? "You" : "Your friend"), colour = p === 1 ? "Sage green" : "Walnut brown", card = $("player-score-" + p);
     $("name-" + p).textContent = mine ? "You" : name;
     $("name-" + p).title = mine ? "You" : name;
     $("score-" + p).textContent = totals[p - 1].total;
     card.style.order = mine ? 1 : 2;
     card.classList.toggle("is-you", mine);
     card.classList.toggle("is-turn", active && !unconfirmed && game.state.player === p);
-    card.setAttribute("aria-label", `${mine ? "You, " : ""}${name}. ${colour2}. ${active && !unconfirmed && game.state.player === p ? "Current turn. " : ""}Score: ${totals[p - 1].total}. View breakdown`);
+    card.setAttribute("aria-label", `${mine ? "You, " : ""}${name}. ${colour}. ${active && !unconfirmed && game.state.player === p ? "Current turn. " : ""}Score: ${totals[p - 1].total}. View breakdown`);
   });
   const scoreboard = document.querySelector(".scoreboard"), ownCard = $("player-score-" + seat);
   if (scoreboard.firstElementChild !== ownCard) scoreboard.prepend(ownCard);
@@ -11222,8 +11306,6 @@ function renderGame() {
   $("composer").hidden = !myTurn() && !preview || isFinished(game) || !!pending() && !busy;
   $("game-result").hidden = !isFinished(game);
   $("draw-offer").hidden = !game.draw_by || game.draw_by === user?.id || game.status !== "active";
-  const colour = seat === 1 ? "green" : "brown", context = highlightLast ? "Last word highlighted" : preview ? "Explore the board" : isFinished(game) ? "Your final territory" : ownTurn ? engine_default.canReenter(game.state, config2) ? "No territory left. Start anywhere." : `Start on your ${colour} tiles` : `Your tiles \xB7 ${colour}`;
-  $("board-context").replaceChildren(node("span", void 0, seat === 1 ? "owner-dot" : "owner-ring"), node("span", context));
   if (isFinished(game)) {
     $("result-title").textContent = game.status === "completed" ? gameStatus(game, user?.id) + "." : game.status === "abandoned" ? "A game left unfinished." : "Invitation cancelled.";
     $("result-description").textContent = game.status === "completed" ? `${totals[seat - 1].total} to ${totals[seat === 1 ? 1 : 0].total}. A little word, a little world.` : "This game ended without a result.";
@@ -11336,14 +11418,6 @@ function scoreLines(rows) {
 function showScore(player) {
   const s = engine_default.scoreBreakdown(game.state, config2)[player - 1];
   showSheet(player === seatOf(game, user?.id) ? "Your score" : `${game.names[player - 1]}'s score`, [scoreLines([["Word points", s.words], ["Current territory", s.territory], ...config2.castleIncome ? [["Castle income earned", s.income]] : [], ["Total", s.total, true]]), node("p", config2.castleIncome ? "Word points and earned castle income stay yours. Current territory changes with ownership. Income pays after both players move, including the final round." : "Word points stay yours. Territory points change when tiles are captured.")]);
-}
-function showWordScore() {
-  if (!selection.length) return;
-  const s = engine_default.scoreMove(game.state, selection, config2);
-  const content = [scoreLines([["Letter points", s.letters], ["Length bonus", s.lengthBonus], ["New territory", s.territoryGain], ...s.castleIncome ? [["Castle income this round", s.castleIncome]] : [], ["Added to your score", s.totalGain, true]])];
-  if (s.enemyLoss) content.push(node("p", `Your opponent also loses ${s.enemyLoss} territory points.`));
-  if (s.incomeAwarded?.[2 - game.state.player]) content.push(node("p", `Your opponent also earns ${s.incomeAwarded[2 - game.state.player]} castle income this round.`));
-  showSheet("A good word adds up.", content);
 }
 function showRules() {
   const config3 = currentView === "game" && game ? configFor(game.rules_version) || config : config;
@@ -11858,7 +11932,6 @@ $("player-score-2").onclick = () => {
   scoreMotion.cancel();
   showScore(2);
 };
-$("score-preview").onclick = showWordScore;
 $("recap").onclick = showRecap;
 $("accept-draw").onclick = () => run(() => confirmAction("accept_draw"));
 $("setup-signout").onclick = $("signout").onclick = () => run(async () => {
@@ -11881,12 +11954,6 @@ $("read-inbox").onclick = () => run(async () => {
 $("submit-word").onclick = () => run(() => action("word"));
 $("retry").onclick = () => run(sendPending);
 $("clear-word").onclick = clearWord;
-$("zoom").onclick = () => {
-  const expanded = $("board").classList.toggle("enlarged");
-  $("zoom").setAttribute("aria-pressed", expanded);
-  $("zoom").setAttribute("aria-label", expanded ? "Fit board" : "Enlarge board");
-  $("zoom").replaceChildren(icon(expanded ? "shrink" : "expand"));
-};
 var tileAt = (x, y) => document.elementFromPoint(x, y)?.closest("[data-id]")?.dataset.id;
 var boardGesture = null;
 $("board").onpointerdown = (e) => {
@@ -11927,20 +11994,20 @@ $("board").onkeydown = (e) => {
     e.preventDefault();
     const edit = selection.includes(id) && game.state.tiles.find((t) => t.id === id).letter === "?";
     if (!edit) choose(id);
-    $("board").querySelector(`[data-id="${id}"]`)?.focus();
+    $("board").querySelector(`[data-id="${id}"]`)?.focus({ preventScroll: true });
     if (edit) openJoker(id);
     else openPendingJoker();
   } else if (e.key === "Escape") {
     e.preventDefault();
     clearWord();
-    $("board").querySelector(`[data-id="${id}"]`)?.focus();
+    $("board").querySelector(`[data-id="${id}"]`)?.focus({ preventScroll: true });
   } else if (e.key === "Backspace") {
     e.preventDefault();
     if (canPlay() || preview) {
       delete jokers[selection.pop()];
       drawBoard();
       renderSelection();
-      $("board").querySelector(`[data-id="${id}"]`)?.focus();
+      $("board").querySelector(`[data-id="${id}"]`)?.focus({ preventScroll: true });
     }
   } else if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
     e.preventDefault();
@@ -11949,7 +12016,7 @@ $("board").onkeydown = (e) => {
     if (next) {
       focusTile = next.id;
       drawBoard();
-      $("board").querySelector(`[data-id="${next.id}"]`)?.focus();
+      $("board").querySelector(`[data-id="${next.id}"]`)?.focus({ preventScroll: true });
     }
   }
 };
