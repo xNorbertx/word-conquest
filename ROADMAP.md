@@ -9,7 +9,7 @@ See [implementation and verification status](docs/PROGRESS.md) and the single
 and real-device acceptance checks pass, not merely because source code was written.
 
 Scoring simplification research is complete: four systems, 4,800 English games
-and 1,536 decision continuations. [Findings](docs/research/scoring-2026-10-18/FINDINGS.md)
+and 1,536 decision continuations. [Published findings](https://xnorbertx.github.io/word-conquest/research/scoring-2026-10-18/)
 recommend human-testing the proposal against words-plus-defended-castles. Rule
 selection, starting-order fairness and implementation remain pending; live scoring
 is unchanged. A later implementation needs a new pinned rules version.

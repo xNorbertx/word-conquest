@@ -24,7 +24,10 @@
 - [Written findings](research/scoring-2026-10-18/FINDINGS.md),
   [methods and reproduction](research/scoring-2026-10-18/README.md),
   [interactive report](research/scoring-2026-10-18/index.html).
-  Report publication pending; no new infrastructure or ongoing cost.
+  [Public report](https://xnorbertx.github.io/word-conquest/research/scoring-2026-10-18/) published from source `992e907`,
+  Pages `2bdbac7`. All 15 public assets match verified files;
+  ten existing app/prototype assets also match their previous deployment.
+  No new infrastructure, Android build or ongoing cost.
 
 ## Focus and sign-out — 17 October 2026, released 0.11.2
 
