@@ -99,7 +99,7 @@ dictionary provider; validation remains inside the existing backend. The last
 game-language choice is stored locally for the signed-in account and removed on
 account deletion. See [source, filtering and balance details](LANGUAGES.md).
 
-Prepared 0.11.0: new Swedish games retain that list and add its normalized accented
+From 0.11.0, new Swedish games retain that list and add its normalized accented
 entries plus SALDO full forms (CC BY 4.0). Decomposable accents use plain board
 letters; Å/Ä/Ö stay distinct. SALDO proper names, abbreviations, multiword entries
 and compound-only/affix fragments are excluded. SAOL is not included pending export

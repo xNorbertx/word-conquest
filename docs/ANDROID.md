@@ -1,5 +1,10 @@
 # Android pilot and build pipeline
 
+Version 0.11.0 adds SALDO and accent handling for new Swedish games: 991,634 word
+forms, including MOSKEERNA, OBOKAD and OBOKAT. Accents such as é use plain letters;
+Å/Ä/Ö stay distinct. Update both players and start a new Swedish game to use it.
+Existing games keep their original dictionary. SAOL remains a separate follow-up.
+
 Version 0.10.0 adds You → Dark mode. The chosen theme stays on this device and
 updates the game, dialogs, joker keyboard and Android system bars. The native
 bridge is included in the APK; install over the existing pilot.
@@ -66,16 +71,16 @@ Install the new APK to receive client changes. Backend improvements are already
 compatible with older APKs. First visits still need network access; physical Seeker
 startup/resume timing remains a device acceptance check. No paid service was added.
 
-Verified pilot build: [0.10.0-133da47](https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-25028715) (version code `25028715`),
-from the successful [pipeline run](https://github.com/xNorbertx/word-conquest/actions/runs/39049278894). The signature matches the existing
-pilot. Package/version, notification permission, WC icons, theme bootstrap/switch,
-compiled Appearance bridge and matching packaged HTML/CSS are verified.
-Anonymous download matches SHA-256 `c6f622a1224888898c67a44d3dbf5df7e7b7a8976ee57d2c28a0b0846ae80037`.
-Local APK: `dist/word-conquest-0.10.0.apk`. Install over the existing pilot.
-[Download the APK directly](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25028715/word-conquest-android.apk); no GitHub sign-in is needed.
-All 150 regression tests and original suites pass, alongside account/game DOM and
-palette contrast checks. Browser access remains unavailable; rendered appearance
-and physical system-bar acceptance are unverified. No new permissions or costs.
+Verified pilot build: [0.11.0-7ee58cb](https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-25037098) (version code `25037098`),
+from the successful [pipeline run](https://github.com/xNorbertx/word-conquest/actions/runs/39059412946). The signature matches the
+existing pilot. Package/version, notification permission, WC icons, native
+Appearance bridge, exact packaged client/page and dictionary notices are verified.
+Anonymous download matches SHA-256 `b41e80138a52731ef4151915dc0276d8e0b5cb9aea297bdec651e86f1a6829f2`.
+Local APK: `dist/word-conquest-0.11.0.apk`. Install over the existing pilot.
+[Download the APK directly](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25037098/word-conquest-android.apk); no GitHub sign-in is needed.
+All 158 regression tests and original suites pass. Hosted reported-word checks,
+older dictionaries, retries and a completed 28-turn Swedish game pass. Physical
+phone acceptance and vocabulary feedback remain open. No new permissions or costs.
 
 Version 0.7.1 removes the waiting-turn card, the Record section on You, and
 table-themed wording. Results/statistics remain stored on the backend. The WC
@@ -120,7 +125,7 @@ statistics stay separate.
 On your Android phone, open the repository's [Releases page](https://github.com/xNorbertx/word-conquest/releases).
 Open the newest published Android pilot and, under **Assets**, download
 `word-conquest-android.apk`. No GitHub account or ZIP extraction is needed.
-[Direct verified APK download](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-24616906/word-conquest-android.apk).
+[Direct verified APK download](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25037098/word-conquest-android.apk).
 Open the downloaded APK and allow installation from your browser if Android asks.
 Updates install over the existing pilot app; do not uninstall it, because that
 removes locally saved sessions and pending actions.

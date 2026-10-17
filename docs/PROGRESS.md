@@ -1,8 +1,8 @@
 # Implementation and verification - updated 17 October 2026
 
-## Expanded Swedish vocabulary — 17 October 2026, prepared 0.11.0
+## Expanded Swedish vocabulary — 17 October 2026, released 0.11.0
 
-- Prepared 991,634 playable forms: the existing 400,901-word list is retained;
+- Released 991,634 playable forms: the existing 400,901-word list is retained;
   accented entries from its pinned upstream source and listed SALDO full forms
   add 590,733 entries. MOSKEERNA, OBOKAD and OBOKAT are covered.
 - Import normalizes decomposable Latin accents (é/è/ê/ë→e, ü→u, ñ→n, ç→c),
@@ -21,8 +21,10 @@
   sb-info@svenska.gu.se for an authorised machine-readable export of saol15-ord
   (https://doi.org/10.23695/eqtv-ee68). Store supplied data locally; no credentials
   in chat. Full SAOL/Wordfeud compatibility is not claimed.
-- Owner was asked whether to publish this SALDO/accents increment first or hold
-  for SAOL. **Publication remains pending that answer.** No hosted game modified.
+- Owner approved the SALDO/accents release while SAOL access is pending.
+  Backend was deployed before clients. Hosted tests use dedicated example.invalid
+  accounts and newly created test games only; all were completed or cancelled.
+  Existing player games and data were not modified.
 
 Verification: 158 regression tests and the original engine/scoring/supply suites
 pass; production build passes. Coverage includes accent distinctions, fragment
@@ -36,6 +38,34 @@ not hosted Edge verification). Run `npm run build` then
 `node --expose-gc scripts/check-dictionary-bundle.cjs` to repeat it.
 The client bundle is about 508 KB and contains no word lists. No migration,
 new service, dependency or recurring cost is required.
+
+Release verification:
+
+- Source `7ee58cb`; dedicated Supabase `game-api` deployed with no schema,
+  secrets, push or infrastructure changes. Existing English and Swedish versions
+  remain supported. Seven isolated word fixtures verified MOSKEERNA, OBOKAD
+  (including a joker), OBOKAT, both old Swedish versions and English. OBOKAT is
+  still rejected in v2 without spending a turn. Scoring, duplicate receipts,
+  stale revisions and opponent reloads pass.
+- A fresh Swedish friend invitation completed **28 word turns**, 14 per player,
+  with final totals 110 / 142. Link preview/cancellation, creation retry, old-client
+  guards, game summaries and per-version statistics pass. English smoke passes.
+  Observed Swedish turn requests averaged 919 ms and the home request was
+  566 ms; these are network observations, not a latency guarantee.
+- [Web](https://xnorbertx.github.io/word-conquest/online/) published as Pages `041b3a4`.
+  All ten public assets match the verified build after line-ending normalization;
+  the original prototype and design galleries are preserved.
+- [Android 0.11.0-7ee58cb](https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-25037098), code `25037098`, passed
+  [CI](https://github.com/xNorbertx/word-conquest/actions/runs/39059412946), including 158 tests and the original suites.
+  Verified stable signing certificate, package/version, notification permission,
+  WC icons, native Appearance bridge, exact packaged client/page and SALDO/CC BY
+  attribution. No test fixtures or private-key material are packaged. Anonymous
+  [APK download](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25037098/word-conquest-android.apk) matches SHA-256
+  `b41e80138a52731ef4151915dc0276d8e0b5cb9aea297bdec651e86f1a6829f2`. Local copy: `dist/word-conquest-0.11.0.apk`.
+- Update both players or use the current web client, then start a **new Swedish
+  game** for this dictionary. Existing games retain their earlier word lists.
+  Physical-phone acceptance and Swedish vocabulary quality feedback remain open.
+  SAOL needs an authorised export and another immutable dictionary version.
 
 ## Dark mode — 17 October 2026, 0.10.0
 

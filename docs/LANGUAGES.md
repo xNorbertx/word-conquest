@@ -1,6 +1,6 @@
 # Game languages
 
-## Expanded Swedish dictionary — prepared 0.11.0
+## Expanded Swedish dictionary — released 0.11.0
 
 New clients select autumn-sv-v3 for Swedish games. This changes dictionary selection
 only: the v2 board layout, alphabet, weights, point values and replacements remain.
@@ -24,8 +24,8 @@ additional characters; displayed words use their board spelling.
 
 **SAOL is not yet included.** Its catalogue metadata lists the headword resource
 saol15-ord under CC BY 4.0, but the documented public API refused access.
-Publication of this SALDO/accents increment awaits the owner's choice. To complete
-the originally requested SAOL+SALDO union, obtain an authorised export from
+The owner approved shipping SALDO/accents first; this increment is released on
+web and Android. To complete the originally requested SAOL+SALDO union, obtain an authorised export from
 sb-info@svenska.gu.se, audit its fields/licence and release another immutable version.
 This is not a claim of Wordfeud-compatible vocabulary. SALDO's archived snapshot
 can still omit recent words; reviewed corrections belong in subsequent versions.

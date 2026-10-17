@@ -30,12 +30,13 @@ See [Android installation](docs/ANDROID.md) and [0.3.0 UX review](docs/UX.md). H
 36-turn and owner playtests passed; multi-day/device acceptance, backup restoration
 and operational monitoring remain open. The local prototype below is unchanged.
 
-### Prepared Swedish vocabulary update (0.11.0)
+### Swedish vocabulary update (0.11.0)
 
 Adds SALDO full forms and accent handling (é→e, with Å/Ä/Ö preserved), retaining all
 existing accepted words. New Swedish games use a separately pinned dictionary;
-older games and letter/scoring balance stay unchanged. SAOL export access and
-publication are pending. See [source and release status](docs/LANGUAGES.md).
+older games and letter/scoring balance stay unchanged. Released on the web and in
+[Android 0.11.0](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25037098/word-conquest-android.apk); update both players before starting a new Swedish
+game. SAOL export access remains pending. See [source and release status](docs/LANGUAGES.md).
 
 ### Game languages (0.8.0)
 
