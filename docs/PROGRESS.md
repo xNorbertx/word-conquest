@@ -28,7 +28,22 @@ suites pass. Ten production DOM scenarios cover English/Swedish selection, joker
 clear, waiting, stale, pending and finished states; CSS parses without warnings.
 Production and isolated fixture builds pass. These are not rendered-layout tests.
 
-Release verification pending.
+Release verification:
+
+- [Web](https://xnorbertx.github.io/word-conquest/online/) published from source `ba55394`, Pages `237a067`.
+  All ten public assets match the tested build after line-ending normalization.
+  The hosting change is confined to the online HTML/CSS/client bundle; the local
+  prototype and both joker galleries are preserved.
+- [Android 0.9.4-ba55394](https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-25021039), code `25021039`, passed the
+  [pipeline](https://github.com/xNorbertx/word-conquest/actions/runs/39040058619), including all 143 regression tests and original suites.
+  Stable signing certificate, package/version, notification permission, WC icons,
+  zoom controller, removed composer text and matching packaged HTML/CSS verified.
+  No private keys or local test fixtures are included.
+- [Direct APK](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25021039/word-conquest-android.apk) needs no GitHub sign-in. Anonymous download matches
+  SHA-256 `838ec8c1096f11f6d8e084d8682278c9aab3aa77a0312f357d1cddb002a1aafb` (4,972,524 bytes).
+  Local APK: `dist/word-conquest-0.9.4.apk`; install over the existing pilot.
+- Rendered phone/touch acceptance remains unverified because browser inventory is
+  empty. No backend deployment, migration, app-store submission or new costs.
 
 ## Word keys joker picker — 17 October 2026, 0.9.3
 
