@@ -1,5 +1,9 @@
 # Android pilot and build pipeline
 
+Version 0.11.2 removes brown touch/mouse focus boxes, retains keyboard focus cues,
+and adds Sign out? confirmation with Cancel / Sign out. Install over the existing
+pilot. No backend changes, new permissions or service costs.
+
 Version 0.11.1 replaces the login screen with the selected tile-built title,
 forest header, small WC castle and underline fields. The large background WC and
 slogans are removed. Install over the existing pilot; sign-in, recovery, username
@@ -76,15 +80,15 @@ Install the new APK to receive client changes. Backend improvements are already
 compatible with older APKs. First visits still need network access; physical Seeker
 startup/resume timing remains a device acceptance check. No paid service was added.
 
-Verified pilot build: [0.11.1-8fb5c72](https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-25044686) (code `25044686`),
-from the successful [pipeline run](https://github.com/xNorbertx/word-conquest/actions/runs/39068411819). Stable signing certificate,
+Verified pilot build: [0.11.2-2ae60e3](https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-25046289) (code `25046289`),
+from the successful [pipeline run](https://github.com/xNorbertx/word-conquest/actions/runs/39070324863). Stable signing certificate,
 package/version, notification permission, native WC icons, Appearance bridge and
 exact packaged HTML/CSS/JavaScript/dictionary notices are verified. Anonymous
-download matches SHA-256 `25e48143ec871ce1cfebb33ecd5085722412e3e00b7ba085a42180f59b57f6d5`.
-Local APK: `dist/word-conquest-0.11.1.apk`. Install over the existing pilot.
-[Download the APK directly](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25044686/word-conquest-android.apk); no GitHub sign-in is needed.
-All 158 tests and original suites pass. Production auth DOM and theme checks pass;
-real-phone rendering and keyboard interaction remain unverified in this session.
+download matches SHA-256 `61ad935d56c16ed5c6a2be017faa365574064c845cc1c7df6e312c96ff1360ad`.
+Local APK: `dist/word-conquest-0.11.2.apk`. Install over the existing pilot.
+[Download the APK directly](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25046289/word-conquest-android.apk); no GitHub sign-in is needed.
+All 158 tests and original suites pass. Focus transitions and sign-out confirmation
+DOM checks pass; real-phone rendering remains unverified in this session.
 
 Version 0.7.1 removes the waiting-turn card, the Record section on You, and
 table-themed wording. Results/statistics remain stored on the backend. The WC
@@ -129,7 +133,7 @@ statistics stay separate.
 On your Android phone, open the repository's [Releases page](https://github.com/xNorbertx/word-conquest/releases).
 Open the newest published Android pilot and, under **Assets**, download
 `word-conquest-android.apk`. No GitHub account or ZIP extraction is needed.
-[Direct verified APK download](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25044686/word-conquest-android.apk).
+[Direct verified APK download](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25046289/word-conquest-android.apk).
 Open the downloaded APK and allow installation from your browser if Android asks.
 Updates install over the existing pilot app; do not uninstall it, because that
 removes locally saved sessions and pending actions.

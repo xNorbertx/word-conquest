@@ -1,6 +1,6 @@
 # Implementation and verification - updated 17 October 2026
 
-## Focus and sign-out — 17 October 2026, prepared 0.11.2
+## Focus and sign-out — 17 October 2026, released 0.11.2
 
 - Removed the global ochre focus rectangles and login input outline. Touch,
   mouse and pen use no focus box. Deliberate keyboard navigation retains a small
@@ -16,7 +16,15 @@
   production DOM checks cover both entry points, cancel/Escape/Back/backdrop,
   repeat taps, confirmation, SDK errors and subsequent message-based dialogs.
   Touch/mouse/pen/keyboard transitions and CSS parse pass.
-- Publication pending. Client-only change, no backend rollout,
+- [Web](https://xnorbertx.github.io/word-conquest/online/) published from source `2ae60e3`, Pages
+  `e82cc32`. All ten public assets match the tested build; the root prototype
+  and design galleries remain available.
+- [Android 0.11.2-2ae60e3](https://github.com/xNorbertx/word-conquest/releases/tag/android-pilot-25046289) passed [CI](https://github.com/xNorbertx/word-conquest/actions/runs/39070324863).
+  Verified stable signing, package/version, native WC icons and Appearance bridge,
+  exact packaged HTML/CSS/JavaScript/dictionary notices and anonymous download.
+  [APK](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25046289/word-conquest-android.apk), version code `25046289`, SHA-256
+  `61ad935d56c16ed5c6a2be017faa365574064c845cc1c7df6e312c96ff1360ad`. Local copy: `dist/word-conquest-0.11.2.apk`.
+- Client-only change, no backend rollout,
   new permissions, dependencies or service costs. Real phone rendering remains an
   acceptance check because browser/device access is unavailable here.
 

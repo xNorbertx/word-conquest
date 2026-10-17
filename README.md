@@ -1,5 +1,13 @@
 # Word Conquest
 
+### Focus and sign-out update (0.11.2)
+
+Removes brown focus boxes during touch/mouse use and keeps a subtle keyboard
+focus indicator. Sign out now asks for confirmation on both account screens.
+Released on the [web](https://xnorbertx.github.io/word-conquest/online/) and in the
+[Android APK](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25046289/word-conquest-android.apk).
+See [verification and device-check limits](docs/PROGRESS.md).
+
 ### Approved login update (0.11.1)
 
 Board-tile title, forest header, small WC castle and simple underline fields.
