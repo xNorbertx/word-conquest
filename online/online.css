@@ -22,7 +22,7 @@
 }
 .sr-only{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
 .friend-search{display:flex;align-items:center;gap:8px;border:1px solid #d5d5c9;border-radius:14px;background:var(--paper);padding:3px 8px 3px 16px}
-.friend-search:focus-within{outline:2px solid var(--green);outline-offset:2px}
+:root[data-input-mode="keyboard"] .friend-search:focus-within{outline:2px solid var(--green);outline-offset:2px}
 .friend-search>.icon{color:var(--muted);flex-shrink:0}
 .friend-search input{border:0;background:transparent;padding:12px 4px;min-width:0;outline:none;box-shadow:none}
 .friend-search input:focus{outline:none;box-shadow:none}
@@ -101,12 +101,14 @@ h2 {
 h3 {
   font-size: 21px;
 }
-button:focus-visible,
-a:focus-visible,
-input:focus-visible,
-[tabindex]:focus-visible {
-  outline: 3px solid var(--ochre);
-  outline-offset: 4px;
+/* Taps/clicks have no focus box. Keyboard navigation keeps a quiet sage cue. */
+button:focus,
+a:focus,
+input:focus,
+[tabindex]:focus { outline:none; }
+:root[data-input-mode="keyboard"] :is(button,a,input,[tabindex]):not(.tile,main):focus-visible {
+  outline:2px solid var(--green);
+  outline-offset:3px;
 }
 main:focus {
   outline: 0;
@@ -919,8 +921,8 @@ input:read-only {
   stroke-width: 2.7;
   fill: #b4c7a0;
 }
-.tile:focus-visible > polygon:first-child {
-  stroke: #9e752b;
+:root[data-input-mode="keyboard"] .tile:focus-visible > polygon:first-child {
+  stroke: var(--green);
   stroke-width: 3.5;
 }
 .tile.last-move > polygon:first-child {
@@ -1783,7 +1785,7 @@ input:read-only {
 .tile.selected > polygon:first-child {stroke:var(--own-ink);stroke-width:3;fill:var(--own-fill)}
 .tile.selected .step {fill:var(--own-ink);font-weight:700}
 #board .path {stroke:var(--own-ink)}
-#board .tile:focus-visible > polygon:first-child {stroke:#9e752b;stroke-width:3.5}
+:root[data-input-mode="keyboard"] #board .tile:focus-visible > polygon:first-child {stroke:var(--green);stroke-width:3.5}
 #submit-word {background:var(--own-ink)}
 .game-card.has-turn {border-color:#a1b394}
 .game-card.has-turn .card-status {font-weight:750;color:var(--paper);background:var(--green)}
@@ -1844,7 +1846,7 @@ input:read-only {
 #board .tile.centre-castle>polygon:first-child{stroke-width:3.3}
 #board .tile.castle-tile.owner0>polygon:first-child{fill:#f2e8d1}
 #board .tile.castle-tile.selected>polygon:first-child{stroke:var(--own-ink);stroke-width:3.5;fill:var(--own-fill)}
-#board .tile.castle-tile:focus-visible>polygon:first-child{stroke:var(--own-ink);stroke-width:4}
+:root[data-input-mode="keyboard"] #board .tile.castle-tile:focus-visible>polygon:first-child{stroke:var(--own-ink);stroke-width:4}
 .is-scoring #board .tile.castle-tile.motion-castle>polygon:first-child{stroke:#a98235;stroke-width:4}
 .is-scoring #board .tile.castle-tile.motion-loss>polygon:first-child{stroke:var(--motion-target);stroke-dasharray:5 3}
 #score-motion[data-phase="capture"] #motion-tally{display:none}
@@ -1856,7 +1858,7 @@ input:read-only {
 /* Letter lens: a blank tile becomes a letter without opening a phone keyboard. */
 #word { display:flex; flex-wrap:wrap; align-items:center; gap:1px; }
 .word-joker { display:inline-grid; place-items:center; vertical-align:baseline; padding:0 3px; margin:0 2px; min-width:34px; height:40px; border:0; border-bottom:3px solid var(--green, #385340); border-radius:7px 7px 3px 3px; background:#e5e9d9; color:inherit; font:inherit; line-height:1; cursor:pointer; }
-.word-joker:focus-visible { outline:2px solid #385340; outline-offset:3px; }
+:root[data-input-mode="keyboard"] .word-joker:focus-visible { outline:2px solid var(--green); outline-offset:3px; }
 .tile.joker-tile.selected polygon { stroke-width:3; }
 /* Approved Word keys: only the selected word, letter keys and close icon. */
 body.joker-picking { overflow:hidden; }
@@ -1879,7 +1881,7 @@ body.joker-picking { overflow:hidden; }
 .joker-key-row.lower { padding:0 12%; }
 .joker-key-row.extra { padding-bottom:9px; margin-bottom:10px; border-bottom:1px solid #ced7c1; }
 .joker-key-row.extra .joker-key { max-width:62px; height:44px; }
-.joker-key:focus-visible,.joker-word-slot:focus-visible { outline:2px solid var(--green); outline-offset:2px; }
+:root[data-input-mode="keyboard"] .joker-key:focus-visible,:root[data-input-mode="keyboard"] .joker-word-slot:focus-visible { outline:2px solid var(--green); outline-offset:2px; }
 .joker-letter-flight { position:fixed; display:grid; place-items:center; z-index:10000; pointer-events:none; color:var(--green); background:#dae5cc; border-radius:10px; font:30px var(--serif); }
 @media(hover:hover) { .joker-key:hover { background:#e0e8d5; border-color:#9fb48b; } }
 @media(min-width:800px) { .sheet.joker-keyboard { inset:0; margin:auto; border-bottom:1px solid #d6dccb; border-radius:24px; } }
@@ -1987,7 +1989,7 @@ body.joker-picking { overflow:hidden; }
   --night-tile:#2b3027; --night-tile-edge:#68705c; --night-values:#d4d6c9;
   --night-castle:#413825; --night-gold:#d6b56f;
 }
-#dark-mode:focus-visible { outline-offset:-3px; }
+:root[data-input-mode="keyboard"] #dark-mode:focus-visible { outline-offset:-3px; }
 .theme-switch { position:relative; display:block; flex:0 0 42px; width:42px; height:26px; border:1px solid #8b947f; border-radius:20px; background:var(--line); }
 .theme-switch::after { content:''; position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:var(--paper); box-shadow:0 1px 3px #0002; }
 #dark-mode[aria-checked="true"] .theme-switch { background:var(--green); border-color:var(--green); }
@@ -2041,7 +2043,7 @@ body.joker-picking { overflow:hidden; }
 :root[data-theme="dark"] #board .tile.castle-tile>polygon:first-child { stroke:var(--night-gold); }
 :root[data-theme="dark"] #board .tile.castle-tile.owner0>polygon:first-child { fill:var(--night-castle); }
 :root[data-theme="dark"] #board .tile.selected>polygon:first-child { fill:var(--own-fill); stroke:var(--own-ink); }
-:root[data-theme="dark"] #board .tile:focus-visible>polygon:first-child { stroke:var(--night-gold); }
+:root[data-theme="dark"][data-input-mode="keyboard"] #board .tile:focus-visible>polygon:first-child { stroke:var(--green); }
 :root[data-theme="dark"] #board .castle-pulse { stroke:var(--night-gold); }
 :root[data-theme="dark"] #game-table.is-scoring { --motion-ink:var(--green); --motion-target:var(--green); }
 :root[data-theme="dark"] #game-table.is-scoring[data-motion-player="2"] { --motion-ink:var(--night-walnut); }
@@ -2064,7 +2066,7 @@ body.joker-picking { overflow:hidden; }
 :root[data-theme="dark"] .toast .icon-button:hover { background:#ffffff10; }
 :root[data-theme="dark"] .form-alert { background:#422e26; border-color:#966e5b; }
 :root[data-theme="dark"] .word-joker { background:var(--green-soft); border-color:var(--green); }
-:root[data-theme="dark"] .word-joker:focus-visible { outline-color:var(--green); }
+:root[data-theme="dark"][data-input-mode="keyboard"] .word-joker:focus-visible { outline-color:var(--green); }
 :root[data-theme="dark"] .sheet.joker-keyboard { border-color:var(--line); }
 :root[data-theme="dark"] .joker-keyboard-header .icon-button { background:var(--green-soft); }
 :root[data-theme="dark"] .joker-word-slot { background:var(--green-soft); border-color:#788c65; }
@@ -2107,7 +2109,6 @@ body.joker-picking { overflow:hidden; }
 .login-form input { display:block; height:56px; min-width:0; border:0; border-bottom:1px solid #c8ccbc; border-radius:0; background:transparent; padding:0 1px; font-size:16px; line-height:1.2; }
 .login-form input::placeholder { color:var(--muted); opacity:1; }
 .login-form input:focus { border-color:var(--green); }
-.login-form input:focus-visible { outline:2px solid var(--ochre); outline-offset:4px; }
 .login-form input:autofill { -webkit-text-fill-color:var(--ink); box-shadow:0 0 0 1000px var(--bg) inset; }
 .login-form #password { padding-right:52px; }
 .login-form #show-password { top:4px; right:-5px; height:48px; width:48px; border-radius:9px; color:var(--muted); }

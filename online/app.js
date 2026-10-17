@@ -2890,7 +2890,7 @@ function createSnapshotCache(storage, { namespace = "", now = Date.now, ttl = 7 
 }
 
 // package.json
-var version = "0.11.1";
+var version = "0.11.2";
 
 // online/app.js
 init_dist();
@@ -2940,6 +2940,27 @@ function createTheme({ root, button: button2, meta, storage = () => localStorage
   return { get theme() {
     return theme;
   }, settled: () => queue };
+}
+
+// online/focus.mjs
+function trackFocusInput(doc = document) {
+  const root = doc.documentElement;
+  root.dataset.inputMode = "pointer";
+  const pointer = () => {
+    root.dataset.inputMode = "pointer";
+  };
+  const keyboard = (event) => {
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
+    if (["Tab", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home", "End", "PageUp", "PageDown"].includes(event.key)) {
+      root.dataset.inputMode = "keyboard";
+    }
+  };
+  doc.addEventListener("pointerdown", pointer, { capture: true, passive: true });
+  doc.addEventListener("keydown", keyboard, true);
+  return () => {
+    doc.removeEventListener("pointerdown", pointer, true);
+    doc.removeEventListener("keydown", keyboard, true);
+  };
 }
 
 // node_modules/@capacitor/app/dist/esm/index.js
@@ -9868,10 +9889,11 @@ function showSheet(title, content) {
   $("sheet-content").scrollTop = 0;
 }
 var confirmResolve = null;
-function ask({ title, message, label = "Confirm", cancel = "Keep playing", danger = false, symbol = "help" }) {
+function ask({ title, message = "", label = "Confirm", cancel = "Keep playing", danger = false, symbol = "help" }) {
   closeSheet();
   $("confirm-title").textContent = title;
   $("confirm-message").textContent = message;
+  $("confirm-message").hidden = !message;
   $("confirm-ok").textContent = label;
   $("confirm-ok").classList.toggle("danger", danger);
   $("confirm-cancel").textContent = cancel;
@@ -10744,6 +10766,7 @@ function friendlyError(error) {
 
 // online/app.js
 var config2 = config;
+trackFocusInput();
 initUI();
 $("app-version").textContent = version;
 var appearance = Capacitor.getPlatform() === "android" ? registerPlugin("Appearance") : null;
@@ -10789,6 +10812,7 @@ var lastProblem = null;
 var usernameSetupBusy = false;
 var gameFresh = false;
 var entering = false;
+var signingOut = false;
 var snapshots = createSnapshotCache(localStorage, { namespace: cfg.supabaseUrl + (cfg.cacheScope || "") });
 var native = Capacitor.isNativePlatform();
 var publicApp = "https://xnorbertx.github.io/word-conquest/online/";
@@ -12028,17 +12052,27 @@ $("player-score-2").onclick = () => {
 };
 $("recap").onclick = showRecap;
 $("accept-draw").onclick = () => run(() => confirmAction("accept_draw"));
-$("setup-signout").onclick = $("signout").onclick = () => run(async () => {
-  await push.disable(false);
-  notificationGame = null;
-  await db.auth.signOut();
-  game = null;
-  homeData = null;
-  selection = [];
-  $("password").value = "";
-  $("setup-username").value = "";
-  status("Signed out.");
-});
+async function confirmSignOut() {
+  if (signingOut) return;
+  signingOut = true;
+  try {
+    if (!await ask({ title: "Sign out?", label: "Sign out", cancel: "Cancel", symbol: "logout" })) return;
+    await push.disable(false);
+    const { error } = await db.auth.signOut();
+    if (error) throw error;
+    notificationGame = null;
+    game = null;
+    homeData = null;
+    selection = [];
+    $("password").value = "";
+    $("setup-username").value = "";
+    setAuthMode("signin");
+    status("Signed out.");
+  } finally {
+    signingOut = false;
+  }
+}
+$("setup-signout").onclick = $("signout").onclick = () => run(confirmSignOut);
 $("read-inbox").onclick = () => run(async () => {
   await api({ action: "read_notifications" });
   await fetchHome();
