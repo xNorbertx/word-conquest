@@ -5,7 +5,9 @@
 New games score words, castles held through an opponent's turn (side 3 / centre 5),
 and one final point per owned tile. No capture deductions or separate final castle
 bonus. The smaller word-length bonus starts at six letters. Existing games keep
-their saved rules. See [timing, verification and release status](docs/PROGRESS.md).
+their saved rules. Available on the [web](https://xnorbertx.github.io/word-conquest/online/)
+and in the [Android APK](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25106288/word-conquest-android.apk).
+Update both players and start a new game. See [timing and verification](docs/PROGRESS.md).
 
 ### Focus and sign-out update (0.11.2)
 

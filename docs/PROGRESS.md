@@ -31,10 +31,35 @@ their immutable rules and dictionaries. No migration or re-scoring of old games.
   games reproduce every board, replacement, payout and final score in production.
   Both starters, final word/refresh, early endings, zero jokers, Swedish, malformed
   animation receipts, old clients, retries and stale races are covered.
-- Publication/hosted verification follows below when complete. No paid services,
-  dependencies, schema changes or ongoing costs added. Human balance, fairness and
-  physical-device animation acceptance remain open. Research reports describe
-  their historical baselines; reproduce those studies at their recorded commits.
+- Released source `de48268`; dedicated Supabase `game-api` deployed before clients.
+  Hosted checks used existing isolated `@example.invalid` test accounts with no
+  enabled push devices, and only newly journaled test games. Full Swedish game
+  (30 words, all using Å/Ä/Ö) and English game (34 words) completed with equal
+  turns, exact defence/final ownership accounting, creation/turn/final retries,
+  stale-client rejection, opponent reloads and matching lists/statistics.
+  Seven further hosted terminal cases passed: final word and refresh with both
+  starters, resignation, accepted draw, abandonment. Each saved exactly one
+  operation receipt, ignored forged score fields, and rejected stale retries.
+- Twelve production DOM checks cover both seats, new English/Swedish and old
+  English rules, active/final score sheets, rules, recaps, reduced-motion payout
+  rendering, exact final balances and cleanup. CSS parses. These are DOM checks;
+  browser rendering, full-motion feel and physical-phone appearance are unverified.
+- [Web](https://xnorbertx.github.io/word-conquest/online/) published at Pages
+  `4113567`. Build succeeded and all ten app/prototype assets match
+  the verified files (normalizing CRLF where relevant). Root prototype preserved;
+  only `online/` changed on Pages, preserving published research and designs.
+- [Android 0.12.0](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25106288/word-conquest-android.apk) from
+  [successful CI](https://github.com/xNorbertx/word-conquest/actions/runs/39133822191), version `0.12.0-de48268`,
+  code `25106288`. Stable certificate, package ID, notification
+  permission, native appearance bridge, exact bundled assets and no embedded
+  private keys/fixtures verified. Anonymous public download hash matches:
+  `1a83d4ccfe8d16a5f4149996a790ca1ac1e7668ae58bf021bff6806977c4aa78`.
+- Update both phones and start a new game; old games keep their rules. Run,
+  deployment and compatible rollback are in [OPERATIONS.md](OPERATIONS.md).
+  No paid services, dependencies, schema changes or ongoing costs added. Human
+  balance, fairness and physical-device animation acceptance remain open.
+  Research reports describe historical baselines; reproduce those studies at
+  their recorded commits.
 
 ## Defended castles at 3/5 — 18 October 2026
 

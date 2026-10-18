@@ -1,5 +1,12 @@
 # Android pilot and build pipeline
 
+Version 0.12.0 uses defended castles 3/5 plus one final point per owned tile in
+new games. Install the [signed APK](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25106288/word-conquest-android.apk) over the existing pilot;
+update both phones and start a new game. Existing games retain their saved rules.
+The smaller six-letter bonus and English letter tiers are included. Server deployed,
+CI/signature/assets verified; physical-device animation acceptance remains open.
+No new permissions or service costs. See [full verification](PROGRESS.md).
+
 Version 0.11.2 removes brown touch/mouse focus boxes, retains keyboard focus cues,
 and adds Sign out? confirmation with Cancel / Sign out. Install over the existing
 pilot. No backend changes, new permissions or service costs.

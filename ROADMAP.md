@@ -10,7 +10,9 @@ and real-device acceptance checks pass, not merely because source code was writt
 
 The owner approved final territory + defended castles 3/5. Version 0.12.0
 implements this for new English/Swedish games; see [timing and verification](docs/PROGRESS.md).
-Historical games keep their rules. Deployment evidence is recorded there.
+Historical games keep their rules. Web/server and signed Android pilot are live;
+170 tests, two hosted complete games and seven hosted ending cases pass.
+Deployment evidence is recorded there.
 
 - [x] Implement a new pinned version, terminal tally, defender-only payouts,
   score animations/recaps and explicit resignation/draw/abandonment timing.
