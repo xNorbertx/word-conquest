@@ -1,5 +1,26 @@
 # Run, deploy and maintain
 
+## Game-screen polish and compact history — 0.13.0
+
+Run tests/build, deploy `game-api` to the existing dedicated Supabase project,
+then publish the web assets and signed Android pilot. No database migration,
+dictionary/rules change, push-worker deployment or new service is needed.
+`supportsCompactHistory: true` asks for score-only history receipts; older clients
+still receive full receipts and stored operation audit data is unchanged.
+Participant, revision, rules, rate and authentication checks are unchanged.
+
+History uses an account/game-scoped memory cache for six recently viewed games.
+It prefetches the newest page once per observed revision, joins concurrent loads,
+keeps older pages, and clears on sign-out/account changes. Failures leave the known
+latest move visible and allow Retry. No persistent history copy is added.
+Prefetch adds at most one history request per newly viewed revision; it does not
+poll or retry a failing revision in the background. Cold network requests can
+still take time; the speed gain on opening/reopening is prefetch/cache reuse.
+Rollback can revert the client independently; the compact API flag is optional.
+Draw actions remain accepted for older installed clients and historical results,
+but the new client contains no draw offer or acceptance controls.
+No new ongoing costs. Phone checks remain listed in ROADMAP.
+
 ## Android joker auto-open — 0.12.1
 
 Client-only patch: tests/build, existing Pages publication, signed Android CI.

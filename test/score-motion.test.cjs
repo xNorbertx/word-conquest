@@ -30,7 +30,7 @@ test('incomplete rounds omit income; legacy games keep their original territory 
 });
 test('joker contributes no letter point and long-word bonus is a separate source',()=>{
   const f=fixture({joker:true}),plan=m.scoreMotionPlan(f.game,f.move,f.config),word=plan.events[0];
-  assert.equal(word.amount,18);assert.equal(word.sources.find(s=>s.bonus).amount,10);assert.ok(!word.sources.some(s=>s.id==='-2,0'));
+  assert.equal(word.amount,18);assert.equal(word.sources.find(s=>s.bonus).amount,10);assert.equal(word.sources.find(s=>s.id==='-2,0').amount,0);assert.deepEqual(word.sources.filter(s=>s.id).map(s=>s.id),plan.path);
   assert.equal(plan.beforeTiles.find(t=>t.id==='-2,0').value,0);
 });
 test('final reply animates the final earned income and exact finished totals',()=>{
@@ -81,4 +81,12 @@ test('ledger skips old revisions and falls back to memory if local storage is un
   const f=fixture(),s={getItem(){throw Error('Unavailable');},setItem(){throw Error('Unavailable');}},ledger=m.createScoreLedger(s);
   assert.equal(ledger.claim({userId:B,game:f.game,move:f.move}),true);assert.equal(ledger.claim({userId:B,game:f.game,move:f.move}),false);
   assert.equal(ledger.claim({userId:B,game:{...f.game,revision:12},move:{...f.move,revision:12}}),false);
+});
+
+test('an all-joker zero-point word still gets an ordered capture presentation',()=>{
+ const config=d.configFor('autumn-v5'),state=d.Engine.newGame(config,()=>.2);state.player=1;state.tiles.forEach(t=>{if(t.castle)t.owner=0;});
+ const path=['-1,1','0,1','1,1'];path.forEach((id,i)=>Object.assign(state.tiles.find(t=>t.id===id),{letter:'?',owner:i===0?1:0}));
+ const game={id:crypto.randomUUID(),players:[A,B],revision:2,status:'active',rules_version:'autumn-v5',dictionary_version:meta.version,state};
+ const result=d.applyCommand(game,A,{action:'word',path,jokers:Object.fromEntries(path.map((id,i)=>[id,'CAT'[i]])),revision:2,operationId:crypto.randomUUID()},words,meta.version,()=>.3);
+ const plan=m.scoreMotionPlan(result.next,{revision:3,recap:result.recap},config);assert.ok(plan);assert.equal(plan.events[0].amount,0);assert.deepEqual(plan.events[0].sources.map(s=>s.id),path);assert.deepEqual(plan.totalsAfter,plan.totalsBefore);
 });

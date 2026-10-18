@@ -1,5 +1,16 @@
 # Word Conquest
 
+### Game screen and move history (0.13.0)
+
+The waiting hourglass turns quietly every five seconds. Word points arrive one
+letter at a time as each tile takes its new colour, followed by the length bonus.
+Tap anywhere still skips the whole sequence. Draw controls are removed.
+
+The last-word row opens **Move history**, with Word / Length / Castles / Total
+columns. Castle income goes on the actual recipient's row; final territory stays
+explicit. History preloads and is reused during the session. See
+[verification and release status](docs/PROGRESS.md).
+
 ### Tap to finish scoring (0.12.2)
 
 Tap anywhere during scoring to jump straight to the saved final board and both

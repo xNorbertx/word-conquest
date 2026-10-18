@@ -72,6 +72,15 @@ Version 0.11.1 implements it, retaining the small castle stamp; see [release sta
 
 ## Reference source
 
+Game-screen refinement, 18 October 2026 (0.13.0): keep the waiting icon subtle,
+with one half-turn per five seconds and no motion for reduced-motion preference.
+Score letters in their path order while the corresponding tiles change ownership;
+show the length bonus after the last letter. Keep the invisible whole-screen skip.
+The last-word shortcut opens the Move history sheet directly. Use a compact table,
+with separate recipient rows for defended castle income and final territory;
+do not reintroduce tile replacement chips or board-location explanations.
+
+
 Created with the built-in image generation tool, refining the Paper & Ink concept.
 
 Final refinement prompt:

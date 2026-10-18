@@ -1,3 +1,4 @@
+import {compactHistory} from './history-summary.mjs';
 import {gameSummary} from './game-summary.mjs';
 import {applyCommand,checkCommand,commandKey,configFor,Engine,Fault,LEGACY_RULES_VERSION,statistics,uuid} from './domain.mjs';
 import {dictionaryFor} from './dictionaries.mjs';
@@ -127,7 +128,7 @@ export function createHandler(db, settings={}) {
           const before=Math.min(input.beforeRevision??game.revision+1,game.revision+1);
           const rows=unwrap(await db.from('operations').select('revision,recap').eq('game_id',game.id).lt('revision',before).order('revision',{ascending:false}).limit(51));
           const history=rows.slice(0,50);
-          return reply({history,hasMore:rows.length>50,nextBefore:history.at(-1)?.revision??null});
+          return reply({history:input.supportsCompactHistory===true?compactHistory(history):history,hasMore:rows.length>50,nextBefore:history.at(-1)?.revision??null});
         }
         case 'create': {
           if(!uuid(input.gameId))throw new Fault('invalid_id','A saved game ID is required.');

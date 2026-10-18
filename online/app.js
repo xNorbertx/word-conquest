@@ -13,6 +13,7 @@ import {createFriends} from './friends.js';
 import {requireUsername,signUpAccount} from './username.mjs';
 import {scoreMotionPlan,createScoreLedger} from './score-motion.mjs';
 import {createBoardScoreMotion} from './score-motion.js';
+import {createMoveHistory} from './move-history.js';
 import {tilePoints,castleLabel} from './board-geometry.mjs';
 import {createJokerKeyboard,canAssignJoker} from './joker-keyboard.mjs';
 import {createBoardViewport} from './board-viewport.mjs';
@@ -49,6 +50,8 @@ const homeRequests=createHomeRequests(()=>api({action:'home'}));
 const gameRequests=createHomeRequests(key=>api({action:'game',gameId:key.split('/')[1]}));
 const scoreLedger=createScoreLedger(localStorage);
 const scoreMotion=createBoardScoreMotion({onComplete:()=>{if(game&&currentView==='game')renderGame();}});
+const moveHistory=createMoveHistory({api,getUser:()=>user,getGame:()=>game,getMoves:()=>history,isPreview:()=>preview,
+  stopMotion:()=>scoreMotion.cancel(),canReplay:()=>!preview&&gameFresh&&!!scoreMotionPlan(game,history[0],config),replay:()=>animateScore(null,{replay:true})});
 const jokerKeyboard=createJokerKeyboard();
 const boardViewport=createBoardViewport({viewport:$('board-scroll'),board:$('board'),button:$('zoom'),icon,
   stamp:()=>currentView+'/'+game?.id+'/'+game?.revision,enabled:()=>currentView==='game'&&!scoreMotion.active,
@@ -72,9 +75,9 @@ function pending(){if(preview)return null;try{return JSON.parse(localStorage.get
 function apiError(message,code,statusCode,requestId){const e=new Error(message);Object.assign(e,{code,status:statusCode,requestId});return e;}
 async function api(body){
   if(!db)throw new Error('Online play is not connected yet.');
-  const {data:{session},error}=await db.auth.getSession();if(error||!session){snapshots.clear();gameFresh=false;authReady=false;homeData=null;game=null;++navigation;++gameLoad;++homeLoad;screen('auth',{route:false});throw apiError('Sign in to continue.','unauthorized',401);}
+  const {data:{session},error}=await db.auth.getSession();if(error||!session){snapshots.clear();moveHistory.reset();gameFresh=false;authReady=false;homeData=null;game=null;++navigation;++gameLoad;++homeLoad;screen('auth',{route:false});throw apiError('Sign in to continue.','unauthorized',401);}
   const response=await fetch(`${cfg.supabaseUrl}/functions/v1/game-api`,{method:'POST',signal:AbortSignal.timeout(20000),headers:{'Content-Type':'application/json',apikey:cfg.supabaseAnonKey,Authorization:`Bearer ${session.access_token}`},body:JSON.stringify({...body,supportedRules:SUPPORTED_RULES,supportsFriends:true,supportsUsernameOnboarding:true,supportsGameSummaries:true,supportsFastReads:true})});
-  const result=await response.json();if(!response.ok){if(user?.id===session.user.id){if(result.code==='username_required')showUsernameSetup();else if(['unauthorized','account_deleting'].includes(result.code)){snapshots.clear();gameFresh=false;game=null;homeData=null;authReady=false;++navigation;++gameLoad;++homeLoad;screen('auth',{route:false});}}throw apiError(result.error||'Request failed.',result.code,response.status,result.requestId);}return result;
+  const result=await response.json();if(!response.ok){if(user?.id===session.user.id){if(result.code==='username_required')showUsernameSetup();else if(['unauthorized','account_deleting'].includes(result.code)){snapshots.clear();moveHistory.reset();gameFresh=false;game=null;homeData=null;authReady=false;++navigation;++gameLoad;++homeLoad;screen('auth',{route:false});}}throw apiError(result.error||'Request failed.',result.code,response.status,result.requestId);}return result;
 }
 async function run(fn){try{return await fn();}catch(e){lastProblem=friendlyError(e);lastRequestId=e.requestId||null;status(lastProblem,true);if(currentView==='loading'){$('loading-message').textContent='Your games could not load.';$('retry-load').hidden=false;$('loading').querySelector('.spinner').hidden=true;}}}
 const act=(label,fn,className='secondary',symbol)=>button(label,()=>run(fn),className,symbol);
@@ -127,7 +130,7 @@ function renderActivity(){
   $('inbox').replaceChildren();for(const n of homeData.notifications){const g=homeData.games.find(g=>g.id===n.game_id),name=g?opponentName(g,user.id):'Your friend';const item=act('',()=>openGame(n.game_id),'activity-item'+(n.read_at?'':' unread'));item.replaceChildren(avatar(name),node('span'),icon('chevron'));item.children[1].append(node('strong',activityText(n.kind,name)),node('small',timeAgo(n.created_at)));$('inbox').append(item);}
   if(!homeData.notifications.length)$('inbox').append(emptyState('All caught up.','Game updates will appear here.','bell'));
 }
-function showUsernameSetup(){snapshots.clear();gameFresh=false;authReady=false;if(currentView!=='username-setup'){$('setup-username-error').hidden=true;$('setup-username').removeAttribute('aria-invalid');screen('username-setup',{route:false});}}
+function showUsernameSetup(){snapshots.clear();moveHistory.reset();gameFresh=false;authReady=false;if(currentView!=='username-setup'){$('setup-username-error').hidden=true;$('setup-username').removeAttribute('aria-invalid');screen('username-setup',{route:false});}}
 function accountReady(){const first=!authReady;authReady=true;if(first)void push.restore().catch(()=>{});}
 async function fetchHome(){const request=homeLoad,actor=user?.id;const result=await homeRequests.get(actor);if(user?.id!==actor||request!==homeLoad)return null;homeData=result;if(result.needsUsername||result.profile.username===null){showUsernameSetup();return null;}snapshots.saveHome(actor,result);accountReady();return result;}
 function rememberGame(saved){
@@ -187,7 +190,7 @@ async function openGame(id,quiet=false,{route=true}={}){
   const previousRevision=game?.id===id?game.revision:null;
   const changed=!game||game.id!==id||game.revision!==result.game.revision,wasFresh=gameFresh;
   const gameConfig=configFor(result.game.rules_version);if(!gameConfig)throw apiError('Update Word Conquest to play this game.','client_update_required',409);
-  preview=false;config=gameConfig;game=result.game;history=result.history;invite=result.invitation;gameFresh=true;rememberGame(game);
+  preview=false;config=gameConfig;game=result.game;history=result.history;invite=result.invitation;gameFresh=true;rememberGame(game);moveHistory.warm();
   if(changed){selection=[];jokers={};highlightLast=false;focusTile=null;}
   if(!quiet&&!cached)screen('game',{route});
   if(changed||!quiet||!wasFresh){renderGame();animateScore(previousRevision);}
@@ -281,13 +284,13 @@ function renderGame(){
   const turnText=!preview&&!gameFresh?'Updating…':unconfirmed?(busy?'Saving your turn...':'Turn awaiting confirmation'):preview?'Your turn':active?(ownTurn?'Your turn':`${other}'s turn`):gameStatus(game,user?.id);
   const turnIcon=unconfirmed?'refresh':!active?'flag':ownTurn?'arrow':'hourglass';
   if($('turn').dataset.label!==turnText){const copy=node('span',undefined,'turn-copy');if(active&&!ownTurn&&!unconfirmed&&gameFresh){copy.append(node('span',other,'turn-player'),node('span',"'s turn",'turn-suffix'));}else copy.textContent=turnText;$('turn').replaceChildren(icon(turnIcon),copy);$('turn').dataset.label=turnText;}
+  $('turn').classList.toggle('is-waiting-turn',active&&!ownTurn&&!unconfirmed&&gameFresh&&!preview);
   $('turn').title=turnText;$('turn').classList.toggle('waiting',!ownTurn||unconfirmed);$('turn').dataset.side=active&&!unconfirmed?(game.state.player===1?'sage':'walnut'):'none';
   const left=Engine.lettersRemaining(game.state,config);$('supply').textContent=isFinished(game)?'Final score':left===0?'Final reply':`${left} letters left`;$('supply-fill').style.width=`${Math.max(0,Math.min(100,left/config.letterBudget*100))}%`;
   $('share').hidden=!invite;$('game-table').hidden=!!invite;
   if(invite){$('share-link').value=`${authRedirect()}?invite=${invite.token}`;$('invite-expiry').textContent=`Available until ${new Date(invite.expires_at).toLocaleDateString(undefined,{month:'short',day:'numeric'})}`;}
   const addressed=!!invite?.recipient;$('share').querySelector('h1').textContent=addressed?`Invitation for ${invite.recipient_name}.`:'Invite a friend.';$('share').querySelector('.muted').textContent=addressed?'Your invitation is waiting in their Games tab.':'Share your invitation to get the game going.';$('share-invite').hidden=addressed;$('share').querySelector('.copy-field').hidden=addressed;
   $('composer').hidden=(!myTurn()&&!preview)||isFinished(game)||!!pending()&&!busy;$('game-result').hidden=!isFinished(game);
-  $('draw-offer').hidden=!game.draw_by||game.draw_by===user?.id||game.status!=='active';
 
   if(isFinished(game)){$('result-title').textContent=game.status==='completed'?gameStatus(game,user?.id)+'.':game.status==='abandoned'?'A game left unfinished.':'Invitation cancelled.';$('result-description').textContent=game.status==='completed'?`${totals[seat-1].total} to ${totals[seat===1?1:0].total}. A little word, a little world.`:'This game ended without a result.';}
   const last=history[0]?.recap;$('recap').hidden=!last;
@@ -308,7 +311,7 @@ async function sendPending(){
     if(user?.id===sentUser&&game?.id===sentGame&&result.game.revision>=game.revision){
       const previousRevision=game.revision;game=result.game;gameFresh=true;selection=[];jokers={};
       if(result.recap&&result.acceptedRevision===game.revision)history=[{revision:result.acceptedRevision,recap:result.recap},...history.filter(m=>m.revision!==result.acceptedRevision)];
-      rememberGame(game);
+      rememberGame(game);moveHistory.warm();
       if(command.action==='resign'){await showHome();status('You left the game.');}
       else if(currentView==='game'){
         // The accepted receipt is enough to render, even if a history refresh fails.
@@ -345,31 +348,7 @@ function showDictionary(){
   const text=swedish?(expanded?'Swedish uses SALDO and the original Swedish list. Accents such as é use the plain letter; Å, Ä and Ö stay distinct.':'This game uses the original Martin Lindhe Swedish list. Å, Ä and Ö are distinct letters.'):'English uses the Letterpress-derived list. New Swedish games combine SALDO with the original Swedish list.';
   showSheet('Words we play.',[node('p',text),node('p','Listed inflections and compounds count. Each game keeps its original dictionary. Uncommon or offensive words may occur.'),link]);
 }
-function showHistory(){
-  const actor=user?.id,id=game.id,names=[...game.names],content=node('div'),list=node('ol',undefined,'move-list'),note=node('p','Loading moves…','menu-note');
-  let moves=[...history],cursor,loading=false;
-  const more=act('Older moves',()=>loadPage(),'secondary full','history');more.hidden=true;
-  function render(){list.replaceChildren();for(const move of moves){const r=move.recap,item=node('li'),copy=node('div',undefined,'move-copy');copy.append(node('strong',r.word||({refresh:'Letters refreshed',resign:'Resigned',offer_draw:'Draw offered',accept_draw:'Draw accepted',abandon:'Game abandoned'}[r.action]||'Game update')),node('small',`${names[r.player-1]} · ${timeAgo(r.at)}`));item.append(node('span',move.revision,'move-number'),copy,node('span',r.score?`+${r.score.wordPoints}`:'','move-points'));list.append(item);}}
-  async function loadPage(){
-    if(loading)return;loading=true;more.disabled=true;note.textContent='Loading moves…';note.hidden=false;
-    try{const result=await api({action:'game_history',gameId:id,...(cursor?{beforeRevision:cursor}:{})});if(!content.isConnected||actor!==user?.id||game?.id!==id)return;
-      moves=cursor?[...moves,...result.history.filter(m=>!moves.some(old=>old.revision===m.revision))]:result.history;cursor=result.nextBefore;render();more.hidden=!result.hasMore;more.textContent='Older moves';note.hidden=!!moves.length;note.textContent='The first word is yours.';
-    }catch(e){if(content.isConnected&&actor===user?.id){note.textContent='Could not load moves.';more.hidden=false;more.textContent='Retry';}}finally{loading=false;more.disabled=false;}
-  }
-  render();content.append(list,note,more);showSheet('The story so far.',content);if(!preview)void loadPage();else {note.textContent='Played words will appear here.';}
-}
-function showRecap(){
-  scoreMotion.cancel();
-  const r=history[0]?.recap;if(!r)return;const content=[node('div',r.word||'Game update','recap-word'),node('div',`${game.names[r.player-1]} · ${timeAgo(r.at)}`,'recap-byline')];
-  if(scoreMotionPlan(game,history[0],config))content.push(act('Replay points',()=>animateScore(null,{replay:true}),'secondary full','refresh'));
-  if(r.score)content.push(scoreLines([['Word points',r.score.wordPoints],...(config.scoringMode==='defended-final'?[]:[['Territory gained',r.score.territoryGain]]),...(r.score.enemyLoss?[['Opponent territory lost',r.score.enemyLoss]]:[])]));
-  if(r.incomeTiming==='defended'&&r.income?.some(Boolean))content.push(node('h3','Defended castles'),scoreLines([1,2].filter(p=>r.income[p-1]).map(p=>[game.names[p-1],`+${r.income[p-1]}`])));
-  if(r.finalTerritory)content.push(node('h3','Final territory'),scoreLines([1,2].map(p=>[game.names[p-1],`+${r.finalTerritory[p-1]}`])));
-  if(r.roundComplete)content.push(node('h3',`Round ${r.round} castle income`),scoreLines([1,2].map(p=>[game.names[p-1],`+${r.income[p-1]}`])));
-  if(r.changed?.length){content.push(node('h3','After the word'));const changes=node('div',undefined,'tile-changes');for(const c of r.changed){const chip=node('span',undefined,'tile-change'+(c.before.owner!==c.after.owner?' captured':''));chip.append(node('b',c.before.letter),node('span','→'),node('b',c.after.letter));chip.title=c.before.owner!==c.after.owner?'Captured tile':'Replacement letter';changes.append(chip);}content.push(changes,node('p','Green chips are tiles captured on this turn.','field-hint'));}
-  if(r.path?.length)content.push(act('Show word on the board',()=>{highlightLast=true;closeSheet();renderGame();$('board').scrollIntoView({block:'center',behavior:'smooth'});},'secondary full','eye'));
-  content.push(act('All moves',showHistory,'text-button full'));showSheet('The last move.',content);
-}
+function showHistory(){moveHistory.show();}
 function showNewGame(person=null){
   if(!person?.display_name)person=null;
   let chosen='en';try{chosen=languageFor(localStorage.getItem(`wc-language:${user.id}`))?.code||'en';}catch{}
@@ -396,7 +375,7 @@ async function quitGame(){
 }
 async function confirmAction(kind){
   const cost=Math.max(config.refreshMinimumLetterCost,game.state.tiles.filter(t=>t.owner===game.state.player&&t.letter!=='?').length);
-  const options={refresh:{title:'Fresh letters?',message:`Replace your ordinary owned letters. This uses your turn and ${cost} letters from the shared supply.${config.scoringMode==='defended-final'?' Your opponent’s defended castles still score.':''}`,label:'Refresh letters',symbol:'refresh'},offer_draw:{title:'Call it a draw?',message:'Your friend can accept the offer. You can both keep playing until then.',label:'Offer draw',symbol:'handshake'},accept_draw:{title:'Share the honours?',message:'This ends the game as a draw for both players.',label:'Accept draw',symbol:'handshake'},abandon:{title:'Close this inactive game?',message:'After 30 days without a turn, you can close a game without a win or loss.',label:'Close game',symbol:'hourglass'}};
+  const options={refresh:{title:'Fresh letters?',message:`Replace your ordinary owned letters. This uses your turn and ${cost} letters from the shared supply.${config.scoringMode==='defended-final'?' Your opponent’s defended castles still score.':''}`,label:'Refresh letters',symbol:'refresh'},abandon:{title:'Close this inactive game?',message:'After 30 days without a turn, you can close a game without a win or loss.',label:'Close game',symbol:'hourglass'}};
   if(await ask(options[kind]))await action(kind);
 }
 function showGameMenu(){
@@ -404,7 +383,6 @@ function showGameMenu(){
   const list=node('div',undefined,'settings-list');list.append(row('Move history','history',showHistory),row('How to play','book',showRules,{note:rulesLabel(game.rules_version)}));
   if(game.status==='active'&&!preview){
     const refresh=row('Refresh letters','refresh',()=>confirmAction('refresh'),{note:'Replace your letters instead of playing a word'});refresh.disabled=!canPlay();list.append(refresh);
-    if(game.draw_by===user?.id){const offered=row('Draw offered','handshake',()=>{}, {note:'Waiting for your friend'});offered.disabled=true;list.append(offered);}else list.append(row(game.draw_by?'Accept draw':'Offer a draw','handshake',()=>confirmAction(game.draw_by?'accept_draw':'offer_draw')));
     if(Date.now()-Date.parse(game.last_play_at)>=30*86400000)list.append(row('Close inactive game','hourglass',()=>confirmAction('abandon')));
     list.append(row('Leave game','flag',quitGame,{danger:true}));
   }
@@ -486,8 +464,8 @@ $('push-prompt-enable').onclick=()=>run(async()=>{if(push.snapshot().state==='bl
 $('new-game').onclick=showNewGame;$('blocked-players').onclick=()=>run(showBlockedPlayers);$('edit-profile').onclick=editProfile;$('push-settings').onclick=showPush;
 $('help-button').onclick=showRules;for(const b of document.querySelectorAll('[data-sheet]'))b.onclick=()=>b.dataset.sheet==='rules'?showRules():showPrivacy();
 $('game-menu').onclick=showGameMenu;$('share-invite').onclick=()=>run(shareInvite);$('copy-invite').onclick=()=>run(copyInvite);$('cancel-invite').onclick=()=>run(quitGame);
-$('player-score-1').onclick=()=>{scoreMotion.cancel();showScore(1);};$('player-score-2').onclick=()=>{scoreMotion.cancel();showScore(2);};$('recap').onclick=showRecap;
-$('accept-draw').onclick=()=>run(()=>confirmAction('accept_draw'));
+$('player-score-1').onclick=()=>{scoreMotion.cancel();showScore(1);};$('player-score-2').onclick=()=>{scoreMotion.cancel();showScore(2);};$('recap').onclick=showHistory;
+
 async function confirmSignOut(){
   if(signingOut)return;signingOut=true;
   try{
@@ -567,8 +545,10 @@ window.addEventListener('online',()=>{resume();if(authReady)void push.restore().
 if(!db)screen('setup',{route:false});else db.auth.onAuthStateChange((event,session)=>{
   const previousUser=user?.id;user=session?.user||null;setTimeout(()=>run(()=>connectLiveUpdates(session)),0);
   if(event==='PASSWORD_RECOVERY'){authReady=false;recovering=true;screen('recovery',{route:false});return;}
-  if(!user){snapshots.clear();gameRequests.reset();gameFresh=false;game=null;homeRequests.reset();authReady=false;homeData=null;$('setup-username').value='';friends.reset();renderPush();++navigation;++gameLoad;++homeLoad;screen('auth',{route:false});return;}
+  if(!user){snapshots.clear();moveHistory.reset();gameRequests.reset();gameFresh=false;game=null;homeRequests.reset();authReady=false;homeData=null;$('setup-username').value='';friends.reset();renderPush();++navigation;++gameLoad;++homeLoad;screen('auth',{route:false});return;}
   if(recovering||!['SIGNED_IN','INITIAL_SESSION'].includes(event)||(previousUser===user.id&&currentView!=='auth'))return;
-  if(previousUser!==user.id){if(previousUser)snapshots.clear();gameRequests.reset();gameFresh=false;game=null;homeRequests.reset();++homeLoad;++gameLoad;++navigation;authReady=false;homeData=null;$('setup-username').value='';}
+  if(previousUser!==user.id){if(previousUser)snapshots.clear();moveHistory.reset();gameRequests.reset();gameFresh=false;game=null;homeRequests.reset();++homeLoad;++gameLoad;++navigation;authReady=false;homeData=null;$('setup-username').value='';}
   setTimeout(()=>run(enterApp),0);
 });
+
+document.addEventListener('visibilitychange',()=>document.body.classList.toggle('app-background',document.hidden));

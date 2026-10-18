@@ -15,7 +15,7 @@ export function scoreMotionPlan(game,move,config){
   const value=t=>t.castle?(t.q===0&&t.r===0?config.centerCastlePoints??config.castlePoints:config.castlePoints):config.normalTerritoryPoints;
   const add=(kind,player,sources,expected)=>{
     if(!Number.isSafeInteger(expected)||sum(sources)!==expected)throw Error('Receipt does not reconcile');
-    if(expected)events.push({kind,player,amount:expected,sources:sources.filter(s=>s.amount!==0)});
+    if(expected||kind==='word')events.push({kind,player,amount:expected,sources:sources.filter(s=>s.amount!==0||kind==='word'&&s.id)});
   };
   try{
     if(r.action==='word'){

@@ -74,13 +74,40 @@ export function createBoardScoreMotion({onComplete}){
     if(wasActive&&restore)onComplete();
     if(returnFocus?.isConnected)returnFocus.focus({preventScroll:true});
   }
-  async function fly(b,player,signal,delay){
+  async function fly(b,player,signal,delay,duration=520){
     await wait(delay,signal);const target=centre($('score-'+player)),dx=target.x-b.p.x,dy=target.y-b.p.y;
     await animate(b.el,[{transform:'translate(-50%,-50%) scale(1)',opacity:1},
       {transform:`translate(calc(-50% + ${dx*.4}px),calc(-50% + ${dy*.55}px)) scale(1.05)`,opacity:1,offset:.55},
-      {transform:`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) scale(.45)`,opacity:0}],520,signal);
+      {transform:`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) scale(.45)`,opacity:0}],duration,signal);
     b.el.remove();
   }
+  async function wordPoints(plan,event,balances,signal){
+    const letters=event.sources.filter(s=>s.id),bonus=event.sources.find(s=>s.bonus);
+    let tally=0;
+    async function award(source){
+      check(signal);
+      const target=source.id?tile(source.id):null;
+      if(target){owner(target,plan.afterTiles.find(t=>t.id===source.id));target.classList.add('motion-source');}
+      if(source.bonus){$('score-motion').dataset.phase='length';$('motion-label').textContent='Length bonus';$('motion-tally').textContent='+0';}
+      if(!media.matches){
+        const p=sourcePoint(source);p.y-=source.bonus?-18:14;
+        const el=node('span','+0',`score-point side-${event.player}${source.bonus?' bonus':''}`);
+        el.style.left=p.x+'px';el.style.top=p.y+'px';layer.append(el);
+        await Promise.all([count(el,0,source.amount,100,signal),animate(el,[{opacity:0,transform:'translate(-50%,0) scale(.8)'},{opacity:1,transform:'translate(-50%,-50%) scale(1)'}],120,signal)]);
+        await fly({el,p},event.player,signal,0,source.bonus?320:220);
+      }
+      const old=balances[event.player-1];balances[event.player-1]+=source.amount;
+      const previous=tally;tally+=source.amount;
+      await Promise.all([count($('score-'+event.player),old,balances[event.player-1],110,signal,String),
+        count($('motion-tally'),source.bonus?0:previous,source.bonus?source.amount:tally,110,signal)]);
+      target?.classList.remove('motion-source');
+    }
+    // Receipt order is path order; even a zero-point joker changes ownership.
+    for(const letter of letters)await award(letter);
+    if(media.matches)await wait(260,signal);
+    if(bonus){await award(bonus);await wait(media.matches?260:100,signal);}
+  }
+
   async function play(plan,{seat,names}){
     cancel(false);controller=new AbortController();const signal=controller.signal;active=true;started=performance.now();
     $('game-table').classList.add('is-scoring');$('score-motion').hidden=false;$('board').inert=true;
@@ -106,13 +133,14 @@ export function createBoardScoreMotion({onComplete}){
         if(!captured&&e.kind!=='word'){captured=true;await captureCastles(plan,signal);}
         check(signal);$('score-motion').dataset.phase=e.kind;$('score-motion').dataset.player=e.player;
         $('game-table').dataset.motionTarget=e.player;
-        if(e.kind==='castles'||e.kind==='territory'||e.kind==='final-territory')paint(plan.afterTiles.map(t=>{const old=plan.beforeTiles.find(b=>b.id===t.id);return{...t,letter:old.letter,owner:e.kind==='castles'&&!t.castle?old.owner:t.owner};}),plan);
+        if(e.kind==='castles'||e.kind==='territory'||e.kind==='final-territory')paint(plan.afterTiles.map(t=>{const old=plan.beforeTiles.find(b=>b.id===t.id);return{...t,letter:old.letter};}),plan);
         for(const el of $('board').querySelectorAll('.tile'))el.classList.remove('motion-source','motion-castle','motion-loss');
         const label={word:'Word points',castles:'Castle income',territory:'Territory gained','final-territory':'Final territory',loss:'Territory lost'}[e.kind];
         const player=e.player===seat?'You':names[e.player-1];
         $('motion-label').textContent=label;$('motion-recipient').textContent=player;
         $('motion-symbol').replaceChildren(icon({word:'book',castles:'castle',territory:'territory','final-territory':'territory',loss:'capture'}[e.kind]));
         $('motion-tally').textContent='+0';$('score-motion').dataset.side=e.player===1?'sage':'walnut';
+        if(e.kind==='word'){await wordPoints(plan,e,balances,signal);continue;}
         const bubbles=e.sources.map(s=>{
           if(s.id)tile(s.id)?.classList.add(e.kind==='castles'?'motion-castle':e.kind==='loss'?'motion-loss':'motion-source');
           const p=sourcePoint(s);p.y-=s.bonus?-18:14;

@@ -2,6 +2,20 @@
 
 Updated: 18 October 2026
 
+Combined game-screen release 0.13.0:
+- [x] Waiting hourglass: one half-turn every five seconds, reduced-motion aware.
+- [x] Word scoring: ordered letter points and ownership colours, length bonus last,
+  zero-point jokers included, tap-anywhere skip retained.
+- [x] Remove draw offer/accept controls from the current client; preserve historical
+  games and older-client compatibility on the server.
+- [x] Last-word shortcut opens Move history directly, with score columns and totals;
+  remove the tile replacements / board-location recap.
+- [x] Prefetch and cache history, deduplicate pending requests and reduce response
+  size; test scoring attribution, paging, offline retry and account changes.
+- [ ] Physical-phone acceptance: animation pacing, waiting icon and history layout
+  in light/dark mode. No phone or browser surface was available for this run.
+See [release evidence and limits](docs/PROGRESS.md).
+
 - [x] Replace the scoring Skip button with an invisible full-screen tap target:
   one click finishes every remaining phase and restores the saved board/totals;
   the tap is consumed so underlying game controls do not activate.

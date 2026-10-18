@@ -1,5 +1,47 @@
 # Implementation and verification - updated 18 October 2026
 
+## Combined game-screen update — 0.13.0, 18 October 2026
+
+- Waiting hourglass makes a quiet half-turn every five seconds only on a confirmed
+  opponent turn. It pauses while scoring/backgrounded and respects reduced motion.
+- Each word letter now changes its tile to the saved owner, sends its own points,
+  and advances the score before the next letter. Jokers participate with zero
+  points. The length bonus appears only after all letters; castle/final-territory
+  phases retain their original accounting. Reduced motion has no flights.
+  Tap-anywhere, Escape, cancellation, cleanup and saved-state restoration remain.
+- Removed draw controls and the detailed last-move sheet. Last word now opens
+  **Move history** directly, also available in the game menu. Table columns are
+  Word / Length / Castles / Total, with player names and timestamps. Opponent
+  defence income has its own recipient row, as do final territory and historical
+  land gains/losses; no castle points are attributed to the wrong word author.
+  Replay points remains available at the bottom of the sheet.
+- History previously fetched the older moves only after opening and discarded
+  that result on close. It now preloads once per observed revision, joins in-flight
+  requests and reuses an account/game-scoped six-game memory cache. Offline Retry,
+  exclusive revision paging, live-update merging, stale-result rejection and
+  sign-out/account-change cleanup are covered by tests.
+- The optional compact history API omits path/tile replacements from the response;
+  full receipts remain stored and available to older clients. Deployed `game-api`
+  successfully to `aumiyyjsdqdazzmdmprl`; no SQL, scoring or dictionary change.
+- Hosted read-only checks used existing isolated example.invalid test identities
+  and games. Every compact row matched the full receipt, and per-player row sums
+  matched authoritative score deltas. Unauthenticated requests still return 401.
+  - `autumn-v5`: 34 moves, 34,040 → 9,931 bytes (71% smaller).
+  - `autumn-sv-v4`: 30 moves, 32,510 → 8,817 bytes (73% smaller).
+  - `autumn-v3`: 4 moves, 4,716 → 761 bytes (84% smaller).
+  These are payload savings, not promised latency reductions: sampled network
+  calls still took roughly 0.5–1.7 seconds. Prefetch and cache remove the repeat
+  wait when opening history after it has loaded. No owner games changed.
+- Verification: 204 regression tests (including 24 new cases), original engine/
+  scoring/supply suites and production build. A further 24 actual-renderer DOM
+  scenarios cover both seats, English/Swedish/legacy, normal/final games, skipped/
+  reduced-motion scoring, last-word history routing, draw removal and hourglass
+  state. DOM tests do not establish real phone pixels or animation feel.
+- Physical-phone and rendered browser review remain open; neither surface was
+  connected. No owner decisions or manual setup are required before release.
+  No paid infrastructure, new dependencies, permissions or ongoing cost changes.
+- Publication evidence follows below.
+
 ## Tap anywhere to finish scoring — 0.12.2, 18 October 2026
 
 - A transparent full-screen button consumes a completed tap/click and cancels

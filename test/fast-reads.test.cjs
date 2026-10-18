@@ -61,3 +61,11 @@ test('older single-player invitations keep exactly one corresponding display nam
  assert.equal(waiting.players.length,1);const home=await rpc('wc_read_home',[c]);assert.deepEqual(home.games[0].names,['Outsider']);
  const detail=await rpc('wc_read_game',[c,waiting.id]);assert.deepEqual(detail.game.names,['Outsider']);assert.deepEqual(detail.history,[]);assert.equal(detail.historyHasMore,false);
 });
+
+test('compact history is opt-in, preserves score columns and retains the original stored receipt',async()=>{
+ const receipt={word:'GARDENS',action:'word',player:1,score:{letters:9,lengthBonus:3,wordPoints:12,territoryGain:0,enemyLoss:0},income:[0,5],incomeTiming:'defended',totalsBefore:[10,20],totalsAfter:[22,25],changed:[{id:'0,0',before:{letter:'A'},after:{letter:'Z'}}],path:['0,0']};
+ await db.query('update operations set recap=$1 where game_id=$2 and revision=53',[JSON.stringify(receipt),g.id]);
+ const x=await apiFixture(),full=await(await x.send({action:'game_history',gameId:g.id})).json(),compact=await(await x.send({action:'game_history',gameId:g.id,supportsCompactHistory:true})).json();
+ assert.deepEqual(full.history[0].recap,receipt);assert.equal(compact.history[0].recap.changed,undefined);assert.equal(compact.history[0].recap.path,undefined);assert.deepEqual(compact.history[0].recap.score,receipt.score);assert.deepEqual(compact.history[0].recap.income,[0,5]);assert.equal(compact.hasMore,full.hasMore);assert.equal(compact.nextBefore,full.nextBefore);
+ assert.deepEqual((await db.query('select recap from operations where game_id=$1 and revision=53',[g.id])).rows[0].recap,receipt);
+});

@@ -19,7 +19,7 @@ function setup({reduced=false,interrupt=false,skipAt,restoreOnComplete=false}={}
     querySelectorAll(selector){return this.children.filter(e=>selector==='[data-id]'?e.attrs['data-id']:e.classes.has(selector.slice(1)));}
     querySelector(selector){if(selector.startsWith('[data-id='))return this.children.find(e=>e.attrs['data-id']===selector.slice(10,-2));if(selector==='text:not(.value)')return this.children.find(e=>e.tag==='text'&&!e.classes.has('value'));return this.children.find(e=>selector[0]==='.'?e.classes.has(selector.slice(1)):e.tag===selector);}
     getBoundingClientRect(){return{left:100,top:200,width:50,height:50};}
-    animate(frames,{duration}){const phase=$('score-motion').dataset.phase;phases.add(phase);if(phase===skipAt)queueMicrotask(clickShield);animations.push({el:this,frames,duration});let resolve,reject;const finished=new Promise((a,b)=>{resolve=a;reject=b;});if(!interrupt||duration!==560)queueMicrotask(resolve);else queueMicrotask(()=>motion.cancel());return{finished,cancel:()=>reject(Object.assign(Error('Cancelled'),{name:'AbortError'}))};}
+    animate(frames,{duration}){const phase=$('score-motion').dataset.phase;phases.add(phase);if(phase===skipAt)queueMicrotask(clickShield);animations.push({el:this,frames,duration,phase,ownerStates:$('board').children.map(t=>t.className),score:$('score-1').textContent,bubbles:document.body.children.find(e=>e.classes.has('score-motion-layer'))?.children.length||0});let resolve,reject;const finished=new Promise((a,b)=>{resolve=a;reject=b;});if(!interrupt||duration!==560)queueMicrotask(resolve);else queueMicrotask(()=>motion.cancel());return{finished,cancel:()=>reject(Object.assign(Error('Cancelled'),{name:'AbortError'}))};}
   }
   const document={body:new Element(),hidden:false,getElementById:id=>{if(!nodes.has(id))nodes.set(id,new Element());return nodes.get(id);},createElement:t=>new Element(t),createElementNS:(_,t)=>new Element(t),addEventListener:(name,fn)=>documentEvents[name]=fn};
   const window={addEventListener:(name,fn)=>events[name]=fn};
@@ -83,4 +83,24 @@ test('Escape skips and a replaced replay does not remove its successor shield',a
   assert.notEqual(shield,old);let prevented=false,stopped=false;
   shield.onkeydown({key:'Escape',preventDefault(){prevented=true;},stopPropagation(){stopped=true;}});
   await second;assert.ok(prevented&&stopped);assert.equal(h.completed(),1);assert.equal(h.document.body.children.length,0);
+});
+
+function wordFixture(h){
+  const before=[{id:'0,0',q:0,r:0,letter:'C',value:3,owner:1},{id:'1,0',q:1,r:0,letter:'?',value:0,owner:2},{id:'2,0',q:2,r:0,letter:'T',value:2,owner:0}];
+  const Element=h.tile.constructor;h.$('board').replaceChildren();
+  for(const t of before){const el=new Element('g');el.setAttribute('data-id',t.id);el.className='tile owner'+t.owner;for(const [tag,cls]of [['polygon',''],['text',''],['text','value']]){const child=new Element(tag);child.className=cls;el.append(child);}h.$('board').append(el);}
+  Object.assign(h.plan,{word:'CAT',path:before.map(t=>t.id),beforeTiles:before,afterTiles:before.map(t=>({...t,owner:1,letter:'Z'})),castleCaptures:[],totalsAfter:[18,10],events:[{kind:'word',player:1,amount:8,sources:[...before.map(t=>({id:t.id,amount:t.value})),{bonus:true,amount:3}]}]});
+}
+test('word points travel one letter at a time, including joker ownership, with the bonus strictly last',async()=>{
+ const h=setup();wordFixture(h);await h.motion.play(h.plan,{seat:1,names:['A','B']});
+ const arrivals=h.animations.filter(a=>a.duration===120);assert.equal(arrivals.length,4);assert.deepEqual(arrivals.map(a=>a.phase),['word','word','word','length']);
+ assert.deepEqual(arrivals.map(a=>String(a.score)),['10','13','13','15']);assert.ok(arrivals.every(a=>a.bubbles===1),'only one letter or bonus bubble exists');
+ assert.ok(arrivals[0].ownerStates[1].includes('owner2'));assert.ok(arrivals[1].ownerStates[1].includes('owner1'));assert.ok(arrivals[1].ownerStates[2].includes('owner0'));assert.ok(arrivals[2].ownerStates[2].includes('owner1'));
+ assert.equal(h.$('score-1').textContent,'18');assert.equal(String(h.$('score-2').textContent),'10');assert.equal(h.completed(),1);
+});
+test('the length bonus can be skipped with the same full-screen tap',async()=>{
+ const h=setup({skipAt:'length',restoreOnComplete:true});wordFixture(h);await h.motion.play(h.plan,{seat:1,names:['A','B']});assert.equal(h.motion.active,false);assert.equal(h.completed(),1);assert.equal(h.$('score-1').textContent,'18');assert.equal(h.document.body.children.length,0);
+});
+test('reduced-motion word playback changes every tile and reaches exact totals without flights',async()=>{
+ const h=setup({reduced:true});wordFixture(h);await h.motion.play(h.plan,{seat:1,names:['A','B']});assert.equal(h.animations.length,0);assert.equal(h.$('score-1').textContent,'18');assert.ok(h.$('board').children.every(t=>t.classes.has('owner1')));assert.equal(h.completed(),1);
 });
