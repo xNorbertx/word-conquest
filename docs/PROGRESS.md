@@ -1,5 +1,31 @@
 # Implementation and verification - updated 18 October 2026
 
+## Defended castles at 3/5 — 18 October 2026
+
+- Added only the 3/5 defended-castle variant to the previous English comparison,
+  retaining final +1 per owned tile. No extra end-game castle value, capture
+  reward, banked-score deduction or production rule change.
+- 1,504 new games / 37,138 turns; 2,880 previous distinct controls reused exactly.
+  Combined: 4,384 distinct games / 108,026 turns. All seven stages use identical
+  seeds, starts and policy coefficients; rate changes reach scoring and decisions.
+- Main: 52.1% words / 34.0% defended castles / 14.0% final land, versus
+  58.9 / 25.4 / 15.6% at 2/4. Paired castle-share increase 8.5 points, interval
+  8.2-8.9. Castle exchanges 5.7 -> 6.3; halfway leader wins 70.9 -> 74.4%.
+  Fewer late reversals; fairness remains unresolved and human enjoyment unmeasured.
+- Sixteen research tests pass. All 512 new main games independently replayed,
+  every 3/5 payout checked against surviving ownership; twenty complete controls
+  across five models reproduce earlier records. Prior controls hash-identical;
+  aggregate accounting, source hashes, six full replays and all assets pass.
+  No search truncation or unfinished games.
+- Six model selectors, every replay score, retry/navigation/accessibility labels,
+  CSS/JS parse and mobile layout rules checked. PNG/SVG figures visually inspected;
+  browser/device rendering unavailable, so physical-phone appearance not verified.
+- [Findings](research/castle-35-2026-10-18/FINDINGS.md),
+  [methods](research/castle-35-2026-10-18/README.md),
+  [report](research/castle-35-2026-10-18/index.html).
+  Publication verification pending. Existing reports, live app, APK, backend,
+  dictionary and saved games unchanged; no new infrastructure or ongoing cost.
+
 ## Final territory follow-up — 18 October 2026
 
 - Compared words + defended castles against the same rules plus a one-time final

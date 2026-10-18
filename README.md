@@ -30,6 +30,7 @@ saved games and authoritative server turns. Capacitor packages the built web cli
 - [Run/deploy/backup/maintenance instructions](docs/OPERATIONS.md).
 - [Privacy and dictionary policy](docs/PRIVACY.md).
 - [Offline balance study: 33 setups, ratings and replays](docs/research/BALANCE-2026-10-04.md).
+- [Expanded scoring comparison: defended castles at 3/5, 1,504 new games](https://xnorbertx.github.io/word-conquest/research/castle-35-2026-10-18/).
 - [Final territory follow-up: 2,880 English games, with and without an end bonus](https://xnorbertx.github.io/word-conquest/research/final-territory-2026-10-18/).
 - [Scoring simplification study: 4,800 English games, four systems](https://xnorbertx.github.io/word-conquest/research/scoring-2026-10-18/).
 - [Castle income study: 3,248 games and score composition](docs/research/CASTLE-INCOME-2026-10-04.md).

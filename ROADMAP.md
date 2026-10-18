@@ -8,6 +8,17 @@ See [implementation and verification status](docs/PROGRESS.md) and the single
 [manual setup checklist](docs/SETUP.md). Boxes remain unchecked until their hosted
 and real-device acceptance checks pass, not merely because source code was written.
 
+Defended-castle 3/5 extension is complete: 1,504 new English games on the same
+seeds, compared with 2,880 exact previous controls. [Findings](docs/research/castle-35-2026-10-18/FINDINGS.md)
+show 52.1% words / 34.0% castle income / 14.0% final land in the main model.
+This is recommended for a stronger-castle human comparison against 2/4; rule
+approval, recoverable leads and starting-order fairness remain open.
+
+- [x] Add 3/5 defended income with final territory to the research comparison;
+  audit all 512 new main games, parameterized payouts and exact previous controls.
+- [ ] Human-test 2/4 versus 3/5, with final territory in both; watch side castles,
+  word-versus-position choices and whether early castle leads are recoverable.
+
 Final territory follow-up is complete: 2,880 distinct English games comparing
 words + defended castles with and without a final +1 per owned tile.
 [Results](docs/research/final-territory-2026-10-18/FINDINGS.md) favour testing the
