@@ -8,6 +8,21 @@ See [implementation and verification status](docs/PROGRESS.md) and the single
 [manual setup checklist](docs/SETUP.md). Boxes remain unchecked until their hosted
 and real-device acceptance checks pass, not merely because source code was written.
 
+Final territory follow-up is complete: 2,880 distinct English games comparing
+words + defended castles with and without a final +1 per owned tile.
+[Results](docs/research/final-territory-2026-10-18/FINDINGS.md) favour testing the
+final bonus: 58.9% words / 25.4% castle income / 15.6% territory in the main model,
+with more ordinary attacks and late reversals. Fairness remains unresolved.
+
+- [x] Compare final territory versus no territory using paired seeds, both starts,
+  multiple word-search/strategy models and exact main-game accounting audits.
+- [ ] Choose the next human-playtest rules; final territory is recommended, not yet approved.
+- [ ] Human-test late territorial steals, score legibility and starting-order balance.
+- [ ] If selected, implement as a new pinned rules version, including explicit
+  terminal scoring presentation and lifecycle decisions for resignation/draw.
+
+No live scoring, saved games or releases changed by this research.
+
 Scoring simplification research is complete: four systems, 4,800 English games
 and 1,536 decision continuations. [Published findings](https://xnorbertx.github.io/word-conquest/research/scoring-2026-10-18/)
 recommend human-testing the proposal against words-plus-defended-castles. Rule

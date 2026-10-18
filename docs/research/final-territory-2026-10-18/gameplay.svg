@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="792pt" height="367.2pt" viewBox="0 0 792 367.2" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-10-18T15:08:42.677938</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.10.7, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 367.2
+L 792 367.2
+L 792 0
+L 0 0
+z
+" style="fill: #faf7ef"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 35.64 293.76
+L 239.14 293.76
+L 239.14 110.16
+L 35.64 110.16
+z
+" style="fill: #faf7ef"/>
+   </g>
+   <g id="patch_3">
+    <path d="M 44.89 293.76
+L 114.265 293.76
+L 114.265 215.096574
+L 44.89 215.096574
+z
+" clip-path="url(#pd49b39e201)" style="fill: #a4b591"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 160.515 293.76
+L 229.89 293.76
+L 229.89 192.584705
+L 160.515 192.584705
+z
+" clip-path="url(#pd49b39e201)" style="fill: #946b50"/>
+   </g>
+   <g id="matplotlib.axis_1">
+    <g id="xtick_1">
+     <g id="line2d_1"/>
+     <g id="text_1">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #655e56" x="79.5775" y="310.118281" transform="rotate(-0 79.5775 310.118281)">No bonus</text>
+     </g>
+    </g>
+    <g id="xtick_2">
+     <g id="line2d_2"/>
+     <g id="text_2">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #655e56" x="195.2025" y="310.118281" transform="rotate(-0 195.2025 310.118281)">Final territory</text>
+     </g>
+    </g>
+   </g>
+   <g id="matplotlib.axis_2"/>
+   <g id="text_3">
+    <text style="font-weight: 700; font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #342a24" x="79.5775" y="208.218918" transform="rotate(-0 79.5775 208.218918)">42.8%</text>
+   </g>
+   <g id="text_4">
+    <text style="font-weight: 700; font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #342a24" x="195.2025" y="185.707049" transform="rotate(-0 195.2025 185.707049)">55.1%</text>
+   </g>
+   <g id="text_5">
+    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #342a24" x="137.39" y="90.16" transform="rotate(-0 137.39 90.16)">Word turns taking enemy land</text>
+   </g>
+  </g>
+  <g id="axes_2">
+   <g id="patch_5">
+    <path d="M 300.19 293.76
+L 503.69 293.76
+L 503.69 110.16
+L 300.19 110.16
+z
+" style="fill: #faf7ef"/>
+   </g>
+   <g id="patch_6">
+    <path d="M 309.44 293.76
+L 378.815 293.76
+L 378.815 186.004997
+L 309.44 186.004997
+z
+" clip-path="url(#peb102e7624)" style="fill: #a4b591"/>
+   </g>
+   <g id="patch_7">
+    <path d="M 425.065 293.76
+L 494.44 293.76
+L 494.44 143.123304
+L 425.065 143.123304
+z
+" clip-path="url(#peb102e7624)" style="fill: #946b50"/>
+   </g>
+   <g id="matplotlib.axis_3">
+    <g id="xtick_3">
+     <g id="line2d_3"/>
+     <g id="text_6">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #655e56" x="344.1275" y="310.118281" transform="rotate(-0 344.1275 310.118281)">No bonus</text>
+     </g>
+    </g>
+    <g id="xtick_4">
+     <g id="line2d_4"/>
+     <g id="text_7">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #655e56" x="459.7525" y="310.118281" transform="rotate(-0 459.7525 310.118281)">Final territory</text>
+     </g>
+    </g>
+   </g>
+   <g id="matplotlib.axis_4"/>
+   <g id="text_8">
+    <text style="font-weight: 700; font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #342a24" x="344.1275" y="179.127341" transform="rotate(-0 344.1275 179.127341)">58.7%</text>
+   </g>
+   <g id="text_9">
+    <text style="font-weight: 700; font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #342a24" x="459.7525" y="136.245647" transform="rotate(-0 459.7525 136.245647)">82.0%</text>
+   </g>
+   <g id="text_10">
+    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #342a24" x="401.94" y="90.16" transform="rotate(-0 401.94 90.16)">Attacks in the final quarter</text>
+   </g>
+  </g>
+  <g id="axes_3">
+   <g id="patch_8">
+    <path d="M 564.74 293.76
+L 768.24 293.76
+L 768.24 110.16
+L 564.74 110.16
+z
+" style="fill: #faf7ef"/>
+   </g>
+   <g id="patch_9">
+    <path d="M 573.99 293.76
+L 643.365 293.76
+L 643.365 247.890178
+L 573.99 247.890178
+z
+" clip-path="url(#pa8896b0bbb)" style="fill: #a4b591"/>
+   </g>
+   <g id="patch_10">
+    <path d="M 689.615 293.76
+L 758.99 293.76
+L 758.99 175.230356
+L 689.615 175.230356
+z
+" clip-path="url(#pa8896b0bbb)" style="fill: #946b50"/>
+   </g>
+   <g id="matplotlib.axis_5">
+    <g id="xtick_5">
+     <g id="line2d_5"/>
+     <g id="text_11">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #655e56" x="608.6775" y="310.118281" transform="rotate(-0 608.6775 310.118281)">No bonus</text>
+     </g>
+    </g>
+    <g id="xtick_6">
+     <g id="line2d_6"/>
+     <g id="text_12">
+      <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #655e56" x="724.3025" y="310.118281" transform="rotate(-0 724.3025 310.118281)">Final territory</text>
+     </g>
+    </g>
+   </g>
+   <g id="matplotlib.axis_6"/>
+   <g id="text_13">
+    <text style="font-weight: 700; font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #342a24" x="608.6775" y="241.012521" transform="rotate(-0 608.6775 241.012521)">3.7%</text>
+   </g>
+   <g id="text_14">
+    <text style="font-weight: 700; font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #342a24" x="724.3025" y="168.352699" transform="rotate(-0 724.3025 168.352699)">9.7%</text>
+   </g>
+   <g id="text_15">
+    <text style="font-size: 11px; font-family: 'DejaVu Sans'; text-anchor: middle; fill: #342a24" x="666.49" y="90.16" transform="rotate(-0 666.49 90.16)">Last-move lead reversals</text>
+   </g>
+  </g>
+  <g id="text_16">
+   <text style="font-weight: 700; font-size: 21px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #342a24" x="27.72" y="22.032" transform="rotate(-0 27.72 22.032)">More land tactics. More late reversals.</text>
+  </g>
+  <g id="text_17">
+   <text style="font-size: 10px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #342a24" x="27.72" y="44.064" transform="rotate(-0 27.72 44.064)">Main comparison · 512 games per setup</text>
+  </g>
+  <g id="text_18">
+   <text style="font-size: 9px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #342a24" x="27.72" y="347.004" transform="rotate(-0 27.72 347.004)">Late = turns starting after 90 of 120 letters used. Reversal = the projected pre-final-move leader loses;</text>
+  </g>
+  <g id="text_19">
+   <text style="font-size: 9px; font-family: 'DejaVu Sans'; text-anchor: start; fill: #342a24" x="27.72" y="358.02" transform="rotate(-0 27.72 358.02)">current territory is included in that projection. Tied pre-move positions excluded. Bot results, not measured enjoyment.</text>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="pd49b39e201">
+   <rect x="35.64" y="110.16" width="203.5" height="183.6"/>
+  </clipPath>
+  <clipPath id="peb102e7624">
+   <rect x="300.19" y="110.16" width="203.5" height="183.6"/>
+  </clipPath>
+  <clipPath id="pa8896b0bbb">
+   <rect x="564.74" y="110.16" width="203.5" height="183.6"/>
+  </clipPath>
+ </defs>
+</svg>

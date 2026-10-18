@@ -1,5 +1,30 @@
 # Implementation and verification - updated 18 October 2026
 
+## Final territory follow-up — 18 October 2026
+
+- Compared words + defended castles against the same rules plus a one-time final
+  point per owned tile, including starting tiles, castles and jokers. Neutral
+  tiles excluded. No capture rewards, special final castle values or deductions.
+- Completed 2,880 distinct English games / 70,888 turns; 3,008 executions include
+  128 repeated controls, explicitly marked and excluded from the headline.
+  Main, mixed styles, sparse, exhaustive familiar search, one-reply planning,
+  full and late land valuation. Fixed coefficients; both starters per board.
+- Main distribution without bonus: 69.9% words / 30.1% castle income. With bonus:
+  58.9% / 25.4% / 15.6% final land. Attacks 42.8% -> 55.1%; last-move reversals
+  3.7% -> 9.7%. Starter win change is inconclusive; no claim of measured enjoyment.
+- Nine rule tests pass. All 1,024 main games replay-audited exactly; eight controls
+  match the prior runner. Score/component/source-hash checks pass for all records,
+  including exact duplicate-control reconciliation and 16 terminal alternatives.
+  No search truncation or unfinished games.
+- Six report selectors, four complete replays with every score checked, retry,
+  navigation, accessibility labels, CSS/JS parsing and report assets pass. Exported
+  PNG/SVG charts visually inspected. Browser/physical-phone rendering unavailable.
+- [Findings](research/final-territory-2026-10-18/FINDINGS.md),
+  [methods](research/final-territory-2026-10-18/README.md),
+  [report](research/final-territory-2026-10-18/index.html).
+  Publication verification pending. No app, backend, dictionary, account, APK,
+  rules migration or new ongoing cost. Human comparison and rule approval remain.
+
 ## Scoring simplification study — 18 October 2026
 
 - Research-only comparison of current English autumn-v4, the owner's proposed
