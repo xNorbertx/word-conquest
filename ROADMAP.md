@@ -2,6 +2,12 @@
 
 Updated: 18 October 2026
 
+- [x] Replace the scoring Skip button with an invisible full-screen tap target:
+  one click finishes every remaining phase and restores the saved board/totals;
+  the tap is consumed so underlying game controls do not activate.
+- [ ] Confirm tap-anywhere scoring skip on the physical Android/iPhone builds.
+  Automated checks and release evidence: [PROGRESS](docs/PROGRESS.md).
+
 This is an acceptance checklist. The original local two-player prototype remains
 available; a separate online implementation now exists. Rules remain experimental.
 See [implementation and verification status](docs/PROGRESS.md) and the single

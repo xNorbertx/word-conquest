@@ -1,5 +1,9 @@
 # Android pilot and build pipeline
 
+Version 0.12.2 adds tap-anywhere to skip the entire scoring sequence. The old Skip
+button is gone; one tap shows the saved final board and scores. Install over the
+existing pilot; no new game is needed. See [verification and release status](PROGRESS.md).
+
 Version 0.12.1 fixes automatic joker-picker opening after touch selection,
 including zoomed boards. [Download the signed APK](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25108092/word-conquest-android.apk).
 Install over the existing pilot; no account reset,

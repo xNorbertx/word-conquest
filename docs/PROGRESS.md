@@ -1,5 +1,28 @@
 # Implementation and verification - updated 18 October 2026
 
+## Tap anywhere to finish scoring — 0.12.2, 18 October 2026
+
+- A transparent full-screen button consumes a completed tap/click and cancels
+  the whole sequence, including word points, castle capture/income and both
+  final-territory tallies. Existing completion rendering restores the saved board
+  and exact scores immediately. No score calculation or server mutation changed.
+- Removed the visible Skip button and its reserved space. The invisible target
+  has an accessible label, native Enter/Space activation and Escape support;
+  prior keyboard focus is restored when its element remains connected.
+- Cleanup removes the tap target and point effects on skip, natural completion,
+  replay replacement, navigation, resize or backgrounding. Waiting for click
+  (not pointerdown) prevents the same tap reaching a control underneath.
+- All 180 regression tests and original engine/scoring/supply suites pass, as does
+  the production build. Six added cases cover clicks during initial/word/capture/
+  castle/final phases, immediate restoration, reduced motion, click consumption,
+  focus, Escape and replay replacement. Twelve actual-renderer DOM cases confirm
+  immediate saved totals for both seats, English/Swedish/legacy rules and live/
+  final states; twelve additional cases verify natural reduced-motion completion.
+- Physical-phone acceptance remains open: no browser surface or Android device
+  is connected for this run. Publication evidence follows below.
+- Client-only patch; existing games supported, no backend migration, permissions,
+  dependencies or ongoing cost changes.
+
 ## Android joker auto-open — 0.12.1, 18 October 2026
 
 - Fixed a touch-capture failure path: all tile DOM nodes were replaced during

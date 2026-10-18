@@ -1,5 +1,11 @@
 # Word Conquest
 
+### Tap to finish scoring (0.12.2)
+
+Tap anywhere during scoring to jump straight to the saved final board and both
+scores. The visible Skip button is removed. Applies to live moves and replays,
+including the final territory tally. See [verification and release status](docs/PROGRESS.md).
+
 ### Android joker picker fix (0.12.1)
 
 Keeps touch selection intact so the letter picker opens when you select a joker,

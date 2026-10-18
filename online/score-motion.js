@@ -2,7 +2,7 @@ import {$,node,svg,icon} from './ui.js';
 
 const signed=n=>n<0?'−'+Math.abs(n):'+'+n;
 export function createBoardScoreMotion({onComplete}){
-  let controller=null,active=false,layer=null,started=0;
+  let controller=null,active=false,layer=null,dismiss=null,previousFocus=null,started=0;
   const media=matchMedia('(prefers-reduced-motion: reduce)');
   const check=signal=>{if(signal.aborted)throw new DOMException('Cancelled','AbortError');};
   const wait=(ms,signal)=>new Promise((resolve,reject)=>{
@@ -67,9 +67,12 @@ export function createBoardScoreMotion({onComplete}){
     }));
   }
   function cancel(restore=true){
-    const wasActive=active;active=false;controller?.abort();controller=null;layer?.remove();layer=null;
+    const wasActive=active,returnFocus=dismiss&&document.activeElement===dismiss?previousFocus:null;
+    active=false;controller?.abort();controller=null;layer?.remove();layer=null;
+    dismiss?.remove();dismiss=null;previousFocus=null;
     $('game-table').classList.remove('is-scoring');$('board').inert=false;$('score-motion').hidden=true;
     if(wasActive&&restore)onComplete();
+    if(returnFocus?.isConnected)returnFocus.focus({preventScroll:true});
   }
   async function fly(b,player,signal,delay){
     await wait(delay,signal);const target=centre($('score-'+player)),dx=target.x-b.p.x,dy=target.y-b.p.y;
@@ -85,7 +88,15 @@ export function createBoardScoreMotion({onComplete}){
     $('game-table').classList.toggle('score-reduced',media.matches);
     layer=node('div',undefined,'score-motion-layer');layer.setAttribute('aria-hidden','true');document.body.append(layer);
     $('motion-word').textContent=plan.word||(plan.action==='refresh'?'Fresh letters':'Final score');$('motion-byline').textContent=plan.player===seat?'You played':names[plan.player-1];
-    $('motion-skip').onclick=()=>cancel();$('motion-status').textContent='';
+    previousFocus=document.activeElement;
+    dismiss=node('button',undefined,'score-motion-dismiss');dismiss.type='button';
+    dismiss.setAttribute('aria-label','Skip scoring animations');
+    // Consume the completed click before removing the shield. Removing it on
+    // pointerdown could send the following click to a control underneath.
+    dismiss.onclick=event=>{event.preventDefault();event.stopPropagation();cancel();};
+    dismiss.onkeydown=event=>{if(event.key==='Escape'){event.preventDefault();event.stopPropagation();cancel();}};
+    document.body.append(dismiss);dismiss.focus({preventScroll:true});
+    $('motion-status').textContent='';
     const balances=[...plan.totalsBefore];balances.forEach((n,i)=>$('score-'+(i+1)).textContent=n);
     paint(plan.beforeTiles,plan);
     try{
