@@ -14,6 +14,7 @@ Combined game-screen release 0.13.0:
   size; test scoring attribution, paging, offline retry and account changes.
 - [ ] Physical-phone acceptance: animation pacing, waiting icon and history layout
   in light/dark mode. No phone or browser surface was available for this run.
+Web, compact-history backend and signed Android APK are released.
 See [release evidence and limits](docs/PROGRESS.md).
 
 - [x] Replace the scoring Skip button with an invisible full-screen tap target:

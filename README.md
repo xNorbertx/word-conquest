@@ -9,7 +9,9 @@ Tap anywhere still skips the whole sequence. Draw controls are removed.
 The last-word row opens **Move history**, with Word / Length / Castles / Total
 columns. Castle income goes on the actual recipient's row; final territory stays
 explicit. History preloads and is reused during the session. See
-[verification and release status](docs/PROGRESS.md).
+[verification and device-check limits](docs/PROGRESS.md).
+Live on the [web](https://xnorbertx.github.io/word-conquest/online/) and in
+[Android 0.13.0](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25133416/word-conquest-android.apk).
 
 ### Tap to finish scoring (0.12.2)
 

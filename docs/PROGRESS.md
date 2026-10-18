@@ -40,7 +40,18 @@
 - Physical-phone and rendered browser review remain open; neither surface was
   connected. No owner decisions or manual setup are required before release.
   No paid infrastructure, new dependencies, permissions or ongoing cost changes.
-- Publication evidence follows below.
+- Released source `b947240`; [web](https://xnorbertx.github.io/word-conquest/online/)
+  published at Pages `dc05e6d`. Pages build succeeded and all ten
+  public app/prototype assets match the verified build (CRLF normalized).
+  Original prototype and published design/research pages are retained.
+- [Signed Android APK](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25133416/word-conquest-android.apk) from
+  [successful CI](https://github.com/xNorbertx/word-conquest/actions/runs/39168081253): `0.13.0-b947240`,
+  code `25133416`. Original pilot certificate, package ID, exact
+  web assets, sequential scoring/cache code, absent draw controls, notification
+  permission and native appearance bridge verified. No private keys or local
+  test fixtures packaged. Anonymous public download matches SHA-256
+  `65d7b606d5fb689301fc8c120c93aaab18f7ffd340889fa940c0ad787cb2d5d9`.
+  Install over the existing pilot. Existing games work; no new game is needed.
 
 ## Tap anywhere to finish scoring — 0.12.2, 18 October 2026
 

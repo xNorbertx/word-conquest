@@ -3,7 +3,8 @@
 Version 0.13.0 combines the waiting-hourglass animation, sequential word points,
 length bonus last, removal of draw controls, and the cached Move history table.
 Install over the current pilot; existing games work. No new permissions or native
-dependencies. See [verification and release status](PROGRESS.md).
+dependencies. [Download the signed APK](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25133416/word-conquest-android.apk).
+See [verification and device-check limits](PROGRESS.md).
 
 Version 0.12.2 adds tap-anywhere to skip the entire scoring sequence. The old Skip
 button is gone; one tap shows the saved final board and scores. Install over the
