@@ -22,7 +22,10 @@
 - [Findings](research/final-territory-2026-10-18/FINDINGS.md),
   [methods](research/final-territory-2026-10-18/README.md),
   [report](research/final-territory-2026-10-18/index.html).
-  Publication verification pending. No app, backend, dictionary, account, APK,
+  [Public report](https://xnorbertx.github.io/word-conquest/research/final-territory-2026-10-18/)
+  published from source `e8825a5`, Pages `95f1a8a`; build succeeded. All 14
+  public report assets match, and ten existing app/prototype assets match their
+  previous deployment. No app, backend, dictionary, account, APK,
   rules migration or new ongoing cost. Human comparison and rule approval remain.
 
 ## Scoring simplification study — 18 October 2026
