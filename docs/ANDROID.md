@@ -3,7 +3,8 @@
 Version 0.14.0 adds Analytics and slower scoring, plus a new joker opening-gesture
 guard. The owner's 0.12.1 Android issue was not resolved by the earlier capture
 fix alone; this follow-up still needs physical-device confirmation. No new
-permissions, dependencies or signing key. See [release evidence](PROGRESS.md).
+permissions, dependencies or signing key. [Download the review APK](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25134997/word-conquest-android.apk).
+See [release evidence and remaining acceptance checks](PROGRESS.md).
 
 Version 0.13.0 combines the waiting-hourglass animation, sequential word points,
 length bonus last, removal of draw controls, and the cached Move history table.

@@ -2,7 +2,8 @@
 
 ## Analytics, score pacing and picker follow-up — 0.14.0
 
-Implementation and local checks complete; release/hosted evidence follows below.
+Implementation, automated checks, hosted verification and review build complete.
+Rendered visual review and physical Android confirmation are still blocked.
 
 - Removed Activity from the account navigation and routing. Notification delivery
   and backend inbox data remain intact for existing clients.
@@ -43,6 +44,30 @@ Implementation and local checks complete; release/hosted evidence follows below.
   light/dark; six-, seven-, nine-letter words; zero-point jokers; length bonus,
   castle/final phases; tap-anywhere; touch joker select/edit/drag in fit/zoom.
   Do not describe the Android issue as resolved before phone confirmation.
+
+### Published review build and hosted checks
+
+- Source: `79867c7`; [web review](https://xnorbertx.github.io/word-conquest/previews/0.14.0/). GitHub Pages
+  commit `16fae09f46a3fe14c5a96b6aba641ba9a33a19de`. All five preview assets and five original-prototype
+  assets match the local build (CRLF-normalized where necessary). The stable
+  `/online/` app remains at 0.13.0 pending rendered visual/device acceptance.
+- [Android review APK](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25134997/word-conquest-android.apk) — `0.14.0-79867c7`,
+  versionCode `25134997`, 4,994,932 bytes. Anonymous
+  download checksum verified. [CI build](https://github.com/xNorbertx/word-conquest/actions/runs/39169993546) passed.
+  Stable signing certificate, package, native theme plugin, notification permission
+  and exact bundled HTML/CSS/JS/license all verified; no private key or test fixture.
+- SHA-256: `44393338d6846a74f1814b27039cf0cb1509a260cf760c6dfe903dd69d1ce24b`.
+- `game-api` deployed on the existing Supabase project; two isolated test accounts
+  each returned 8 completed games / 33 own words / 3 castle captures, matching
+  stored records exactly. Responses were 537 bytes, measured at 1,572 / 1,427 ms.
+  Unauthenticated requests returned 401; client-supplied actor identity was ignored.
+  No owner game, email or push notification was modified/sent.
+- New picker gesture tests fail against the previous committed controller and
+  pass with this change. Physical Android confirmation remains open. No CUA browser
+  or ADB device became available; the review tab is queued for the owner to open.
+- No database migration, new dependency, paid service or app-store release.
+  The normal web deployment can be promoted after visual acceptance; the review
+  build and stable app share the existing backend and current game rules.
 
 ## Combined game-screen update — 0.13.0, 18 October 2026
 

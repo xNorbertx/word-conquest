@@ -11,6 +11,8 @@ and flight. The length bonus holds for a full second before travelling. One tap
 still skips everything. The joker picker now rejects a trailing opening-gesture
 click; physical Android confirmation is still required. See
 [verification and release status](docs/PROGRESS.md).
+[Web review](https://xnorbertx.github.io/word-conquest/previews/0.14.0/) · [Android review APK](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25134997/word-conquest-android.apk).
+The stable web version remains unchanged pending visual/device acceptance.
 
 ### Game screen and move history (0.13.0)
 
