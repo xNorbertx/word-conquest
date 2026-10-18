@@ -1,5 +1,10 @@
 # Android pilot and build pipeline
 
+Version 0.12.1 fixes automatic joker-picker opening after touch selection,
+including zoomed boards. Install over the existing pilot; no account reset,
+new permissions or new game is required. Physical-device confirmation remains
+open. See [verification and release details](PROGRESS.md).
+
 Version 0.12.0 uses defended castles 3/5 plus one final point per owned tile in
 new games. Install the [signed APK](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25106288/word-conquest-android.apk) over the existing pilot;
 update both phones and start a new game. Existing games retain their saved rules.

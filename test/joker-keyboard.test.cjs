@@ -10,7 +10,7 @@ class Element {
  set textContent(value){this.text=String(value);this.children=[];}get textContent(){return(this.text||'')+this.children.map(c=>c.textContent).join('');}
  append(...children){this.children.push(...children);}replaceChildren(...children){this.text='';this.children=children;}
  setAttribute(k,v){this.attributes[k]=String(v);}getAttribute(k){return this.attributes[k];}
- addEventListener(name,fn){(this.events[name]??=[]).push(fn);}emit(name,extra={}){const e={key:'',preventDefault(){},...extra};for(const fn of this.events[name]||[])fn(e);}
+ addEventListener(name,fn){(this.events[name]??=[]).push(fn);}emit(name,extra={}){const e={key:'',target:this,preventDefault(){},...extra};for(const fn of this.events[name]||[])fn(e);}
  querySelector(tag){for(const c of this.children){if(c.tag===tag)return c;const found=c.querySelector(tag);if(found)return found;}return null;}
  get lastElementChild(){return this.children.at(-1);}getBoundingClientRect(){return{left:0,top:0,right:0,bottom:0,width:0,height:0};}
  showModal(){this.open=true;}close(){this.open=false;this.emit('close');}focus(){document.activeElement=this;}
@@ -82,6 +82,46 @@ test('board gesture opens the picker only after release; cancellation does not o
  vm.createContext(c);vm.runInContext(source.slice(source.indexOf('let boardGesture='),source.indexOf("$('board').onkeydown=")),c);
  const down=id=>board.onpointerdown({button:0,clientX:id,pointerId:1,preventDefault(){}});
  down('j');assert.deepEqual(opened,[]);assert.deepEqual(chosen,[]);board.emit('pointerup',{pointerId:1});assert.deepEqual(opened,['j']);
- down('a');board.emit('pointercancel');board.emit('pointerup',{pointerId:1});assert.deepEqual(opened,['j']);
+ down('a');board.emit('pointercancel',{pointerId:1});board.emit('pointerup',{pointerId:1});assert.deepEqual(opened,['j']);
  down('a');board.onpointermove({clientX:'j',pointerId:1});assert.deepEqual(opened,['j']);board.emit('pointerup',{pointerId:1});assert.deepEqual(opened,['j','pending']);
+});
+test('touch capture transfer and unrelated fingers cannot suppress the automatic joker picker',()=>{
+ const source=fs.readFileSync('online/app.js','utf8');
+ for(const selected of [false,true])for(const event of ['tile-transfer','other-pointer-loss','other-pointer-cancel']){
+  const board=new Element('svg');board.setPointerCapture=()=>{};board.hasPointerCapture=()=>true;board.releasePointerCapture=()=>{};
+  const opened=[],chosen=[],c={$:()=>board,dragging:false,preview:false,canPlay:()=>true,tileAt:x=>x,selection:selected?['j']:[],game:{state:{tiles:[{id:'j',letter:'?'}]}},choose:id=>chosen.push(id),openJoker:id=>opened.push(id),openPendingJoker:()=>opened.push('pending')};
+  vm.createContext(c);vm.runInContext(source.slice(source.indexOf('let boardGesture='),source.indexOf("$('board').onkeydown=")),c);
+  board.onpointerdown({button:0,clientX:'j',pointerId:1,pointerType:'touch',preventDefault(){}});
+  if(event==='tile-transfer')board.emit('lostpointercapture',{pointerId:1,target:new Element('polygon')});
+  else board.emit(event==='other-pointer-loss'?'lostpointercapture':'pointercancel',{pointerId:2});
+  assert.deepEqual(opened,[]);board.emit('pointerup',{pointerId:1});assert.deepEqual(opened,[selected?'j':'pending']);
+  board.emit('lostpointercapture',{pointerId:1});board.emit('pointerup',{pointerId:1});assert.equal(opened.length,1);
+  assert.deepEqual(chosen,selected?[]:['j']);
+ }
+});
+test('genuine board capture loss cancels the gesture without opening a picker',()=>{
+ const board=new Element('svg'),opened=[];board.setPointerCapture=()=>{};board.hasPointerCapture=()=>true;board.releasePointerCapture=()=>{};
+ const c={$:()=>board,dragging:false,preview:false,canPlay:()=>true,tileAt:x=>x,selection:[],game:{state:{tiles:[{id:'j',letter:'?'}]}},choose(){},openJoker:()=>opened.push('edit'),openPendingJoker:()=>opened.push('pending')};
+ const source=fs.readFileSync('online/app.js','utf8');vm.createContext(c);vm.runInContext(source.slice(source.indexOf('let boardGesture='),source.indexOf("$('board').onkeydown=")),c);
+ board.onpointerdown({button:0,clientX:'j',pointerId:1,preventDefault(){}});board.emit('lostpointercapture',{pointerId:1});board.emit('pointerup',{pointerId:1});assert.deepEqual(opened,[]);
+});
+test('production board redraw keeps touched groups and polygons connected while updating selection, letters and ownership',()=>{
+ class Svg extends Element{
+  constructor(tag){super(tag);this.dataset={};}
+  setAttribute(k,v){super.setAttribute(k,v);if(k==='data-id')this.dataset.id=v;if(k==='class')this.className=v;}
+  matches(s){return s==='text:not(.value)'?this.tag==='text'&&!this.className?.split(' ').includes('value'):s.startsWith('.')?this.className?.split(' ').includes(s.slice(1)):this.tag===s;}
+  querySelector(s){return this.querySelectorAll(s)[0]||null;}
+  querySelectorAll(s){return this.children.flatMap(c=>[...(c.matches(s)?[c]:[]),...c.querySelectorAll(s)]);}
+  append(...children){for(const child of children){if(child.parent)child.remove();child.parent=this;}super.append(...children);}
+  remove(){if(this.parent)this.parent.children=this.parent.children.filter(c=>c!==this);this.parent=null;}
+  replaceChildren(...children){for(const c of this.children)c.parent=null;this.children=[];this.append(...children);}
+ }
+ const board=new Svg('svg'),svg=(tag,attrs={},text)=>{const e=new Svg(tag);for(const [k,v]of Object.entries(attrs))e.setAttribute(k,String(v));if(text!==undefined)e.textContent=text;return e;};
+ const game={id:'g',state:{tiles:[{id:'j',q:0,r:0,letter:'?',owner:1,castle:false},{id:'a',q:1,r:0,letter:'A',owner:0,castle:true}]}},context={$:()=>board,svg,game,history:[],selection:[],jokers:{},user:{id:'me'},seatOf:()=>1,focusTile:null,preview:false,canPlay:()=>true,highlightLast:false,config:{},tilePoints:t=>t.id,castleLabel:()=>'Castle',Engine:{letterValue:l=>l==='?'?0:1}};
+ const source=fs.readFileSync('online/app.js','utf8');vm.createContext(context);vm.runInContext(source.slice(source.indexOf('const pos='),source.indexOf('function openJoker(')),context);context.canPlay=()=>true;
+ context.drawBoard();const group=board.querySelectorAll('.tile')[0],polygon=group.querySelector('polygon'),letter=group.querySelector('text:not(.value)'),line=board.querySelector('.path');
+ context.selection=['j'];context.drawBoard();assert.equal(board.querySelectorAll('.tile')[0],group);assert.equal(group.querySelector('polygon'),polygon);assert.equal(group.parent,board);assert.equal(polygon.parent,group);assert.equal(group.getAttribute('aria-pressed'),'true');assert.equal(group.querySelector('.step').textContent,'1');
+ context.jokers.j='Å';context.drawBoard();assert.equal(group.querySelector('text:not(.value)'),letter);assert.equal(letter.textContent,'Å');assert.equal(board.querySelector('.path'),line);
+ game.state.tiles[0].owner=2;context.selection=[];context.drawBoard();assert.ok(group.className.includes('owner2'));assert.equal(group.querySelector('.step'),null);assert.equal(letter.textContent,'');assert.equal(group.querySelector('polygon'),polygon);
+ game.state.tiles=game.state.tiles.slice(0,1);context.drawBoard();assert.equal(board.querySelectorAll('.tile').length,1);assert.equal(board.querySelectorAll('.path').length,1);
 });

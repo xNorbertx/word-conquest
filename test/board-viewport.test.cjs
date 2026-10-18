@@ -41,7 +41,7 @@ test('fit mode leaves existing word drags alone; zoom consumes gestures before t
  const f=fixture();assert(!f.event('pointerdown').stopped);f.control.setZoom(true);assert(f.event('pointerdown').stopped);assert(f.event('pointermove',140,140).stopped);assert(f.event('pointerup',140,140).stopped);
 });
 test('cancelled, stale-game, disabled and secondary-pointer taps do not change the word',()=>{
- for(const event of ['pointercancel','lostpointercapture']){const f=fixture();f.control.setZoom(true);f.event('pointerdown');f.event(event);f.event('pointerup');assert.deepEqual(f.taps,[]);}
+ for(const event of ['pointercancel','lostpointercapture']){const f=fixture();f.control.setZoom(true);f.event('pointerdown');f.event(event,100,100,{target:f.viewport});f.event('pointerup');assert.deepEqual(f.taps,[]);}
  const f=fixture();f.control.setZoom(true);f.event('pointerdown');f.changeGame();f.event('pointerup');assert.deepEqual(f.taps,[]);
  f.event('pointerdown');f.disable();f.event('pointerup');assert.deepEqual(f.taps,[]);
  const other=fixture();other.control.setZoom(true);other.event('pointerdown',100,100,{isPrimary:false,pointerId:2});other.event('pointerup',100,100,{pointerId:2});assert.deepEqual(other.taps,[]);
@@ -58,4 +58,12 @@ test('keyboard focus pans inside the viewport to reveal offscreen tiles',()=>{
  const f=fixture();f.control.setZoom(true);f.viewport.scrollLeft=0;f.viewport.scrollTop=0;
  f.event('focusin',0,0,{target:{closest:()=>true,getBoundingClientRect:()=>({left:600,right:650,top:600,bottom:650})}});
  assert.equal(f.viewport.scrollLeft,292);assert.equal(f.viewport.scrollTop,328);
+});
+test('zoom tap survives capture transfer from a child and unrelated pointer cancellation',()=>{
+ for(const event of ['child-loss','other-loss','other-cancel']){
+  const f=fixture();f.control.setZoom(true);f.event('pointerdown');
+  if(event==='child-loss')f.event('lostpointercapture',100,100,{target:f.board});
+  else f.event(event==='other-loss'?'lostpointercapture':'pointercancel',100,100,{pointerId:2,target:f.viewport});
+  f.event('pointerup');assert.deepEqual(f.taps,['tile']);f.event('pointerup');assert.equal(f.taps.length,1);
+ }
 });

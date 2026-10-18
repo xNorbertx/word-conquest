@@ -8,6 +8,10 @@ See [implementation and verification status](docs/PROGRESS.md) and the single
 [manual setup checklist](docs/SETUP.md). Boxes remain unchecked until their hosted
 and real-device acceptance checks pass, not merely because source code was written.
 
+Android joker auto-open 0.12.1 fixes capture-transfer cancellation and preserves
+board touch targets. All 174 tests and production DOM regression checks pass.
+Physical-phone confirmation remains open; release details are in [PROGRESS](docs/PROGRESS.md).
+
 The owner approved final territory + defended castles 3/5. Version 0.12.0
 implements this for new English/Swedish games; see [timing and verification](docs/PROGRESS.md).
 Historical games keep their rules. Web/server and signed Android pilot are live;

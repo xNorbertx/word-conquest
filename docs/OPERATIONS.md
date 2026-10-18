@@ -1,5 +1,14 @@
 # Run, deploy and maintain
 
+## Android joker auto-open — 0.12.1
+
+Client-only patch: tests/build, existing Pages publication, signed Android CI.
+No server or schema deployment. Keep 0.12.0 scoring support in the backend.
+Rollback only the client if needed, retaining the server and existing saved games.
+Verify new/edited joker selection and zoomed taps on a physical Android device;
+the automated regressions simulate capture transfer but do not run a WebView.
+No new infrastructure or ongoing costs.
+
 ## Defended scoring — 0.12.0
 
 Run `npm test` and `npm run build`, deploy `game-api` to dedicated project

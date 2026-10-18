@@ -1,5 +1,30 @@
 # Implementation and verification - updated 18 October 2026
 
+## Android joker auto-open — 0.12.1, 18 October 2026
+
+- Fixed a touch-capture failure path: all tile DOM nodes were replaced during
+  selection, while any bubbled `lostpointercapture` event cleared the board
+  gesture. The picker was opened only at release, so that gesture could disappear
+  first. Board groups/polygons now stay connected through selection, and capture
+  cancellation checks the owning element and active pointer. The same correction
+  applies to zoomed taps; actual cancellation and panning still do not open a picker.
+- The existing in-app letter keyboard opens as soon as a joker tap/word drag is
+  released, without an extra tap on the word. English/Swedish letters, re-editing,
+  multiple-joker advance, keyboard accessibility, Android Back and stale-game
+  assignment guards retain their existing behaviour. No OS keyboard/plugin added.
+- 174 regression tests plus original engine/scoring/supply checks pass. New tests
+  cover bubbled capture transfers, other fingers, true capture loss, zoom taps and
+  production SVG identity. Four production DOM touch-sequence scenarios fail in
+  0.12.0 and pass in 0.12.1, including committing English/Swedish joker letters.
+  Twelve scoring DOM/reduced-motion scenarios also pass with the retained nodes.
+- These are synthetic-event/DOM tests, not a recorded trace from the user's phone.
+  No Android device or browser surface was connected; physical WebView acceptance
+  remains open. Pointer capture and disconnected-node behaviour are documented in
+  the [Pointer Events specification](https://www.w3.org/TR/pointerevents/#implicit-release-of-pointer-capture).
+- Client-only patch: existing backend, immutable scoring, saved games, permissions,
+  dependencies and ongoing costs unchanged. Publish web and signed Android pilot;
+  no Supabase deployment/migration required. Publication evidence follows below.
+
 ## Approved scoring — 0.12.0, 18 October 2026
 
 New games use `autumn-v5` (English) / `autumn-sv-v4` (Swedish): words,

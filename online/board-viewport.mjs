@@ -47,7 +47,8 @@ export function createBoardViewport({viewport,board,button,icon,onTap,getFocus,s
     if(!previous.moved&&Math.hypot(e.clientX-previous.x,e.clientY-previous.y)<7&&previous.tile&&previous.stamp===stamp()&&enabled())onTap(previous.tile);
   }
   viewport.addEventListener('pointerdown',down,true);viewport.addEventListener('pointermove',move,true);viewport.addEventListener('pointerup',up,true);
-  for(const event of ['pointercancel','lostpointercapture'])viewport.addEventListener(event,cancel);
+  viewport.addEventListener('pointercancel',e=>{if(gesture?.pointerId===e.pointerId)cancel();});
+  viewport.addEventListener('lostpointercapture',e=>{if(e.target===viewport&&gesture?.pointerId===e.pointerId)cancel();});
   viewport.addEventListener('focusin',e=>{
     if(!expanded||!e.target.closest?.('[data-id]'))return;
     const tile=e.target.getBoundingClientRect(),box=viewport.getBoundingClientRect(),margin=8;

@@ -1,5 +1,11 @@
 # Word Conquest
 
+### Android joker picker fix (0.12.1)
+
+Keeps touch selection intact so the letter picker opens when you select a joker,
+including zoomed boards. Install the updated APK over your existing pilot.
+See [verification and release status](docs/PROGRESS.md).
+
 ### Defended castles and final territory (0.12.0)
 
 New games score words, castles held through an opponent's turn (side 3 / centre 5),
