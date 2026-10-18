@@ -19,7 +19,19 @@
   immediate saved totals for both seats, English/Swedish/legacy rules and live/
   final states; twelve additional cases verify natural reduced-motion completion.
 - Physical-phone acceptance remains open: no browser surface or Android device
-  is connected for this run. Publication evidence follows below.
+  is connected for this run.
+- Released source `ba56ca5`; [web](https://xnorbertx.github.io/word-conquest/online/)
+  published at Pages `7d77254`. Pages build succeeded and all ten
+  public app/prototype files match the verified build (CRLF normalized).
+  Only online client assets changed; original prototype and reports retained.
+- [Android APK](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25109149/word-conquest-android.apk) from
+  [successful CI](https://github.com/xNorbertx/word-conquest/actions/runs/39137399097): `0.12.2-ba56ca5`,
+  version code `25109149`. Stable pilot signing certificate,
+  package ID, exact bundled web files, tap-target code, removed Skip button,
+  notification permission and native appearance bridge verified. No private keys
+  or local test fixtures packaged. Anonymous download matches SHA-256
+  `0583663df88db481849cf81b44a24e16e224637e5d829a9444478812db5211ed`.
+  Install over the current pilot; no new game needed.
 - Client-only patch; existing games supported, no backend migration, permissions,
   dependencies or ongoing cost changes.
 

@@ -6,7 +6,7 @@ Updated: 18 October 2026
   one click finishes every remaining phase and restores the saved board/totals;
   the tap is consumed so underlying game controls do not activate.
 - [ ] Confirm tap-anywhere scoring skip on the physical Android/iPhone builds.
-  Automated checks and release evidence: [PROGRESS](docs/PROGRESS.md).
+  Web and signed APK released; all 180 tests pass. Evidence: [PROGRESS](docs/PROGRESS.md).
 
 This is an acceptance checklist. The original local two-player prototype remains
 available; a separate online implementation now exists. Rules remain experimental.

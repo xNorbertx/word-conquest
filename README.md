@@ -4,7 +4,10 @@
 
 Tap anywhere during scoring to jump straight to the saved final board and both
 scores. The visible Skip button is removed. Applies to live moves and replays,
-including the final territory tally. See [verification and release status](docs/PROGRESS.md).
+including the final territory tally. Live on the
+[web](https://xnorbertx.github.io/word-conquest/online/) and in
+[Android 0.12.2](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25109149/word-conquest-android.apk).
+See [verification and device-check limitation](docs/PROGRESS.md).
 
 ### Android joker picker fix (0.12.1)
 
