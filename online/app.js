@@ -2996,7 +2996,7 @@ function createSnapshotCache(storage, { namespace = "", now = Date.now, ttl = 7 
 }
 
 // package.json
-var version = "0.12.2";
+var version = "0.13.0";
 
 // online/app.js
 init_dist();
@@ -10252,7 +10252,7 @@ function scoreMotionPlan(game2, move, config3) {
   const value = (t) => t.castle ? t.q === 0 && t.r === 0 ? config3.centerCastlePoints ?? config3.castlePoints : config3.castlePoints : config3.normalTerritoryPoints;
   const add = (kind, player, sources, expected) => {
     if (!Number.isSafeInteger(expected) || sum(sources) !== expected) throw Error("Receipt does not reconcile");
-    if (expected) events.push({ kind, player, amount: expected, sources: sources.filter((s) => s.amount !== 0) });
+    if (expected || kind === "word") events.push({ kind, player, amount: expected, sources: sources.filter((s) => s.amount !== 0 || kind === "word" && s.id) });
   };
   try {
     if (r.action === "word") {
@@ -10455,15 +10455,57 @@ function createBoardScoreMotion({ onComplete }) {
     if (wasActive && restore) onComplete();
     if (returnFocus?.isConnected) returnFocus.focus({ preventScroll: true });
   }
-  async function fly(b, player, signal, delay) {
+  async function fly(b, player, signal, delay, duration = 520) {
     await wait(delay, signal);
     const target = centre($("score-" + player)), dx = target.x - b.p.x, dy = target.y - b.p.y;
     await animate(b.el, [
       { transform: "translate(-50%,-50%) scale(1)", opacity: 1 },
       { transform: `translate(calc(-50% + ${dx * 0.4}px),calc(-50% + ${dy * 0.55}px)) scale(1.05)`, opacity: 1, offset: 0.55 },
       { transform: `translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px)) scale(.45)`, opacity: 0 }
-    ], 520, signal);
+    ], duration, signal);
     b.el.remove();
+  }
+  async function wordPoints(plan, event, balances, signal) {
+    const letters = event.sources.filter((s) => s.id), bonus = event.sources.find((s) => s.bonus);
+    let tally = 0;
+    async function award(source) {
+      check(signal);
+      const target = source.id ? tile(source.id) : null;
+      if (target) {
+        owner(target, plan.afterTiles.find((t) => t.id === source.id));
+        target.classList.add("motion-source");
+      }
+      if (source.bonus) {
+        $("score-motion").dataset.phase = "length";
+        $("motion-label").textContent = "Length bonus";
+        $("motion-tally").textContent = "+0";
+      }
+      if (!media.matches) {
+        const p = sourcePoint(source);
+        p.y -= source.bonus ? -18 : 14;
+        const el = node("span", "+0", `score-point side-${event.player}${source.bonus ? " bonus" : ""}`);
+        el.style.left = p.x + "px";
+        el.style.top = p.y + "px";
+        layer.append(el);
+        await Promise.all([count(el, 0, source.amount, 100, signal), animate(el, [{ opacity: 0, transform: "translate(-50%,0) scale(.8)" }, { opacity: 1, transform: "translate(-50%,-50%) scale(1)" }], 120, signal)]);
+        await fly({ el, p }, event.player, signal, 0, source.bonus ? 320 : 220);
+      }
+      const old = balances[event.player - 1];
+      balances[event.player - 1] += source.amount;
+      const previous = tally;
+      tally += source.amount;
+      await Promise.all([
+        count($("score-" + event.player), old, balances[event.player - 1], 110, signal, String),
+        count($("motion-tally"), source.bonus ? 0 : previous, source.bonus ? source.amount : tally, 110, signal)
+      ]);
+      target?.classList.remove("motion-source");
+    }
+    for (const letter2 of letters) await award(letter2);
+    if (media.matches) await wait(260, signal);
+    if (bonus) {
+      await award(bonus);
+      await wait(media.matches ? 260 : 100, signal);
+    }
   }
   async function play(plan, { seat, names }) {
     cancel(false);
@@ -10517,7 +10559,7 @@ function createBoardScoreMotion({ onComplete }) {
         $("game-table").dataset.motionTarget = e.player;
         if (e.kind === "castles" || e.kind === "territory" || e.kind === "final-territory") paint(plan.afterTiles.map((t) => {
           const old2 = plan.beforeTiles.find((b) => b.id === t.id);
-          return { ...t, letter: old2.letter, owner: e.kind === "castles" && !t.castle ? old2.owner : t.owner };
+          return { ...t, letter: old2.letter };
         }), plan);
         for (const el of $("board").querySelectorAll(".tile")) el.classList.remove("motion-source", "motion-castle", "motion-loss");
         const label = { word: "Word points", castles: "Castle income", territory: "Territory gained", "final-territory": "Final territory", loss: "Territory lost" }[e.kind];
@@ -10527,6 +10569,10 @@ function createBoardScoreMotion({ onComplete }) {
         $("motion-symbol").replaceChildren(icon({ word: "book", castles: "castle", territory: "territory", "final-territory": "territory", loss: "capture" }[e.kind]));
         $("motion-tally").textContent = "+0";
         $("score-motion").dataset.side = e.player === 1 ? "sage" : "walnut";
+        if (e.kind === "word") {
+          await wordPoints(plan, e, balances, signal);
+          continue;
+        }
         const bubbles = e.sources.map((s) => {
           if (s.id) tile(s.id)?.classList.add(e.kind === "castles" ? "motion-castle" : e.kind === "loss" ? "motion-loss" : "motion-source");
           const p = sourcePoint(s);
@@ -10575,6 +10621,236 @@ function createBoardScoreMotion({ onComplete }) {
   return { play, cancel, get active() {
     return active;
   } };
+}
+
+// online/presentation.mjs
+var seatOf = (game2, userId) => game2.players.indexOf(userId) + 1;
+var isFinished = (game2) => !["active", "invited"].includes(game2.status);
+function opponentName(game2, userId) {
+  const seat = seatOf(game2, userId);
+  return game2.status === "invited" ? "Waiting for a friend" : ["cancelled", "declined"].includes(game2.status) ? "Invitation to a friend" : game2.names?.[seat === 2 ? 0 : 1] || "Your friend";
+}
+function gameStatus(game2, userId) {
+  if (game2.status === "active") return game2.players[game2.state.player - 1] === userId ? "Your turn" : "Their turn";
+  if (game2.status === "invited") return "Invitation sent";
+  if (game2.status === "completed") return game2.result === "draw" ? "A draw" : Number(game2.result) === seatOf(game2, userId) ? "You won" : "They won";
+  return game2.status === "abandoned" ? "Abandoned" : game2.status === "cancelled" ? "Cancelled" : game2.status === "declined" ? "Declined" : game2.status;
+}
+function visibleGames(games, userId, filter2 = "active") {
+  return games.filter((g) => isFinished(g) === (filter2 === "finished")).sort((a, b) => {
+    const mine = (g) => g.status === "active" && g.players[g.state.player - 1] === userId;
+    return Number(mine(b)) - Number(mine(a)) || Date.parse(b.updated_at) - Date.parse(a.updated_at);
+  });
+}
+function timeAgo(value, now = Date.now()) {
+  const timestamp = Date.parse(value);
+  if (!Number.isFinite(timestamp)) return "";
+  const minutes = Math.max(0, Math.floor((now - timestamp) / 6e4));
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return "Yesterday";
+  if (days < 7) return `${days}d ago`;
+  return new Date(timestamp).toLocaleDateString(void 0, { month: "short", day: "numeric" });
+}
+function invitationToken(value) {
+  let token = value.trim();
+  try {
+    if (/^https?:/i.test(token)) token = new URL(token).searchParams.get("invite") || "";
+  } catch {
+    return null;
+  }
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(token) ? token : null;
+}
+function activityText(kind, name) {
+  if (kind === "invitation received") return `${name} invited you to play`;
+  const labels = { word: `${name} played a word`, refresh: `${name} refreshed their letters`, resign: `${name} left the game`, offer_draw: `${name} offered a draw`, accept_draw: "Your game ended in a draw", abandon: "Your game was abandoned", "game complete": "Your game has finished", "invitation accepted": `Your game with ${name} is ready`, "invitation accept": `Your game with ${name} is ready`, "invitation decline": "Your invitation was declined", "invitation cancel": "Your invitation was cancelled", "invitation declined": "Your invitation was declined", "invitation cancelled": "Your invitation was cancelled" };
+  return labels[kind] || "Your game has an update";
+}
+function friendlyError(error) {
+  if (error.code === "client_update_required") return "Update Word Conquest or open the latest web app to continue.";
+  if (error.code === "username_taken") return "That username is already taken. Try another.";
+  if (error.code === "username_required") return "Choose a username to continue.";
+  const social = { friend_stale: "This friend request has changed. Refresh Friends and try again.", friend_unavailable: "This player is not available for a new invitation.", friend_cooldown: "Give them a little time. You can send another request tomorrow.", friend_limit: "Your friend request limit has been reached. Try again later.", invitation_pending: "An invitation is already waiting for this friend. Open it from Games." };
+  if (social[error.code]) return social[error.code];
+  const messages = { client_update_required: "Update Word Conquest or open the latest web app to play this game.", stale: "A new turn came in. Your board has been updated.", not_your_turn: "It is your friend's turn.", invitation_unavailable: "This invitation is no longer available.", cannot_accept_own_invitation: "This is your invitation. Share it with a friend.", rate_limit: "A little too quick. Try again in a moment.", unauthorized: "Please sign in again to continue.", not_found: "This game is no longer available.", dictionary_unavailable: "Word checking is unavailable. Your turn has not been used.", version_unavailable: "This game needs an update. Please contact your inviter.", ended: "This game has already ended." };
+  if (messages[error.code]) return messages[error.code];
+  if (["TimeoutError", "AbortError", "TypeError"].includes(error.name)) return "Could not connect. Please try again.";
+  return error.message || "Something went wrong. Please try again.";
+}
+
+// online/move-history.mjs
+var amount = (n) => Number.isSafeInteger(n) ? n : 0;
+var actions = { refresh: "Letters refreshed", resign: "Resigned", offer_draw: "Draw offered", accept_draw: "Draw accepted", abandon: "Game closed" };
+function moveHistoryRows(move) {
+  const r = move.recap || {}, player = r.player, rows = [];
+  if (![1, 2].includes(player)) return rows;
+  const income = (p) => amount(r.income?.[p - 1]);
+  const base2 = { revision: move.revision, at: r.at, player, word: amount(r.score?.letters), bonus: amount(r.score?.lengthBonus), castles: income(player) };
+  rows.push({ ...base2, label: r.word || actions[r.action] || "Game update", total: base2.word + base2.bonus + base2.castles, kind: "move" });
+  const other = 3 - player;
+  if (income(other)) rows.push({ revision: move.revision, at: r.at, player: other, label: r.incomeTiming === "defended" ? "Castle defence" : "Castle income", word: 0, bonus: 0, castles: income(other), total: income(other), kind: "income" });
+  for (const p of [player, other]) {
+    const land = amount(r.finalTerritory?.[p - 1]);
+    if (land) rows.push({ revision: move.revision, at: r.at, player: p, label: "Final territory", word: 0, bonus: 0, castles: 0, total: land, kind: "territory" });
+    const legacy = p === player ? amount(r.score?.territoryGain) : -amount(r.score?.enemyLoss);
+    if (legacy) rows.push({ revision: move.revision, at: r.at, player: p, label: "Territory", word: 0, bonus: 0, castles: 0, total: legacy, kind: "territory" });
+  }
+  return rows;
+}
+function createMoveHistoryCache(fetchPage, { maxGames = 6 } = {}) {
+  const entries = /* @__PURE__ */ new Map();
+  let epoch = 0;
+  const key = (actor, id) => actor + "/" + id;
+  const sorted = (e) => [...e.moves.values()].sort((a, b) => b.revision - a.revision);
+  const snapshot = (e) => ({ moves: sorted(e), needsTop: e.topRevision < e.revision, hasMore: e.hasMore, loading: !!e.pending, attempted: e.attemptedRevision >= e.revision });
+  function entry(actor, id) {
+    const k = key(actor, id), e = entries.get(k);
+    if (e) {
+      entries.delete(k);
+      entries.set(k, e);
+    }
+    return e;
+  }
+  function merge(e, moves) {
+    for (const m of moves || []) if (Number.isSafeInteger(m.revision) && m.revision <= e.revision && m.recap) e.moves.set(m.revision, m);
+  }
+  function seed(actor, game2, moves = []) {
+    if (!actor || !game2?.id) return;
+    const k = key(actor, game2.id);
+    let e = entry(actor, game2.id);
+    if (!e) {
+      e = { actor, id: game2.id, revision: game2.revision, topRevision: -1, attemptedRevision: -1, moves: /* @__PURE__ */ new Map(), cursor: null, hasMore: true, pending: null };
+      entries.set(k, e);
+    }
+    e.revision = Math.max(e.revision, game2.revision);
+    merge(e, moves);
+    while (entries.size > maxGames) entries.delete(entries.keys().next().value);
+    return snapshot(e);
+  }
+  async function load(actor, id, { older = false } = {}) {
+    const e = entry(actor, id);
+    if (!e) return null;
+    if (e.pending) {
+      const waitingForTop = e.pendingTop;
+      await e.pending;
+      if (entries.get(key(actor, id)) !== e) return null;
+      return e.topRevision < e.revision || older && waitingForTop ? load(actor, id, { older }) : snapshot(e);
+    }
+    const top = e.topRevision < e.revision;
+    if (!top && (!older || !e.hasMore)) return snapshot(e);
+    const revision = e.revision, before = top ? revision + 1 : e.cursor, started = epoch;
+    if (top) e.attemptedRevision = revision;
+    const request = (async () => {
+      const page = await fetchPage({ action: "game_history", gameId: id, beforeRevision: before, supportsCompactHistory: true });
+      if (started !== epoch || entries.get(key(actor, id)) !== e) return;
+      merge(e, page.history);
+      const overlaps = top && e.topRevision >= 0 && page.nextBefore <= e.topRevision;
+      if (!overlaps || !page.hasMore) {
+        e.cursor = page.nextBefore;
+        e.hasMore = page.hasMore;
+      }
+      if (top) e.topRevision = revision;
+    })();
+    e.pending = request;
+    e.pendingTop = top;
+    try {
+      await request;
+    } finally {
+      if (e.pending === request) e.pending = null;
+    }
+    if (started !== epoch || entries.get(key(actor, id)) !== e) return null;
+    if (e.topRevision < e.revision) return load(actor, id);
+    return snapshot(e);
+  }
+  return { seed, load, read: (actor, id) => {
+    const e = entry(actor, id);
+    return e ? snapshot(e) : null;
+  }, reset() {
+    epoch++;
+    entries.clear();
+  } };
+}
+
+// online/move-history.js
+function createMoveHistory({ api: api2, getUser, getGame, getMoves, isPreview, stopMotion, replay, canReplay }) {
+  const cache = createMoveHistoryCache(api2);
+  function warm() {
+    const actor = getUser()?.id, game2 = getGame();
+    if (!actor || !game2 || isPreview()) return;
+    const state = cache.seed(actor, game2, getMoves());
+    if (state.needsTop && !state.attempted) void cache.load(actor, game2.id).catch(() => {
+    });
+  }
+  function show() {
+    stopMotion();
+    const actor = getUser()?.id, game2 = getGame(), id = game2.id, names = [...game2.names], seat = seatOf(game2, actor);
+    const content = node("div", void 0, "history-sheet"), table = node("table", void 0, "history-table"), head2 = node("thead"), heading = node("tr"), body = node("tbody");
+    const labels = ["Move", "Word", "Length", "Castles", "Total"];
+    labels.forEach((label, i) => {
+      const th = node("th", label);
+      th.scope = "col";
+      if (i === 2) th.setAttribute("aria-label", "Length bonus");
+      heading.append(th);
+    });
+    head2.append(heading);
+    table.append(head2, body);
+    const note = node("p", void 0, "menu-note");
+    note.setAttribute("role", "status");
+    note.hidden = true;
+    const more = button("Older moves", () => void load(true), "secondary full", "history");
+    more.hidden = true;
+    let state = isPreview() ? { moves: getMoves(), needsTop: false, hasMore: false } : cache.seed(actor, game2, getMoves());
+    function render() {
+      body.replaceChildren();
+      for (const move of state.moves) for (const row2 of moveHistoryRows(move)) {
+        const tr = node("tr", void 0, `history-${row2.kind} side-${row2.player}`), identity = node("th");
+        identity.scope = "row";
+        identity.append(node("strong", row2.label), node("small", `${row2.player === seat ? "You" : names[row2.player - 1]}${row2.kind === "move" ? " \xB7 " + timeAgo(row2.at) : ""}`));
+        tr.append(identity);
+        for (const field of ["word", "bonus", "castles", "total"]) tr.append(node("td", row2[field] === 0 ? "\u2014" : row2[field] < 0 ? "\u2212" + Math.abs(row2[field]) : "+" + row2[field], field === "total" ? "history-total" : void 0));
+        body.append(tr);
+      }
+      more.hidden = !state.hasMore && !state.needsTop;
+      table.hidden = !state.moves.length;
+      if (!state.moves.length && !state.needsTop) {
+        note.hidden = false;
+        note.textContent = "No moves yet.";
+      }
+    }
+    const current = () => content.isConnected && actor === getUser()?.id && id === getGame()?.id;
+    async function load(older = false) {
+      if (more.disabled) return;
+      more.disabled = true;
+      note.hidden = false;
+      note.textContent = "Loading moves\u2026";
+      try {
+        const result = await cache.load(actor, id, { older });
+        if (!current() || !result) return;
+        state = result;
+        note.hidden = true;
+        render();
+        more.replaceChildren(node("span", "Older moves"));
+      } catch {
+        if (current()) {
+          note.hidden = false;
+          note.textContent = "Could not load moves.";
+          more.hidden = false;
+          more.replaceChildren(node("span", "Retry"));
+        }
+      } finally {
+        more.disabled = false;
+      }
+    }
+    render();
+    content.append(table, note, more);
+    if (canReplay()) content.append(button("Replay points", replay, "text-button full history-replay", "refresh"));
+    showSheet("Move history", content);
+    if (!isPreview() && state.needsTop) void load();
+  }
+  return { warm, show, reset: () => cache.reset() };
 }
 
 // online/board-geometry.mjs
@@ -10849,64 +11125,6 @@ function createBoardViewport({ viewport, board, button: button2, icon: icon2, on
   } };
 }
 
-// online/presentation.mjs
-var seatOf = (game2, userId) => game2.players.indexOf(userId) + 1;
-var isFinished = (game2) => !["active", "invited"].includes(game2.status);
-function opponentName(game2, userId) {
-  const seat = seatOf(game2, userId);
-  return game2.status === "invited" ? "Waiting for a friend" : ["cancelled", "declined"].includes(game2.status) ? "Invitation to a friend" : game2.names?.[seat === 2 ? 0 : 1] || "Your friend";
-}
-function gameStatus(game2, userId) {
-  if (game2.status === "active") return game2.players[game2.state.player - 1] === userId ? "Your turn" : "Their turn";
-  if (game2.status === "invited") return "Invitation sent";
-  if (game2.status === "completed") return game2.result === "draw" ? "A draw" : Number(game2.result) === seatOf(game2, userId) ? "You won" : "They won";
-  return game2.status === "abandoned" ? "Abandoned" : game2.status === "cancelled" ? "Cancelled" : game2.status === "declined" ? "Declined" : game2.status;
-}
-function visibleGames(games, userId, filter2 = "active") {
-  return games.filter((g) => isFinished(g) === (filter2 === "finished")).sort((a, b) => {
-    const mine = (g) => g.status === "active" && g.players[g.state.player - 1] === userId;
-    return Number(mine(b)) - Number(mine(a)) || Date.parse(b.updated_at) - Date.parse(a.updated_at);
-  });
-}
-function timeAgo(value, now = Date.now()) {
-  const timestamp = Date.parse(value);
-  if (!Number.isFinite(timestamp)) return "";
-  const minutes = Math.max(0, Math.floor((now - timestamp) / 6e4));
-  if (minutes < 1) return "Just now";
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days === 1) return "Yesterday";
-  if (days < 7) return `${days}d ago`;
-  return new Date(timestamp).toLocaleDateString(void 0, { month: "short", day: "numeric" });
-}
-function invitationToken(value) {
-  let token = value.trim();
-  try {
-    if (/^https?:/i.test(token)) token = new URL(token).searchParams.get("invite") || "";
-  } catch {
-    return null;
-  }
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(token) ? token : null;
-}
-function activityText(kind, name) {
-  if (kind === "invitation received") return `${name} invited you to play`;
-  const labels = { word: `${name} played a word`, refresh: `${name} refreshed their letters`, resign: `${name} left the game`, offer_draw: `${name} offered a draw`, accept_draw: "Your game ended in a draw", abandon: "Your game was abandoned", "game complete": "Your game has finished", "invitation accepted": `Your game with ${name} is ready`, "invitation accept": `Your game with ${name} is ready`, "invitation decline": "Your invitation was declined", "invitation cancel": "Your invitation was cancelled", "invitation declined": "Your invitation was declined", "invitation cancelled": "Your invitation was cancelled" };
-  return labels[kind] || "Your game has an update";
-}
-function friendlyError(error) {
-  if (error.code === "client_update_required") return "Update Word Conquest or open the latest web app to continue.";
-  if (error.code === "username_taken") return "That username is already taken. Try another.";
-  if (error.code === "username_required") return "Choose a username to continue.";
-  const social = { friend_stale: "This friend request has changed. Refresh Friends and try again.", friend_unavailable: "This player is not available for a new invitation.", friend_cooldown: "Give them a little time. You can send another request tomorrow.", friend_limit: "Your friend request limit has been reached. Try again later.", invitation_pending: "An invitation is already waiting for this friend. Open it from Games." };
-  if (social[error.code]) return social[error.code];
-  const messages = { client_update_required: "Update Word Conquest or open the latest web app to play this game.", stale: "A new turn came in. Your board has been updated.", not_your_turn: "It is your friend's turn.", invitation_unavailable: "This invitation is no longer available.", cannot_accept_own_invitation: "This is your invitation. Share it with a friend.", rate_limit: "A little too quick. Try again in a moment.", unauthorized: "Please sign in again to continue.", not_found: "This game is no longer available.", dictionary_unavailable: "Word checking is unavailable. Your turn has not been used.", version_unavailable: "This game needs an update. Please contact your inviter.", ended: "This game has already ended." };
-  if (messages[error.code]) return messages[error.code];
-  if (["TimeoutError", "AbortError", "TypeError"].includes(error.name)) return "Could not connect. Please try again.";
-  return error.message || "Something went wrong. Please try again.";
-}
-
 // online/app.js
 var config2 = config;
 trackFocusInput();
@@ -10978,6 +11196,16 @@ var scoreLedger = createScoreLedger(localStorage);
 var scoreMotion = createBoardScoreMotion({ onComplete: () => {
   if (game && currentView === "game") renderGame();
 } });
+var moveHistory = createMoveHistory({
+  api,
+  getUser: () => user,
+  getGame: () => game,
+  getMoves: () => history,
+  isPreview: () => preview,
+  stopMotion: () => scoreMotion.cancel(),
+  canReplay: () => !preview && gameFresh && !!scoreMotionPlan(game, history[0], config2),
+  replay: () => animateScore(null, { replay: true })
+});
 var jokerKeyboard = createJokerKeyboard();
 var boardViewport = createBoardViewport({
   viewport: $("board-scroll"),
@@ -11048,6 +11276,7 @@ async function api(body) {
   const { data: { session }, error } = await db.auth.getSession();
   if (error || !session) {
     snapshots.clear();
+    moveHistory.reset();
     gameFresh = false;
     authReady = false;
     homeData = null;
@@ -11065,6 +11294,7 @@ async function api(body) {
       if (result.code === "username_required") showUsernameSetup();
       else if (["unauthorized", "account_deleting"].includes(result.code)) {
         snapshots.clear();
+        moveHistory.reset();
         gameFresh = false;
         game = null;
         homeData = null;
@@ -11211,6 +11441,7 @@ function renderActivity() {
 }
 function showUsernameSetup() {
   snapshots.clear();
+  moveHistory.reset();
   gameFresh = false;
   authReady = false;
   if (currentView !== "username-setup") {
@@ -11407,6 +11638,7 @@ async function openGame(id, quiet = false, { route = true } = {}) {
   invite = result.invitation;
   gameFresh = true;
   rememberGame(game);
+  moveHistory.warm();
   if (changed) {
     selection = [];
     jokers = {};
@@ -11575,6 +11807,7 @@ function renderGame() {
     $("turn").replaceChildren(icon(turnIcon), copy2);
     $("turn").dataset.label = turnText;
   }
+  $("turn").classList.toggle("is-waiting-turn", active && !ownTurn && !unconfirmed && gameFresh && !preview);
   $("turn").title = turnText;
   $("turn").classList.toggle("waiting", !ownTurn || unconfirmed);
   $("turn").dataset.side = active && !unconfirmed ? game.state.player === 1 ? "sage" : "walnut" : "none";
@@ -11594,7 +11827,6 @@ function renderGame() {
   $("share").querySelector(".copy-field").hidden = addressed;
   $("composer").hidden = !myTurn() && !preview || isFinished(game) || !!pending() && !busy;
   $("game-result").hidden = !isFinished(game);
-  $("draw-offer").hidden = !game.draw_by || game.draw_by === user?.id || game.status !== "active";
   if (isFinished(game)) {
     $("result-title").textContent = game.status === "completed" ? gameStatus(game, user?.id) + "." : game.status === "abandoned" ? "A game left unfinished." : "Invitation cancelled.";
     $("result-description").textContent = game.status === "completed" ? `${totals[seat - 1].total} to ${totals[seat === 1 ? 1 : 0].total}. A little word, a little world.` : "This game ended without a result.";
@@ -11653,6 +11885,7 @@ async function sendPending() {
       jokers = {};
       if (result.recap && result.acceptedRevision === game.revision) history = [{ revision: result.acceptedRevision, recap: result.recap }, ...history.filter((m) => m.revision !== result.acceptedRevision)];
       rememberGame(game);
+      moveHistory.warm();
       if (command.action === "resign") {
         await showHome();
         status("You left the game.");
@@ -11739,83 +11972,7 @@ function showDictionary() {
   showSheet("Words we play.", [node("p", text), node("p", "Listed inflections and compounds count. Each game keeps its original dictionary. Uncommon or offensive words may occur."), link]);
 }
 function showHistory() {
-  const actor = user?.id, id = game.id, names = [...game.names], content = node("div"), list = node("ol", void 0, "move-list"), note = node("p", "Loading moves\u2026", "menu-note");
-  let moves = [...history], cursor, loading = false;
-  const more = act("Older moves", () => loadPage(), "secondary full", "history");
-  more.hidden = true;
-  function render() {
-    list.replaceChildren();
-    for (const move of moves) {
-      const r = move.recap, item = node("li"), copy2 = node("div", void 0, "move-copy");
-      copy2.append(node("strong", r.word || ({ refresh: "Letters refreshed", resign: "Resigned", offer_draw: "Draw offered", accept_draw: "Draw accepted", abandon: "Game abandoned" }[r.action] || "Game update")), node("small", `${names[r.player - 1]} \xB7 ${timeAgo(r.at)}`));
-      item.append(node("span", move.revision, "move-number"), copy2, node("span", r.score ? `+${r.score.wordPoints}` : "", "move-points"));
-      list.append(item);
-    }
-  }
-  async function loadPage() {
-    if (loading) return;
-    loading = true;
-    more.disabled = true;
-    note.textContent = "Loading moves\u2026";
-    note.hidden = false;
-    try {
-      const result = await api({ action: "game_history", gameId: id, ...cursor ? { beforeRevision: cursor } : {} });
-      if (!content.isConnected || actor !== user?.id || game?.id !== id) return;
-      moves = cursor ? [...moves, ...result.history.filter((m) => !moves.some((old) => old.revision === m.revision))] : result.history;
-      cursor = result.nextBefore;
-      render();
-      more.hidden = !result.hasMore;
-      more.textContent = "Older moves";
-      note.hidden = !!moves.length;
-      note.textContent = "The first word is yours.";
-    } catch (e) {
-      if (content.isConnected && actor === user?.id) {
-        note.textContent = "Could not load moves.";
-        more.hidden = false;
-        more.textContent = "Retry";
-      }
-    } finally {
-      loading = false;
-      more.disabled = false;
-    }
-  }
-  render();
-  content.append(list, note, more);
-  showSheet("The story so far.", content);
-  if (!preview) void loadPage();
-  else {
-    note.textContent = "Played words will appear here.";
-  }
-}
-function showRecap() {
-  scoreMotion.cancel();
-  const r = history[0]?.recap;
-  if (!r) return;
-  const content = [node("div", r.word || "Game update", "recap-word"), node("div", `${game.names[r.player - 1]} \xB7 ${timeAgo(r.at)}`, "recap-byline")];
-  if (scoreMotionPlan(game, history[0], config2)) content.push(act("Replay points", () => animateScore(null, { replay: true }), "secondary full", "refresh"));
-  if (r.score) content.push(scoreLines([["Word points", r.score.wordPoints], ...config2.scoringMode === "defended-final" ? [] : [["Territory gained", r.score.territoryGain]], ...r.score.enemyLoss ? [["Opponent territory lost", r.score.enemyLoss]] : []]));
-  if (r.incomeTiming === "defended" && r.income?.some(Boolean)) content.push(node("h3", "Defended castles"), scoreLines([1, 2].filter((p) => r.income[p - 1]).map((p) => [game.names[p - 1], `+${r.income[p - 1]}`])));
-  if (r.finalTerritory) content.push(node("h3", "Final territory"), scoreLines([1, 2].map((p) => [game.names[p - 1], `+${r.finalTerritory[p - 1]}`])));
-  if (r.roundComplete) content.push(node("h3", `Round ${r.round} castle income`), scoreLines([1, 2].map((p) => [game.names[p - 1], `+${r.income[p - 1]}`])));
-  if (r.changed?.length) {
-    content.push(node("h3", "After the word"));
-    const changes = node("div", void 0, "tile-changes");
-    for (const c of r.changed) {
-      const chip = node("span", void 0, "tile-change" + (c.before.owner !== c.after.owner ? " captured" : ""));
-      chip.append(node("b", c.before.letter), node("span", "\u2192"), node("b", c.after.letter));
-      chip.title = c.before.owner !== c.after.owner ? "Captured tile" : "Replacement letter";
-      changes.append(chip);
-    }
-    content.push(changes, node("p", "Green chips are tiles captured on this turn.", "field-hint"));
-  }
-  if (r.path?.length) content.push(act("Show word on the board", () => {
-    highlightLast = true;
-    closeSheet();
-    renderGame();
-    $("board").scrollIntoView({ block: "center", behavior: "smooth" });
-  }, "secondary full", "eye"));
-  content.push(act("All moves", showHistory, "text-button full"));
-  showSheet("The last move.", content);
+  moveHistory.show();
 }
 function showNewGame(person = null) {
   if (!person?.display_name) person = null;
@@ -11932,7 +12089,7 @@ async function quitGame() {
 }
 async function confirmAction(kind) {
   const cost = Math.max(config2.refreshMinimumLetterCost, game.state.tiles.filter((t) => t.owner === game.state.player && t.letter !== "?").length);
-  const options = { refresh: { title: "Fresh letters?", message: `Replace your ordinary owned letters. This uses your turn and ${cost} letters from the shared supply.${config2.scoringMode === "defended-final" ? " Your opponent\u2019s defended castles still score." : ""}`, label: "Refresh letters", symbol: "refresh" }, offer_draw: { title: "Call it a draw?", message: "Your friend can accept the offer. You can both keep playing until then.", label: "Offer draw", symbol: "handshake" }, accept_draw: { title: "Share the honours?", message: "This ends the game as a draw for both players.", label: "Accept draw", symbol: "handshake" }, abandon: { title: "Close this inactive game?", message: "After 30 days without a turn, you can close a game without a win or loss.", label: "Close game", symbol: "hourglass" } };
+  const options = { refresh: { title: "Fresh letters?", message: `Replace your ordinary owned letters. This uses your turn and ${cost} letters from the shared supply.${config2.scoringMode === "defended-final" ? " Your opponent\u2019s defended castles still score." : ""}`, label: "Refresh letters", symbol: "refresh" }, abandon: { title: "Close this inactive game?", message: "After 30 days without a turn, you can close a game without a win or loss.", label: "Close game", symbol: "hourglass" } };
   if (await ask(options[kind])) await action(kind);
 }
 function showGameMenu() {
@@ -11943,12 +12100,6 @@ function showGameMenu() {
     const refresh = row("Refresh letters", "refresh", () => confirmAction("refresh"), { note: "Replace your letters instead of playing a word" });
     refresh.disabled = !canPlay();
     list.append(refresh);
-    if (game.draw_by === user?.id) {
-      const offered = row("Draw offered", "handshake", () => {
-      }, { note: "Waiting for your friend" });
-      offered.disabled = true;
-      list.append(offered);
-    } else list.append(row(game.draw_by ? "Accept draw" : "Offer a draw", "handshake", () => confirmAction(game.draw_by ? "accept_draw" : "offer_draw")));
     if (Date.now() - Date.parse(game.last_play_at) >= 30 * 864e5) list.append(row("Close inactive game", "hourglass", () => confirmAction("abandon")));
     list.append(row("Leave game", "flag", quitGame, { danger: true }));
   }
@@ -12226,8 +12377,7 @@ $("player-score-2").onclick = () => {
   scoreMotion.cancel();
   showScore(2);
 };
-$("recap").onclick = showRecap;
-$("accept-draw").onclick = () => run(() => confirmAction("accept_draw"));
+$("recap").onclick = showHistory;
 async function confirmSignOut() {
   if (signingOut) return;
   signingOut = true;
@@ -12485,6 +12635,7 @@ else db.auth.onAuthStateChange((event, session) => {
   }
   if (!user) {
     snapshots.clear();
+    moveHistory.reset();
     gameRequests.reset();
     gameFresh = false;
     game = null;
@@ -12503,6 +12654,7 @@ else db.auth.onAuthStateChange((event, session) => {
   if (recovering || !["SIGNED_IN", "INITIAL_SESSION"].includes(event) || previousUser === user.id && currentView !== "auth") return;
   if (previousUser !== user.id) {
     if (previousUser) snapshots.clear();
+    moveHistory.reset();
     gameRequests.reset();
     gameFresh = false;
     game = null;
@@ -12516,6 +12668,7 @@ else db.auth.onAuthStateChange((event, session) => {
   }
   setTimeout(() => run(enterApp), 0);
 });
+document.addEventListener("visibilitychange", () => document.body.classList.toggle("app-background", document.hidden));
 /*! Bundled license information:
 
 @capacitor/core/dist/index.js:
