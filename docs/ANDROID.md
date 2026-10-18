@@ -1,5 +1,10 @@
 # Android pilot and build pipeline
 
+Version 0.14.0 adds Analytics and slower scoring, plus a new joker opening-gesture
+guard. The owner's 0.12.1 Android issue was not resolved by the earlier capture
+fix alone; this follow-up still needs physical-device confirmation. No new
+permissions, dependencies or signing key. See [release evidence](PROGRESS.md).
+
 Version 0.13.0 combines the waiting-hourglass animation, sequential word points,
 length bonus last, removal of draw controls, and the cached Move history table.
 Install over the current pilot; existing games work. No new permissions or native
@@ -12,7 +17,7 @@ existing pilot; no new game is needed.
 [Download the signed APK](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25109149/word-conquest-android.apk).
 See [verification and device-check limitation](PROGRESS.md).
 
-Version 0.12.1 fixes automatic joker-picker opening after touch selection,
+Version 0.12.1 addressed touch-capture handling but did not resolve the owner’s joker auto-open issue,
 including zoomed boards. [Download the signed APK](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25108092/word-conquest-android.apk).
 Install over the existing pilot; no account reset,
 new permissions or new game is required. Physical-device confirmation remains

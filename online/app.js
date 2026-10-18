@@ -1,3 +1,4 @@
+import {renderAnalytics} from './analytics.js';
 import monogram from '../assets/monogram.json';
 import {gameSummary} from '../server/game-summary.mjs';
 import {createHomeRequests} from './home-requests.mjs';
@@ -45,7 +46,7 @@ const authRedirect=()=>native?publicApp:location.origin+location.pathname;
 const status=(message,error=false)=>notify(message,error);
 const push=createPushControls({api,getUser:()=>user,onStatus:message=>{status(message);renderPush();},onChange:()=>renderPush(),onUpdate:()=>void poll(),onOpen:id=>{notificationGame=id;if(user&&authReady&&!recovering)void run(openNotification);}});
 const friends=createFriends({api,getUser:()=>user,getData:()=>homeData,setData:partial=>{if(homeData)Object.assign(homeData,partial);},run,status,invite:person=>showNewGame(person),openGame});
-const screens=['loading','setup','auth','username-setup','recovery','home','friends','activity','account','game'];
+const screens=['loading','setup','auth','username-setup','recovery','home','friends','analytics','account','game'];
 const homeRequests=createHomeRequests(()=>api({action:'home'}));
 const gameRequests=createHomeRequests(key=>api({action:'game',gameId:key.split('/')[1]}));
 const scoreLedger=createScoreLedger(localStorage);
@@ -63,8 +64,8 @@ function screen(name,{route=true,replace=false}={}){
   closeSheet();currentView=name;for(const id of screens)$(id).hidden=id!==name;
   const inGame=name==='game';document.body.classList.toggle('auth-view',name==='auth');document.body.classList.toggle('game-view',inGame);if(!inGame)boardViewport.setZoom(false);
   $('back').hidden=!inGame;$('game-heading').hidden=!inGame;$('game-menu').hidden=!inGame;$('help-button').hidden=inGame;
-  $('main-nav').hidden=!user||!['home','friends','activity','account'].includes(name);
-  for(const [id,view]of [['home-button','home'],['friends-button','friends'],['account-button','account']]){if(view===name||view==='account'&&name==='activity')$(id).setAttribute('aria-current','page');else $(id).removeAttribute('aria-current');}
+  $('main-nav').hidden=!user||!['home','friends','analytics','account'].includes(name);
+  for(const [id,view]of [['home-button','home'],['friends-button','friends'],['account-button','account']]){if(view===name||view==='account'&&name==='analytics')$(id).setAttribute('aria-current','page');else $(id).removeAttribute('aria-current');}
   if(route&&user){const url=name==='game'?`?game=${game.id}`:name==='home'?location.pathname:`?view=${name}`;window.history[replace?'replaceState':'pushState']({view:name},'',url);}
   document.title=inGame?`${opponentName(game,user?.id)} - Word Conquest`:'Word Conquest';
   window.scrollTo({top:0,behavior:'instant'});
@@ -75,9 +76,9 @@ function pending(){if(preview)return null;try{return JSON.parse(localStorage.get
 function apiError(message,code,statusCode,requestId){const e=new Error(message);Object.assign(e,{code,status:statusCode,requestId});return e;}
 async function api(body){
   if(!db)throw new Error('Online play is not connected yet.');
-  const {data:{session},error}=await db.auth.getSession();if(error||!session){snapshots.clear();moveHistory.reset();gameFresh=false;authReady=false;homeData=null;game=null;++navigation;++gameLoad;++homeLoad;screen('auth',{route:false});throw apiError('Sign in to continue.','unauthorized',401);}
+  const {data:{session},error}=await db.auth.getSession();if(error||!session){snapshots.clear();moveHistory.reset();analyticsData=null;analyticsActor=null;gameFresh=false;authReady=false;homeData=null;game=null;++navigation;++gameLoad;++homeLoad;screen('auth',{route:false});throw apiError('Sign in to continue.','unauthorized',401);}
   const response=await fetch(`${cfg.supabaseUrl}/functions/v1/game-api`,{method:'POST',signal:AbortSignal.timeout(20000),headers:{'Content-Type':'application/json',apikey:cfg.supabaseAnonKey,Authorization:`Bearer ${session.access_token}`},body:JSON.stringify({...body,supportedRules:SUPPORTED_RULES,supportsFriends:true,supportsUsernameOnboarding:true,supportsGameSummaries:true,supportsFastReads:true})});
-  const result=await response.json();if(!response.ok){if(user?.id===session.user.id){if(result.code==='username_required')showUsernameSetup();else if(['unauthorized','account_deleting'].includes(result.code)){snapshots.clear();moveHistory.reset();gameFresh=false;game=null;homeData=null;authReady=false;++navigation;++gameLoad;++homeLoad;screen('auth',{route:false});}}throw apiError(result.error||'Request failed.',result.code,response.status,result.requestId);}return result;
+  const result=await response.json();if(!response.ok){if(user?.id===session.user.id){if(result.code==='username_required')showUsernameSetup();else if(['unauthorized','account_deleting'].includes(result.code)){snapshots.clear();moveHistory.reset();analyticsData=null;analyticsActor=null;gameFresh=false;game=null;homeData=null;authReady=false;++navigation;++gameLoad;++homeLoad;screen('auth',{route:false});}}throw apiError(result.error||'Request failed.',result.code,response.status,result.requestId);}return result;
 }
 async function run(fn){try{return await fn();}catch(e){lastProblem=friendlyError(e);lastRequestId=e.requestId||null;status(lastProblem,true);if(currentView==='loading'){$('loading-message').textContent='Your games could not load.';$('retry-load').hidden=false;$('loading').querySelector('.spinner').hidden=true;}}}
 const act=(label,fn,className='secondary',symbol)=>button(label,()=>run(fn),className,symbol);
@@ -123,14 +124,9 @@ function renderHome(){
     card.setAttribute('aria-label',`${name}. ${scoreLabel} ${g.status==='invited'?'Invitation':state}. ${language}. ${updated}. Open game`);card.append(top,meta);list.append(card);
   }
   if(!list.childElementCount&&!invitations.childElementCount){const blank=emptyState(filter==='finished'?'Your story starts here.':'A little friendly competition?',filter==='finished'?'Finished games will find a home here.':'Invite someone. Take your time. Find a great word.',filter==='finished'?'award':'leaf');if(filter==='active')blank.append(act('Invite a friend',()=>showNewGame(),'primary','plus'));list.append(blank);}
-  renderActivity();renderPush();friends.render();
+  renderPush();friends.render();
 }
-function renderActivity(){
-  if(!homeData)return;const unread=homeData.notifications.filter(n=>!n.read_at).length;$('activity-badge').hidden=!unread;$('activity-badge').textContent=unread>9?'9+':String(unread);$('activity-state').textContent=unread?`${unread} unread updates`:'';$('read-inbox').disabled=!unread;
-  $('inbox').replaceChildren();for(const n of homeData.notifications){const g=homeData.games.find(g=>g.id===n.game_id),name=g?opponentName(g,user.id):'Your friend';const item=act('',()=>openGame(n.game_id),'activity-item'+(n.read_at?'':' unread'));item.replaceChildren(avatar(name),node('span'),icon('chevron'));item.children[1].append(node('strong',activityText(n.kind,name)),node('small',timeAgo(n.created_at)));$('inbox').append(item);}
-  if(!homeData.notifications.length)$('inbox').append(emptyState('All caught up.','Game updates will appear here.','bell'));
-}
-function showUsernameSetup(){snapshots.clear();moveHistory.reset();gameFresh=false;authReady=false;if(currentView!=='username-setup'){$('setup-username-error').hidden=true;$('setup-username').removeAttribute('aria-invalid');screen('username-setup',{route:false});}}
+function showUsernameSetup(){snapshots.clear();moveHistory.reset();analyticsData=null;analyticsActor=null;gameFresh=false;authReady=false;if(currentView!=='username-setup'){$('setup-username-error').hidden=true;$('setup-username').removeAttribute('aria-invalid');screen('username-setup',{route:false});}}
 function accountReady(){const first=!authReady;authReady=true;if(first)void push.restore().catch(()=>{});}
 async function fetchHome(){const request=homeLoad,actor=user?.id;const result=await homeRequests.get(actor);if(user?.id!==actor||request!==homeLoad)return null;homeData=result;if(result.needsUsername||result.profile.username===null){showUsernameSetup();return null;}snapshots.saveHome(actor,result);accountReady();return result;}
 function rememberGame(saved){
@@ -156,7 +152,21 @@ async function showHome(quiet=false,{route=true,replace=false}={}){
   if(!cached||before!==JSON.stringify(result))renderHome();
   offlineNotice(!navigator.onLine);return true;
 }
-async function showActivity({route=true}={}){if(!user)return;const ticket=++navigation,actor=user.id;if(!homeData)await fetchHome();if(ticket!==navigation||actor!==user?.id||!homeData)return;if(homeData.profile.username===null)return showUsernameSetup();++gameLoad;screen('activity',{route});renderActivity();}
+let analyticsData=null,analyticsActor=null,analyticsRequest=0;
+async function showAnalytics({route=true}={}){
+  if(!user)return;const actor=user.id,ticket=++navigation,request=++analyticsRequest;
+  ++gameLoad;screen('analytics',{route});
+  if(analyticsActor!==actor){analyticsData=null;analyticsActor=actor;}
+  const root=$('analytics-content');root.replaceChildren();
+  if(analyticsData)renderAnalytics(root,analyticsData,{openGame:id=>run(()=>openGame(id))});
+  $('analytics-status').textContent=analyticsData?'Updating…':'Loading…';$('analytics-refresh').disabled=true;
+  try{
+    const result=await api({action:'analytics'});
+    if(request!==analyticsRequest||ticket!==navigation||actor!==user?.id||currentView!=='analytics')return;
+    analyticsData=result.analytics;renderAnalytics(root,analyticsData,{openGame:id=>run(()=>openGame(id))});$('analytics-status').textContent='';
+  }catch(e){if(ticket===navigation&&actor===user?.id)$('analytics-status').textContent=analyticsData?'Could not update. Tap refresh to retry.':'Could not load. Tap refresh to retry.';throw e;}
+  finally{if(request===analyticsRequest)$('analytics-refresh').disabled=false;}
+}
 async function showFriends({route=true}={}){if(!user)return;const ticket=++navigation,actor=user.id;if(!homeData?.social||typeof homeData?.profile.email_notifications!=='boolean')await fetchHome();if(ticket!==navigation||actor!==user?.id||!homeData)return;if(homeData.profile.username===null)return showUsernameSetup();++gameLoad;screen('friends',{route});friends.render();await friends.refresh();}
 async function showInvite(){
   const raw=localStorage.getItem('wc-invitation');if(!raw||!user||homeData?.profile.username===null)return false;const token=invitationToken(raw);if(!token){localStorage.removeItem('wc-invitation');throw Error('That invitation code does not look right.');}
@@ -457,7 +467,7 @@ $('recovery-form').onsubmit=e=>{e.preventDefault();void run(async()=>{const subm
 $('retry-load').onclick=()=>run(enterApp);
 $('home-button').onclick=$('back').onclick=$('result-home').onclick=()=>run(()=>user?showHome():screen(configured?'auth':'setup',{route:false}));
 $('brand').onclick=e=>{e.preventDefault();void run(()=>user?showHome():screen(configured?'auth':'setup',{route:false}));};
-$('activity-button').onclick=()=>run(()=>showActivity());$('account-button').onclick=()=>run(()=>account());
+$('analytics-button').onclick=()=>run(()=>showAnalytics());$('analytics-back').onclick=()=>run(()=>account());$('analytics-refresh').onclick=()=>run(()=>showAnalytics({route:false}));$('account-button').onclick=()=>run(()=>account());
 $('friends-button').onclick=()=>run(()=>showFriends());
 $('active-games').onclick=()=>{filter='active';renderHome();};$('finished-games').onclick=()=>{filter='finished';renderHome();};
 $('push-prompt-enable').onclick=()=>run(async()=>{if(push.snapshot().state==='blocked')await push.openSettings();else await connectPush();});$('push-prompt-dismiss').onclick=()=>push.snooze();
@@ -475,7 +485,6 @@ async function confirmSignOut(){
   }finally{signingOut=false;}
 }
 $('setup-signout').onclick=$('signout').onclick=()=>run(confirmSignOut);
-$('read-inbox').onclick=()=>run(async()=>{await api({action:'read_notifications'});await fetchHome();renderActivity();status('All caught up.');});
 $('submit-word').onclick=()=>run(()=>action('word'));$('retry').onclick=()=>run(sendPending);$('clear-word').onclick=clearWord;
 const tileAt=(x,y)=>document.elementFromPoint(x,y)?.closest('[data-id]')?.dataset.id;
 let boardGesture=null;
@@ -517,7 +526,7 @@ async function enterApp(){
       if(!await showHome(false,{route:false})||actor!==user?.id)return;
       const invited=await showInvite();if(actor!==user?.id)return;
       if(notificationGame)await openNotification();
-      else if(!invited&&params.get('view')==='friends')await showFriends({route:false});else if(!invited&&params.get('view')==='account')await account({route:false});else if(!invited&&params.get('view')==='activity')await showActivity({route:false});
+      else if(!invited&&params.get('view')==='friends')await showFriends({route:false});else if(!invited&&params.get('view')==='account')await account({route:false});else if(!invited&&params.get('view')==='analytics')await showAnalytics({route:false});
     }
   }finally{entering=false;}
 }
@@ -534,20 +543,20 @@ $('username-form').onsubmit=e=>{e.preventDefault();void usernameSetup();};$('ran
 $('setup-username').oninput=()=>{$('setup-username-error').hidden=true;$('setup-username').removeAttribute('aria-invalid');};
 async function poll(){
   if(polling||entering||busy||usernameSetupBusy||!user||document.hidden||recovering)return;polling=true;refreshQueued=false;
-  try{if(currentView==='username-setup'){if(await fetchHome())await enterApp();}else if(currentView==='game'&&!preview)await openGame(game.id,true);else if(currentView==='home')await showHome(true);else if(currentView==='friends')await friends.refresh();else if(currentView==='activity'){await fetchHome();renderActivity();}offlineNotice(!navigator.onLine);}
+  try{if(currentView==='username-setup'){if(await fetchHome())await enterApp();}else if(currentView==='game'&&!preview)await openGame(game.id,true);else if(currentView==='home')await showHome(true);else if(currentView==='friends')await friends.refresh();offlineNotice(!navigator.onLine);}
   catch{offlineNotice(true,'Could not refresh. Reconnect to get the latest turn.');}
   finally{polling=false;if(refreshQueued)void poll();}
 }
 function resume(){if(game&&currentView==='game'&&!preview&&!busy){gameFresh=false;renderGame();}void poll();}
 if(native){void push.initialize().catch(()=>{});void App.addListener('appStateChange',({isActive})=>{if(isActive){resume();if(authReady)void push.restore().catch(()=>{});}else scoreMotion.cancel();});void App.addListener('backButton',()=>{if(closeTopDialog())return;if(currentView!=='home'&&currentView!=='username-setup'&&user)void run(()=>showHome());else void App.minimizeApp();});}
-window.addEventListener('popstate',()=>run(async()=>{if(!user)return;closeSheet();const route=new URLSearchParams(location.search);if(route.get('game'))await openGame(route.get('game'),false,{route:false});else if(route.get('view')==='friends')await showFriends({route:false});else if(route.get('view')==='account')await account({route:false});else if(route.get('view')==='activity')await showActivity({route:false});else await showHome(false,{route:false});}));
+window.addEventListener('popstate',()=>run(async()=>{if(!user)return;closeSheet();const route=new URLSearchParams(location.search);if(route.get('game'))await openGame(route.get('game'),false,{route:false});else if(route.get('view')==='friends')await showFriends({route:false});else if(route.get('view')==='account')await account({route:false});else if(route.get('view')==='analytics')await showAnalytics({route:false});else await showHome(false,{route:false});}));
 window.addEventListener('online',()=>{resume();if(authReady)void push.restore().catch(()=>{});});window.addEventListener('offline',()=>offlineNotice());window.addEventListener('focus',resume);document.addEventListener('visibilitychange',()=>{if(!document.hidden)resume();});setInterval(poll,20000);
 if(!db)screen('setup',{route:false});else db.auth.onAuthStateChange((event,session)=>{
   const previousUser=user?.id;user=session?.user||null;setTimeout(()=>run(()=>connectLiveUpdates(session)),0);
   if(event==='PASSWORD_RECOVERY'){authReady=false;recovering=true;screen('recovery',{route:false});return;}
-  if(!user){snapshots.clear();moveHistory.reset();gameRequests.reset();gameFresh=false;game=null;homeRequests.reset();authReady=false;homeData=null;$('setup-username').value='';friends.reset();renderPush();++navigation;++gameLoad;++homeLoad;screen('auth',{route:false});return;}
+  if(!user){snapshots.clear();moveHistory.reset();analyticsData=null;analyticsActor=null;gameRequests.reset();gameFresh=false;game=null;homeRequests.reset();authReady=false;homeData=null;$('setup-username').value='';friends.reset();renderPush();++navigation;++gameLoad;++homeLoad;screen('auth',{route:false});return;}
   if(recovering||!['SIGNED_IN','INITIAL_SESSION'].includes(event)||(previousUser===user.id&&currentView!=='auth'))return;
-  if(previousUser!==user.id){if(previousUser)snapshots.clear();moveHistory.reset();gameRequests.reset();gameFresh=false;game=null;homeRequests.reset();++homeLoad;++gameLoad;++navigation;authReady=false;homeData=null;$('setup-username').value='';}
+  if(previousUser!==user.id){if(previousUser)snapshots.clear();moveHistory.reset();analyticsData=null;analyticsActor=null;gameRequests.reset();gameFresh=false;game=null;homeRequests.reset();++homeLoad;++gameLoad;++navigation;authReady=false;homeData=null;$('setup-username').value='';}
   setTimeout(()=>run(enterApp),0);
 });
 

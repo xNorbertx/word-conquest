@@ -93,7 +93,7 @@ function wordFixture(h){
 }
 test('word points travel one letter at a time, including joker ownership, with the bonus strictly last',async()=>{
  const h=setup();wordFixture(h);await h.motion.play(h.plan,{seat:1,names:['A','B']});
- const arrivals=h.animations.filter(a=>a.duration===120);assert.equal(arrivals.length,4);assert.deepEqual(arrivals.map(a=>a.phase),['word','word','word','length']);
+ const arrivals=h.animations.filter(a=>a.duration===240);assert.equal(arrivals.length,4);assert.deepEqual(arrivals.map(a=>a.phase),['word','word','word','length']);
  assert.deepEqual(arrivals.map(a=>String(a.score)),['10','13','13','15']);assert.ok(arrivals.every(a=>a.bubbles===1),'only one letter or bonus bubble exists');
  assert.ok(arrivals[0].ownerStates[1].includes('owner2'));assert.ok(arrivals[1].ownerStates[1].includes('owner1'));assert.ok(arrivals[1].ownerStates[2].includes('owner0'));assert.ok(arrivals[2].ownerStates[2].includes('owner1'));
  assert.equal(h.$('score-1').textContent,'18');assert.equal(String(h.$('score-2').textContent),'10');assert.equal(h.completed(),1);

@@ -10,7 +10,7 @@ class Element {
  set textContent(value){this.text=String(value);this.children=[];}get textContent(){return(this.text||'')+this.children.map(c=>c.textContent).join('');}
  append(...children){this.children.push(...children);}replaceChildren(...children){this.text='';this.children=children;}
  setAttribute(k,v){this.attributes[k]=String(v);}getAttribute(k){return this.attributes[k];}
- addEventListener(name,fn){(this.events[name]??=[]).push(fn);}emit(name,extra={}){const e={key:'',target:this,preventDefault(){},...extra};for(const fn of this.events[name]||[])fn(e);}
+ addEventListener(name,fn){(this.events[name]??=[]).push(fn);}emit(name,extra={}){const e={key:'',target:this,detail:0,preventDefault(){this.prevented=true;},stopImmediatePropagation(){this.stopped=true;},...extra};for(const fn of this.events[name]||[]){fn(e);if(e.stopped)break;}return e;}
  querySelector(tag){for(const c of this.children){if(c.tag===tag)return c;const found=c.querySelector(tag);if(found)return found;}return null;}
  get lastElementChild(){return this.children.at(-1);}getBoundingClientRect(){return{left:0,top:0,right:0,bottom:0,width:0,height:0};}
  showModal(){this.open=true;}close(){this.open=false;this.emit('close');}focus(){document.activeElement=this;}
@@ -124,4 +124,24 @@ test('production board redraw keeps touched groups and polygons connected while 
  context.jokers.j='Å';context.drawBoard();assert.equal(group.querySelector('text:not(.value)'),letter);assert.equal(letter.textContent,'Å');assert.equal(board.querySelector('.path'),line);
  game.state.tiles[0].owner=2;context.selection=[];context.drawBoard();assert.ok(group.className.includes('owner2'));assert.equal(group.querySelector('.step'),null);assert.equal(letter.textContent,'');assert.equal(group.querySelector('polygon'),polygon);
  game.state.tiles=game.state.tiles.slice(0,1);context.drawBoard();assert.equal(board.querySelectorAll('.tile').length,1);assert.equal(board.querySelectorAll('.path').length,1);
+});
+
+test('opening release cannot dismiss the modal or click a key on Android; the next deliberate tap works',()=>{
+ const f=setup();f.open();
+ // Pointerdown happened on the board, pointerup opened this modal; WebView's
+ // subsequent compatibility click is retargeted to the new backdrop or key.
+ for(const target of [f.dialog,f.keys()[0]]){
+  const e=f.dialog.emit('click',{target,detail:1,clientX:100,clientY:100});
+  if(!e.prevented&&target!==f.dialog)target.onclick();
+  assert.equal(e.prevented,true);assert.equal(f.controller.active,true);assert.deepEqual(f.saved,{});
+ }
+ f.dialog.emit('pointerdown');const e=f.dialog.emit('click',{target:f.keys()[0],detail:1});
+ assert(!e.prevented);f.keys()[0].onclick();assert.equal(f.controller.active,false);assert.deepEqual(f.saved,{j:'Q'});
+});
+test('fresh backdrop taps close the picker; cancelled gestures and old openers cannot close a reopened picker',()=>{
+ const f=setup();f.open();f.dialog.emit('pointerdown');f.dialog.emit('pointercancel');
+ assert.equal(f.dialog.emit('click',{detail:1,clientX:100,clientY:100}).prevented,true);assert(f.controller.active);
+ f.dialog.emit('pointerdown');f.open();assert.equal(f.dialog.emit('click',{detail:1,clientX:100,clientY:100}).prevented,true);
+ f.dialog.emit('pointerdown');f.dialog.emit('click',{detail:1,clientX:100,clientY:100});assert(!f.controller.active);
+ f.open();f.dialog.emit('click',{detail:0,clientX:100,clientY:100});assert(!f.controller.active,'assistive click still works');
 });

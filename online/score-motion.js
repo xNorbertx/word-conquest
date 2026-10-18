@@ -84,28 +84,44 @@ export function createBoardScoreMotion({onComplete}){
   async function wordPoints(plan,event,balances,signal){
     const letters=event.sources.filter(s=>s.id),bonus=event.sources.find(s=>s.bonus);
     let tally=0;
-    async function award(source){
-      check(signal);
-      const target=source.id?tile(source.id):null;
-      if(target){owner(target,plan.afterTiles.find(t=>t.id===source.id));target.classList.add('motion-source');}
-      if(source.bonus){$('score-motion').dataset.phase='length';$('motion-label').textContent='Length bonus';$('motion-tally').textContent='+0';}
-      if(!media.matches){
-        const p=sourcePoint(source);p.y-=source.bonus?-18:14;
-        const el=node('span','+0',`score-point side-${event.player}${source.bonus?' bonus':''}`);
-        el.style.left=p.x+'px';el.style.top=p.y+'px';layer.append(el);
-        await Promise.all([count(el,0,source.amount,100,signal),animate(el,[{opacity:0,transform:'translate(-50%,0) scale(.8)'},{opacity:1,transform:'translate(-50%,-50%) scale(1)'}],120,signal)]);
-        await fly({el,p},event.player,signal,0,source.bonus?320:220);
-      }
-      const old=balances[event.player-1];balances[event.player-1]+=source.amount;
-      const previous=tally;tally+=source.amount;
-      await Promise.all([count($('score-'+event.player),old,balances[event.player-1],110,signal,String),
-        count($('motion-tally'),source.bonus?0:previous,source.bonus?source.amount:tally,110,signal)]);
-      target?.classList.remove('motion-source');
+    async function add(amount,ms){
+      const old=balances[event.player-1];balances[event.player-1]+=amount;
+      await count($('score-'+event.player),old,balances[event.player-1],ms,signal,String);
     }
-    // Receipt order is path order; even a zero-point joker changes ownership.
-    for(const letter of letters)await award(letter);
-    if(media.matches)await wait(260,signal);
-    if(bonus){await award(bonus);await wait(media.matches?260:100,signal);}
+    // Give each letter a steady reveal, a readable pause and a gentle flight.
+    // Use its actual value instead of rapidly counting through 0 for 1–5 points.
+    for(const source of letters){
+      check(signal);const target=tile(source.id);
+      owner(target,plan.afterTiles.find(t=>t.id===source.id));target.classList.add('motion-source');
+      const previous=tally;tally+=source.amount;
+      if(!media.matches){
+        const p=sourcePoint(source);p.y-=18;
+        const el=node('span',undefined,`score-point letter-point side-${event.player}`);
+        el.append(node('span',plan.word[plan.path.indexOf(source.id)],'score-letter'),node('span',signed(source.amount),'score-letter-value'));
+        el.style.left=p.x+'px';el.style.top=p.y+'px';layer.append(el);
+        await Promise.all([count($('motion-tally'),previous,tally,240,signal),
+          animate(el,[{opacity:0,transform:'translate(-50%,-25%) scale(.94)'},{opacity:1,transform:'translate(-50%,-50%) scale(1)'}],240,signal)]);
+        await wait(180,signal);
+        await fly({el,p},event.player,signal,0,560);
+      }else $('motion-tally').textContent=signed(tally);
+      await add(source.amount,160);target.classList.remove('motion-source');
+      if(!media.matches)await wait(60,signal);
+    }
+    await wait(media.matches?300:340,signal);
+    if(bonus){
+      $('score-motion').dataset.phase='length';$('motion-label').textContent='Length bonus';
+      $('motion-symbol').replaceChildren(icon('plus'));
+      await count($('motion-tally'),0,bonus.amount,320,signal);
+      // The bonus stays in the caption for a full second before travelling.
+      await wait(media.matches?500:1000,signal);
+      if(!media.matches){
+        const p=centre($('motion-tally')),el=node('span',signed(bonus.amount),`score-point bonus side-${event.player}`);
+        el.style.left=p.x+'px';el.style.top=p.y+'px';layer.append(el);
+        await animate(el,[{opacity:0,transform:'translate(-50%,-50%) scale(.96)'},{opacity:1,transform:'translate(-50%,-50%) scale(1)'}],240,signal);
+        await fly({el,p},event.player,signal,0,680);
+      }
+      await add(bonus.amount,260);await wait(media.matches?250:400,signal);
+    }
   }
 
   async function play(plan,{seat,names}){
@@ -127,7 +143,7 @@ export function createBoardScoreMotion({onComplete}){
     const balances=[...plan.totalsBefore];balances.forEach((n,i)=>$('score-'+(i+1)).textContent=n);
     paint(plan.beforeTiles,plan);
     try{
-      await wait(100,signal);
+      await wait(280,signal);
       let captured=false;
       for(const e of plan.events){
         if(!captured&&e.kind!=='word'){captured=true;await captureCastles(plan,signal);}

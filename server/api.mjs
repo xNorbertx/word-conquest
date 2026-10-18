@@ -1,3 +1,4 @@
+import {analytics,ANALYTICS_RULES} from './analytics.mjs';
 import {compactHistory} from './history-summary.mjs';
 import {gameSummary} from './game-summary.mjs';
 import {applyCommand,checkCommand,commandKey,configFor,Engine,Fault,LEGACY_RULES_VERSION,statistics,uuid} from './domain.mjs';
@@ -215,6 +216,15 @@ export function createHandler(db, settings={}) {
         case 'read_notifications': {
           unwrap(await db.from('notifications').update({read_at:new Date().toISOString()}).eq('user_id',actor).is('read_at',null));
           return reply({ok:true});
+        }
+        case 'analytics': {
+          const games=[];
+          for(let from=0;;from+=100){
+            const page=unwrap(await db.from('games').select('id,players,status,result,rules_version,state,updated_at')
+              .contains('players',[actor]).in('rules_version',ANALYTICS_RULES).in('status',['active','completed']).order('id').range(from,from+99));
+            games.push(...page);if(page.length<100)break;
+          }
+          return reply({analytics:analytics(games,actor)});
         }
         case 'stats': case 'export': {
           const all=[]; for(let from=0;;from+=100) {

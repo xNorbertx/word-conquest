@@ -1,5 +1,17 @@
 # Word Conquest
 
+### Analytics and calmer scoring (0.14.0)
+
+You → Analytics replaces Activity. Current-rules English/Swedish games supply
+outcomes, best completed score/date, word records, biggest capture in one turn
+and total castle captures. Older rules are deliberately excluded.
+
+Letter scoring now has a readable letter/value token, slower colour transition
+and flight. The length bonus holds for a full second before travelling. One tap
+still skips everything. The joker picker now rejects a trailing opening-gesture
+click; physical Android confirmation is still required. See
+[verification and release status](docs/PROGRESS.md).
+
 ### Game screen and move history (0.13.0)
 
 The waiting hourglass turns quietly every five seconds. Word points arrive one
@@ -24,7 +36,7 @@ See [verification and device-check limitation](docs/PROGRESS.md).
 
 ### Android joker picker fix (0.12.1)
 
-Keeps touch selection intact so the letter picker opens when you select a joker,
+The earlier patch keeps SVG touch targets stable and fixes capture-transfer handling,
 including zoomed boards. Install the updated APK over your existing pilot.
 [Download Android 0.12.1](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25108092/word-conquest-android.apk).
 See [verification and phone-check limitation](docs/PROGRESS.md).

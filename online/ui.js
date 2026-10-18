@@ -1,5 +1,6 @@
 export const $=id=>document.getElementById(id);
 const paths={
+ chart:['M4 3v18h17','M8 16v-4','M13 16V7','M18 16V4'],
  moon:['M20.5 13.1A8.5 8.5 0 0 1 10.9 3.5 8.5 8.5 0 1 0 20.5 13.1Z'],
  castle:['M4 20V9h3V4h3v5h4V4h3v5h3v11H4Z','M10 20v-6h4v6'],territory:['m7 3 10 0 4 4v10l-4 4H7l-4-4V7Z','M8 12h8','M12 8v8'],capture:['m7 3 10 0 4 4v10l-4 4H7l-4-4V7Z','M8 12h8'],
  friends:['M15 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0','M2 21v-2a7 6 0 0 1 14 0v2','M18 3a4 4 0 0 1 0 8','M19 14a6 5 0 0 1 3 5v2'],search:['M17 10a7 7 0 1 1-14 0 7 7 0 0 1 14 0','m15 15 6 6'],

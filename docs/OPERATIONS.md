@@ -1,5 +1,18 @@
 # Run, deploy and maintain
 
+## Analytics and calmer scoring — 0.14.0
+
+Build/test with `npm test` and `npm run build`. Deploy `game-api` to the existing
+`aumiyyjsdqdazzmdmprl` project before the client. The added read-only `analytics`
+action is backwards compatible; no database migration, push-worker update,
+dictionary/rules change, new permission or new service is needed.
+
+Analytics reads current-rules game state only on entry/refresh, with actor,
+authentication, rate and username guards. It returns aggregate records, never
+another player's private data. Existing `stats` and export remain compatible.
+No new paid infrastructure. Phone visual review and Android picker confirmation
+are explicitly separate from automated DOM/regression coverage.
+
 ## Game-screen polish and compact history — 0.13.0
 
 Run tests/build, deploy `game-api` to the existing dedicated Supabase project,

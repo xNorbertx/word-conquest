@@ -1,5 +1,49 @@
 # Implementation and verification - updated 18 October 2026
 
+## Analytics, score pacing and picker follow-up — 0.14.0
+
+Implementation and local checks complete; release/hosted evidence follows below.
+
+- Removed Activity from the account navigation and routing. Notification delivery
+  and backend inbox data remain intact for existing clients.
+- New authenticated `analytics` action queries only the caller's active/completed
+  `autumn-v5` and `autumn-sv-v4` games, paged in batches of 100. No migration or
+  historical backfill. Completed games provide W/L/D and final score/date (including
+  resignations). Valid word receipts in active/completed games provide word score
+  including length bonus, longest word, maximum newly claimed tiles in one turn
+  (neutral and enemy), and cumulative castle captures. Recapturing a castle counts
+  again; passing through an already-owned castle does not. Abandoned/invited and
+  older-rules games are excluded. Word ties keep the first encountered record.
+- Analytics has a compact outcomes strip and five record rows. Record rows open
+  their game. Cached data is in memory only, scoped to the signed-in account,
+  refreshed on opening or manual refresh; no extra Games-screen work or polling.
+- Letter tokens show the actual letter and value, not a hurried +0 count. Each
+  gets 240 ms reveal, 180 ms hold, 560 ms flight, 160 ms score update and 60 ms gap.
+  Ownership fills transition over 420 ms. After letters, the length bonus counts
+  for 320 ms, holds for 1,000 ms and flies for 680 ms, with a separate settling
+  pause. Reduced motion avoids flights; tap-anywhere still skips every phase.
+- The earlier capture-transfer changes alone did not solve the owner's Android
+  issue. Retained their stable SVG hit targets and corrected a different gesture
+  defect: a newly opened joker dialog accepted a trailing click even though that
+  gesture began on the board. It now requires a fresh pointerdown in the dialog
+  for pointer clicks. Keyboard/assistive activation remains supported. Regression
+  tests model retargeting to both backdrop and letter key, cancelled gestures,
+  reopening, subsequent deliberate taps, touch capture and zoom.
+  This is a plausible Android failure path, not a confirmed device diagnosis.
+  [Pointer Events](https://www.w3.org/TR/pointerevents2/) explains why cancelling
+  pointerdown does not guarantee suppression of the subsequent click.
+- All 212 Node tests and original engine/scoring/supply suites pass; build verifies
+  immutable dictionaries/rules. Production DOM checks cover Analytics links,
+  literal word rendering, empty states, offline retry, cached open, navigation
+  and account races; 24 game-screen scenarios cover both seats, current English/
+  Swedish and older rules, final/live states and skip/reduced motion.
+- **Visual/device check blocked:** no CUA browsers, IAB unavailable, no ADB device.
+  Requested a browser/Seeker connection. No screenshot review or actual Android
+  success is claimed. Remaining acceptance: 320/360/390/430 px and desktop;
+  light/dark; six-, seven-, nine-letter words; zero-point jokers; length bonus,
+  castle/final phases; tap-anywhere; touch joker select/edit/drag in fit/zoom.
+  Do not describe the Android issue as resolved before phone confirmation.
+
 ## Combined game-screen update — 0.13.0, 18 October 2026
 
 - Waiting hourglass makes a quiet half-turn every five seconds only on a confirmed

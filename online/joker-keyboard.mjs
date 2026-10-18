@@ -14,7 +14,7 @@ export function canAssignJoker(snapshot,current){
 export function createJokerKeyboard(){
   const dialog=node('dialog',undefined,'sheet joker-keyboard');dialog.id='joker-keyboard';dialog.setAttribute('aria-label','Joker letter');
   document.body.append(dialog);
-  let session=null,keys=[];
+  let session=null,keys=[],pointerStartedHere=false;
   const lock=on=>document.body.classList.toggle('joker-picking',on);
   const target=id=>document.getElementById('board')?.querySelector(`[data-id="${id}"]`);
   function close(){
@@ -24,6 +24,15 @@ export function createJokerKeyboard(){
   }
   dialog.addEventListener('close',()=>{if(!dialog.open){session=null;lock(false);}});
   dialog.addEventListener('cancel',e=>{e.preventDefault();close();});
+  dialog.addEventListener('pointerdown',()=>{pointerStartedHere=true;},true);
+  dialog.addEventListener('pointercancel',()=>{pointerStartedHere=false;},true);
+  // Android may retarget the release's compatibility click to the newly opened
+  // modal. Only a fresh gesture inside this modal may select or dismiss it.
+  // Keyboard/assistive clicks have detail=0 and remain usable.
+  dialog.addEventListener('click',e=>{
+    const fresh=e.detail===0||pointerStartedHere;pointerStartedHere=false;
+    if(!fresh){e.preventDefault();e.stopImmediatePropagation();}
+  },true);
   dialog.addEventListener('click',e=>{if(e.target!==dialog)return;const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)close();});
   function valid(active){return dialog.open && session===active && active.valid(active.tileId);}
   function focusKey(){(keys.find(key=>key.getAttribute('aria-pressed')==='true')||keys[0])?.focus({preventScroll:true});}
@@ -89,7 +98,7 @@ export function createJokerKeyboard(){
   });
   function open(next){
     if(!next.valid(next.tileId)){close();return;}
-    session={...next,path:[...next.path],assignments:{...next.assignments}};
+    pointerStartedHere=false;session={...next,path:[...next.path],assignments:{...next.assignments}};
     paint();if(!dialog.open)dialog.showModal();lock(true);focusKey();
   }
   return {open,close,validate(){if(session&&(!dialog.open||!session.valid(session.tileId)))close();},get active(){return !!session&&dialog.open;}};

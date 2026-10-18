@@ -1,5 +1,18 @@
 # Word Conquest — app roadmap
 
+Follow-up 0.14.0:
+- [x] Replace Activity under You with private current-rules Analytics.
+- [x] Add outcomes, best game/date, best word, longest word, largest single-turn
+  capture and total castle captures. Do not retrofit incompatible old games.
+- [x] Slow sequential letter scoring and give the length bonus a readable hold.
+- [x] Guard the joker dialog against the opening gesture's trailing click.
+- [x] Test scoring restoration, analytics attribution/access/paging, account
+  isolation, picker gesture sequences and existing game-screen behaviour.
+- [ ] Rendered phone-size review in light/dark and actual Android joker selection.
+  Browser inventory is empty, opening IAB reports unavailable, and ADB has no
+  attached device. Do not count DOM tests as visual or physical-device evidence.
+Release evidence is maintained in [PROGRESS](docs/PROGRESS.md).
+
 Updated: 18 October 2026
 
 Combined game-screen release 0.13.0:
