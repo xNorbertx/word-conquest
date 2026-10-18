@@ -2996,7 +2996,7 @@ function createSnapshotCache(storage, { namespace = "", now = Date.now, ttl = 7 
 }
 
 // package.json
-var version = "0.12.0";
+var version = "0.12.1";
 
 // online/app.js
 init_dist();
@@ -10808,7 +10808,12 @@ function createBoardViewport({ viewport, board, button: button2, icon: icon2, on
   viewport.addEventListener("pointerdown", down, true);
   viewport.addEventListener("pointermove", move, true);
   viewport.addEventListener("pointerup", up, true);
-  for (const event of ["pointercancel", "lostpointercapture"]) viewport.addEventListener(event, cancel);
+  viewport.addEventListener("pointercancel", (e) => {
+    if (gesture?.pointerId === e.pointerId) cancel();
+  });
+  viewport.addEventListener("lostpointercapture", (e) => {
+    if (e.target === viewport && gesture?.pointerId === e.pointerId) cancel();
+  });
   viewport.addEventListener("focusin", (e) => {
     if (!expanded || !e.target.closest?.("[data-id]")) return;
     const tile = e.target.getBoundingClientRect(), box = viewport.getBoundingClientRect(), margin = 8;
@@ -11416,25 +11421,54 @@ function canPlay() {
 }
 function drawBoard() {
   const board = $("board");
-  board.replaceChildren();
   board.setAttribute("viewBox", "-295 -295 590 590");
+  const existing = new Map([...board.querySelectorAll(".tile")].map((tile) => [tile.dataset.id, tile]));
+  const ids = new Set(game.state.tiles.map((t) => t.id));
+  for (const [id, tile] of existing) if (!ids.has(id)) tile.remove();
   const last = history[0]?.recap, seat = seatOf(game, user?.id) || 1;
   if (!focusTile) focusTile = game.state.tiles.find((t) => t.owner === seat)?.id || game.state.tiles[0].id;
   for (const t of game.state.tiles) {
     const p = pos(t), step = selection.indexOf(t.id), letter2 = t.letter === "?" ? step >= 0 ? jokers[t.id] || "" : "" : t.letter;
-    const g = svg("g", { "data-id": t.id, role: "button", tabindex: t.id === focusTile ? 0 : -1, "aria-pressed": step >= 0, "aria-disabled": !canPlay() && !preview, "aria-label": `${t.letter === "?" ? "Joker" + (letter2 ? ", " + letter2 : "") : letter2}, ${t.owner === seat ? "yours" : t.owner ? "opponent" : "neutral"}, ${engine_default.letterValue(t.letter, config2)} letter points${t.castle ? ", " + castleLabel(t, config2) : ""}`, class: `tile owner${t.owner}${t.letter === "?" ? " joker-tile" : ""}${t.castle ? " castle-tile" + (t.q === 0 && t.r === 0 ? " centre-castle" : "") : ""}${t.owner === seat ? " your-tile" : ""}${step >= 0 ? " selected" : ""}${highlightLast && last?.path?.includes(t.id) ? " last-move" : ""}` });
-    g.append(svg("polygon", { points: tilePoints(t) }), svg("text", { x: p.x, y: p.y + (t.castle ? 1 : -2) }, letter2), svg("text", { x: p.x, y: p.y + 19, class: "value" }, engine_default.letterValue(t.letter, config2)));
-    if (t.owner) g.append(svg("circle", { cx: p.x + 20, cy: p.y - 19, r: 4.3, class: "marker" }));
-    if (t.castle) g.append(svg("title", {}, castleLabel(t, config2)), svg("circle", { cx: p.x, cy: p.y, r: 34, class: "castle-pulse", "aria-hidden": "true" }));
-    if (step >= 0) g.append(svg("text", { x: p.x - 19, y: p.y - 18, class: "step" }, step + 1));
-    board.append(g);
+    const attrs = { "data-id": t.id, role: "button", tabindex: t.id === focusTile ? 0 : -1, "aria-pressed": step >= 0, "aria-disabled": !canPlay() && !preview, "aria-label": `${t.letter === "?" ? "Joker" + (letter2 ? ", " + letter2 : "") : letter2}, ${t.owner === seat ? "yours" : t.owner ? "opponent" : "neutral"}, ${engine_default.letterValue(t.letter, config2)} letter points${t.castle ? ", " + castleLabel(t, config2) : ""}`, class: `tile owner${t.owner}${t.letter === "?" ? " joker-tile" : ""}${t.castle ? " castle-tile" + (t.q === 0 && t.r === 0 ? " centre-castle" : "") : ""}${t.owner === seat ? " your-tile" : ""}${step >= 0 ? " selected" : ""}${highlightLast && last?.path?.includes(t.id) ? " last-move" : ""}` };
+    const g = existing.get(t.id) || svg("g");
+    for (const [key, value] of Object.entries(attrs)) g.setAttribute(key, String(value));
+    if (!existing.has(t.id)) {
+      g.append(svg("polygon", { points: tilePoints(t) }), svg("text", { x: p.x, y: p.y + (t.castle ? 1 : -2) }, letter2), svg("text", { x: p.x, y: p.y + 19, class: "value" }, engine_default.letterValue(t.letter, config2)));
+      board.append(g);
+    }
+    g.querySelector("polygon").setAttribute("points", tilePoints(t));
+    const letterNode = g.querySelector("text:not(.value)");
+    letterNode.setAttribute("y", p.y + (t.castle ? 1 : -2));
+    letterNode.textContent = letter2;
+    g.querySelector(".value").textContent = engine_default.letterValue(t.letter, config2);
+    if (t.owner && !g.querySelector(".marker")) g.append(svg("circle", { cx: p.x + 20, cy: p.y - 19, r: 4.3, class: "marker" }));
+    if (!t.owner) g.querySelector(".marker")?.remove();
+    if (t.castle && !g.querySelector(".castle-pulse")) g.append(svg("title", {}, castleLabel(t, config2)), svg("circle", { cx: p.x, cy: p.y, r: 34, class: "castle-pulse", "aria-hidden": "true" }));
+    if (t.castle) g.querySelector("title").textContent = castleLabel(t, config2);
+    else {
+      g.querySelector("title")?.remove();
+      g.querySelector(".castle-pulse")?.remove();
+    }
+    let number = g.querySelector(".step");
+    if (step >= 0) {
+      if (!number) {
+        number = svg("text", { x: p.x - 19, y: p.y - 18, class: "step" });
+        g.append(number);
+      }
+      number.textContent = step + 1;
+    } else number?.remove();
   }
   const centers = selection.map((id) => pos(game.state.tiles.find((t) => t.id === id)));
   const segments = centers.slice(1).map((b, i) => {
     const a = centers[i], length = Math.hypot(b.x - a.x, b.y - a.y), dx = (b.x - a.x) / length * 15, dy = (b.y - a.y) / length * 15;
     return `M${a.x + dx},${a.y + dy} L${b.x - dx},${b.y - dy}`;
   }).join(" ");
-  board.append(svg("path", { class: "path", d: segments }));
+  let line = board.querySelector(".path");
+  if (!line) {
+    line = svg("path", { class: "path" });
+    board.append(line);
+  }
+  line.setAttribute("d", segments);
 }
 function openJoker(id) {
   const snapshot = { gameId: game?.id, revision: game?.revision };
@@ -12232,9 +12266,17 @@ $("board").addEventListener("pointerup", (e) => {
   if (gesture.edit && !gesture.moved) openJoker(gesture.id);
   else openPendingJoker();
 });
-for (const event of ["pointercancel", "lostpointercapture"]) $("board").addEventListener(event, () => {
-  dragging = false;
-  boardGesture = null;
+$("board").addEventListener("pointercancel", (e) => {
+  if (boardGesture?.pointerId === e.pointerId) {
+    dragging = false;
+    boardGesture = null;
+  }
+});
+$("board").addEventListener("lostpointercapture", (e) => {
+  if (e.target === $("board") && boardGesture?.pointerId === e.pointerId) {
+    dragging = false;
+    boardGesture = null;
+  }
 });
 $("board").onkeydown = (e) => {
   const id = e.target.closest("[data-id]")?.dataset.id;
