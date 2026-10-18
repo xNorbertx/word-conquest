@@ -23,7 +23,10 @@
 - [Findings](research/castle-35-2026-10-18/FINDINGS.md),
   [methods](research/castle-35-2026-10-18/README.md),
   [report](research/castle-35-2026-10-18/index.html).
-  Publication verification pending. Existing reports, live app, APK, backend,
+  [Public report](https://xnorbertx.github.io/word-conquest/research/castle-35-2026-10-18/)
+  published from source `a97677c`, Pages `7eb4689`; build succeeded. All 14
+  report assets match verified files, and ten app/prototype assets match their
+  previous deployment. Existing reports, live app, APK, backend,
   dictionary and saved games unchanged; no new infrastructure or ongoing cost.
 
 ## Final territory follow-up — 18 October 2026
