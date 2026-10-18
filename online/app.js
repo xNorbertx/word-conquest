@@ -2996,7 +2996,7 @@ function createSnapshotCache(storage, { namespace = "", now = Date.now, ttl = 7 
 }
 
 // package.json
-var version = "0.12.1";
+var version = "0.12.2";
 
 // online/app.js
 init_dist();
@@ -10326,7 +10326,7 @@ function createScoreLedger(storage) {
 // online/score-motion.js
 var signed = (n) => n < 0 ? "\u2212" + Math.abs(n) : "+" + n;
 function createBoardScoreMotion({ onComplete }) {
-  let controller = null, active = false, layer = null, started = 0;
+  let controller = null, active = false, layer = null, dismiss = null, previousFocus = null, started = 0;
   const media = matchMedia("(prefers-reduced-motion: reduce)");
   const check = (signal) => {
     if (signal.aborted) throw new DOMException("Cancelled", "AbortError");
@@ -10440,16 +10440,20 @@ function createBoardScoreMotion({ onComplete }) {
     }));
   }
   function cancel(restore = true) {
-    const wasActive = active;
+    const wasActive = active, returnFocus = dismiss && document.activeElement === dismiss ? previousFocus : null;
     active = false;
     controller?.abort();
     controller = null;
     layer?.remove();
     layer = null;
+    dismiss?.remove();
+    dismiss = null;
+    previousFocus = null;
     $("game-table").classList.remove("is-scoring");
     $("board").inert = false;
     $("score-motion").hidden = true;
     if (wasActive && restore) onComplete();
+    if (returnFocus?.isConnected) returnFocus.focus({ preventScroll: true });
   }
   async function fly(b, player, signal, delay) {
     await wait(delay, signal);
@@ -10477,7 +10481,24 @@ function createBoardScoreMotion({ onComplete }) {
     document.body.append(layer);
     $("motion-word").textContent = plan.word || (plan.action === "refresh" ? "Fresh letters" : "Final score");
     $("motion-byline").textContent = plan.player === seat ? "You played" : names[plan.player - 1];
-    $("motion-skip").onclick = () => cancel();
+    previousFocus = document.activeElement;
+    dismiss = node("button", void 0, "score-motion-dismiss");
+    dismiss.type = "button";
+    dismiss.setAttribute("aria-label", "Skip scoring animations");
+    dismiss.onclick = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      cancel();
+    };
+    dismiss.onkeydown = (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        cancel();
+      }
+    };
+    document.body.append(dismiss);
+    dismiss.focus({ preventScroll: true });
     $("motion-status").textContent = "";
     const balances = [...plan.totalsBefore];
     balances.forEach((n, i) => $("score-" + (i + 1)).textContent = n);
