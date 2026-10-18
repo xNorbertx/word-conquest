@@ -23,7 +23,19 @@
   the [Pointer Events specification](https://www.w3.org/TR/pointerevents/#implicit-release-of-pointer-capture).
 - Client-only patch: existing backend, immutable scoring, saved games, permissions,
   dependencies and ongoing costs unchanged. Publish web and signed Android pilot;
-  no Supabase deployment/migration required. Publication evidence follows below.
+  no Supabase deployment/migration required.
+- Released source `06a09b3`; [web](https://xnorbertx.github.io/word-conquest/online/)
+  published at Pages `fe86c3a`. Pages build succeeded; all ten public
+  app/prototype assets match verified files (CRLF normalized where relevant).
+  Only the online client changed; root prototype and published reports retained.
+- [Android APK](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25108092/word-conquest-android.apk) from
+  [successful CI](https://github.com/xNorbertx/word-conquest/actions/runs/39136072174): `0.12.1-06a09b3`,
+  code `25108092`, stable pilot signing certificate verified.
+  Package ID, exact web assets, new capture-handling code, notification permission,
+  native appearance bridge and absence of private keys/test fixtures verified.
+  Anonymous public download matches SHA-256 `4fbfa7d1876207bf58494f68d3188a7390516eb78a1a89e85dbae97906a74ad3`.
+  Install over the current pilot; no new game required. Physical-phone confirmation
+  remains the only outstanding acceptance check for this fix.
 
 ## Approved scoring — 0.12.0, 18 October 2026
 

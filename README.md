@@ -4,7 +4,8 @@
 
 Keeps touch selection intact so the letter picker opens when you select a joker,
 including zoomed boards. Install the updated APK over your existing pilot.
-See [verification and release status](docs/PROGRESS.md).
+[Download Android 0.12.1](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25108092/word-conquest-android.apk).
+See [verification and phone-check limitation](docs/PROGRESS.md).
 
 ### Defended castles and final territory (0.12.0)
 
