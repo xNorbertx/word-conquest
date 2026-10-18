@@ -29,7 +29,7 @@ test('expanded dictionary is pinned, preserves existing vocabulary and includes 
  assert.match(fs.readFileSync('server/versions/SWEDISH-EXPANDED-NOTICE.txt','utf8'),/Språkbanken \(2017\)/);
 });
 test('old Swedish games retain their dictionary and new versions keep identical openings and replacements',async()=>{
- assert.equal(l.LANGUAGES.sv.rulesVersion,'autumn-sv-v3');
+ assert.equal(l.LANGUAGES.sv.rulesVersion,'autumn-sv-v4');
  for(const v of ['autumn-sv-v1','autumn-sv-v2'])assert.equal(l.languageForRules(v).dictionary.version,oldMeta.version);
  assert.equal(l.languageForRules('autumn-sv-v3').dictionary.version,meta.version);assert.equal(l.languageForRules('missing'),null);
  const {dictionaryFor}=await import('../server/dictionaries.mjs');

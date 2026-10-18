@@ -4,14 +4,14 @@ import legacySwedish from './versions/dictionary-sv-v1.meta.json' with {type:'js
 import swedish from './versions/dictionary-sv-v2.meta.json' with {type:'json'};
 export const LANGUAGES=Object.freeze({
   en:Object.freeze({code:'en',label:'English',rulesVersion:RULES_VERSION,alphabet:'ABCDEFGHIJKLMNOPQRSTUVWXYZ',dictionary:english}),
-  sv:Object.freeze({code:'sv',label:'Svenska',rulesVersion:'autumn-sv-v3',alphabet:'ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ',dictionary:swedish})
+  sv:Object.freeze({code:'sv',label:'Svenska',rulesVersion:'autumn-sv-v4',alphabet:'ABCDEFGHIJKLMNOPQRSTUVWXYZÅÄÖ',dictionary:swedish})
 });
 export const languageFor=code=>typeof code==='string'&&Object.hasOwn(LANGUAGES,code)?LANGUAGES[code]:null;
 // Resolve the saved version, never substitute today's dictionary into an old game.
 export const languageForRules=version=>{
   const c=configFor(version);if(!c)return null;
   const language=languageFor(c.language||'en');
-  return language?.code==='sv'&&version!=='autumn-sv-v3'
+  return language?.code==='sv'&&['autumn-sv-v1','autumn-sv-v2'].includes(version)
     ?Object.freeze({...language,rulesVersion:version,dictionary:legacySwedish}):language;
 };
 export const languageLabel=version=>languageForRules(version)?.label||'Unknown language';

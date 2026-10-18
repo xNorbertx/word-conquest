@@ -1,10 +1,12 @@
 import legacy from './versions/engine-v1.mjs';
+import defended from './versions/engine-v3.mjs';
 import castles from './versions/engine-v2.mjs';
 import swedish from './versions/engine-sv-v2.mjs';
 import {newGame,generateBoard} from './versions/opening-v4.mjs';
-const engine=config=>config.language==='sv'?swedish:config.castleIncome?castles:legacy;
+const engine=config=>config.scoringMode==='defended-final'?defended:config.language==='sv'?swedish:config.castleIncome?castles:legacy;
 export default {...legacy,
-  newGame:(config,random)=>(config.jokerPlacement?newGame:engine(config).newGame)(config,random),
+  newGame:(config,random)=>{const state=(config.jokerPlacement?newGame:engine(config).newGame)(config,random);return config.scoringMode==='defended-final'?{...state,finalTerritory:null}:state;},
+  settleFinalTerritory:(state,config)=>config.scoringMode==='defended-final'?defended.settleFinalTerritory(state,config):state,
   generateBoard:(config,random)=>(config.jokerPlacement?generateBoard:engine(config).generateBoard)(config,random),
   validatePath:(state,ids,config,...args)=>engine(config).validatePath(state,ids,config,...args),
   scoreMove:(state,ids,config)=>engine(config).scoreMove(state,ids,config),

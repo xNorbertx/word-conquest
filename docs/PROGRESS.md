@@ -1,5 +1,41 @@
 # Implementation and verification - updated 18 October 2026
 
+## Approved scoring — 0.12.0, 18 October 2026
+
+New games use `autumn-v5` (English) / `autumn-sv-v4` (Swedish): words,
+defended castles at 3/5, and final +1 per owned tile. Existing games keep
+their immutable rules and dictionaries. No migration or re-scoring of old games.
+
+- A valid word scores its pre-replacement letters and length bonus, resolves
+  captures, then pays **only the opponent** for castles still theirs: side 3,
+  centre 5. Refresh is also a turn and pays the same defender. A newly captured
+  castle earns nothing immediately; recapturing denies the defence payment.
+- At natural completion (120 shared letters, equal-turn final reply), that last
+  defence payment happens before the final territory tally. Each owned tile is
+  worth exactly 1, including starting tiles, castles and jokers; neutral tiles 0.
+  No extra final castle value, capture reward or score deductions.
+- Resignation and accepted draw settle final territory without another income
+  payment; their explicit result overrides numerical scores. Draw offers do not
+  score. Abandonment leaves territory unsettled. Stored final tallies and immutable
+  operation receipts make retries/reloads safe from duplicate awards.
+- English letter values use the researched five tiers. Both languages use
+  6 letters +1, 7 +3, 8 +5, then +2 per extra letter; jokers remain zero.
+  Swedish retains its previous letter values and expanded dictionary. Its balance
+  has not been simulated. Openings, replacement supply and random starts unchanged.
+- Score breakdowns separate banked points from prospective final territory.
+  Board animations award defender income after captures, and animate each
+  player's final territory separately. Recaps and list/stat totals use the same
+  authoritative state. Captured-castle animation also runs on word-only payouts.
+- 170 regression tests pass, including all historical versions; original prototype
+  engine/scoring/supply checks and pinned-hash build pass. Two full published 3/5
+  games reproduce every board, replacement, payout and final score in production.
+  Both starters, final word/refresh, early endings, zero jokers, Swedish, malformed
+  animation receipts, old clients, retries and stale races are covered.
+- Publication/hosted verification follows below when complete. No paid services,
+  dependencies, schema changes or ongoing costs added. Human balance, fairness and
+  physical-device animation acceptance remain open. Research reports describe
+  their historical baselines; reproduce those studies at their recorded commits.
+
 ## Defended castles at 3/5 — 18 October 2026
 
 - Added only the 3/5 defended-castle variant to the previous English comparison,

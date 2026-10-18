@@ -5,7 +5,7 @@ const sum=sources=>sources.reduce((n,s)=>n+s.amount,0);
 // This is a presentation plan for an authoritative receipt, never a scoring input.
 export function scoreMotionPlan(game,move,config){
   const r=move?.recap;
-  if(!r||move.revision!==game.revision||!['word','refresh'].includes(r.action)||![1,2].includes(r.player)||
+  if(!r||move.revision!==game.revision||!(config.scoringMode==='defended-final'?['word','refresh','resign','accept_draw']:['word','refresh']).includes(r.action)||![1,2].includes(r.player)||
     !pair(r.totalsBefore)||!pair(r.totalsAfter)||!game.state?.tiles?.length)return null;
   if(!Engine.scores(game.state,config).every((n,i)=>n===r.totalsAfter[i]))return null;
   const changes=new Map((r.changed||[]).map(c=>[c.id,c]));
@@ -24,11 +24,19 @@ export function scoreMotionPlan(game,move,config){
       if(sum(letters)!==r.score.letters)return null;
       add('word',actor,[...letters,{bonus:true,amount:r.score.lengthBonus}],r.score.wordPoints);
     }
-    if(r.roundComplete&&config.castleIncome){
+    if(config.scoringMode==='defended-final'){
+      if(!pair(r.income)||r.income[actor-1]!==0)return null;
+      const played=['word','refresh'].includes(r.action);
+      add('castles',enemy,played?after.filter(t=>t.castle&&t.owner===enemy).map(t=>({id:t.id,amount:t.q===0&&t.r===0?config.castleIncome.center:config.castleIncome.side})):[],r.income[enemy-1]);
+      if(r.finalTerritory!=null){
+        if(!game.state.over||!pair(r.finalTerritory)||!r.finalTerritory.every((n,i)=>n===game.state.finalTerritory?.[i]))return null;
+        for(const player of [actor,enemy])add('final-territory',player,after.filter(t=>t.owner===player).map(t=>({id:t.id,amount:config.finalTerritoryPoints})),r.finalTerritory[player-1]);
+      }
+    }else if(r.roundComplete&&config.castleIncome){
       if(!pair(r.income))return null;
       for(const player of [actor,enemy])add('castles',player,after.filter(t=>t.castle&&t.owner===player).map(t=>({id:t.id,amount:t.q===0&&t.r===0?config.castleIncome.center:config.castleIncome.side})),r.income[player-1]);
     }
-    if(r.action==='word'){
+    if(r.action==='word'&&config.scoringMode!=='defended-final'){
       const gained=r.path.map(id=>before.get(id)).filter(t=>t.owner!==actor);
       add('territory',actor,gained.map(t=>({id:t.id,amount:value(t)})),r.score.territoryGain);
       add('loss',enemy,gained.filter(t=>t.owner===enemy).map(t=>({id:t.id,amount:-value(t)})),-r.score.enemyLoss);
@@ -36,7 +44,7 @@ export function scoreMotionPlan(game,move,config){
     const totals=[...r.totalsBefore];for(const e of events)totals[e.player-1]+=e.amount;
     if(!totals.every((n,i)=>n===r.totalsAfter[i])||!events.length)return null;
     const castleCaptures=r.action==='word'?after.filter(t=>t.castle&&r.path.includes(t.id)&&t.owner===actor&&before.get(t.id).owner!==actor).map(t=>t.id):[];
-    return {gameId:game.id,revision:game.revision,player:actor,word:r.word||'',path:r.path||[],round:r.round,castleCaptures,
+    return {gameId:game.id,revision:game.revision,action:r.action,player:actor,word:r.word||'',path:r.path||[],round:r.round,castleCaptures,
       beforeTiles,afterTiles:after,totalsBefore:r.totalsBefore,totalsAfter:r.totalsAfter,events};
   }catch{return null;}
 }

@@ -25,7 +25,7 @@ function newGame(id,other='Mara',rules=RULES_VERSION){return {id,players:[A,B],n
 const games=[newGame(ids[0]),newGame(ids[1],'Jules'),newGame(ids[2],'Alex'),newGame(ids[3])];
 games[0].state.wordPoints=[38,35];games[0].state.lettersUsed=62;games[0].state.turns=[5,5];
 games[1].state.player=2;games[1].state.wordPoints=[15,25];games[1].updated_at=date(160);
-games[2].status='completed';games[2].result='1';games[2].state.over=true;games[2].state.wordPoints=[99,76];games[2].updated_at=date(1700);
+games[2].status='completed';games[2].result='1';games[2].state.over=true;games[2].state.wordPoints=[99,76];games[2].updated_at=date(1700);games[2].state=Engine.settleFinalTerritory(games[2].state,config);
 games[3].status='invited';games[3].players=[A,null];games[3].names=['Norbert',''];games[3].revision=0;games[3].updated_at=date(3);
 function findPath(state,length){const visit=path=>{if(path.length===length)return path;for(const t of state.tiles){if(Engine.validatePath(state,[...path,t.id],config,false))continue;const result=visit([...path,t.id]);if(result)return result;}return null;};return visit([]);}
 if(scenario==='walnut')games[0].state.player=2;

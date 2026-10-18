@@ -1,5 +1,23 @@
 # Run, deploy and maintain
 
+## Defended scoring — 0.12.0
+
+Run `npm test` and `npm run build`, deploy `game-api` to dedicated project
+`aumiyyjsdqdazzmdmprl`, then publish `dist/online` and the signed Android pilot.
+No SQL, dictionary, push-worker, secret or scheduler change is needed. Game JSON
+stores `finalTerritory: null` until settlement, then a fixed two-player tally.
+The existing atomic `wc_commit` saves income, territory, result, receipt and
+notification in one revision. Never derive an unsettled total from `state.over`:
+abandoned games intentionally have no final territory award.
+
+Current defaults: English `autumn-v5`, Swedish `autumn-sv-v4`. Keep all historical
+engines/configs/dictionaries. Once a new-version game exists, rollback must retain
+support for both new versions; a subsequent client may stop selecting them.
+Do not revert the API to a build that cannot read them or edit pinned version files.
+Keep the original root prototype and research Pages paths when updating `online/`.
+No new infrastructure, paid services or ongoing costs. Physical-device behaviour
+and starting-order fairness remain manual acceptance work.
+
 ## Login appearance — 0.11.1
 
 Client-only release: run tests/build, publish dist/online to the existing Pages

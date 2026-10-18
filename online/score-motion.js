@@ -84,7 +84,7 @@ export function createBoardScoreMotion({onComplete}){
     $('game-table').dataset.motionPlayer=plan.player;
     $('game-table').classList.toggle('score-reduced',media.matches);
     layer=node('div',undefined,'score-motion-layer');layer.setAttribute('aria-hidden','true');document.body.append(layer);
-    $('motion-word').textContent=plan.word||'Fresh letters';$('motion-byline').textContent=plan.player===seat?'You played':names[plan.player-1];
+    $('motion-word').textContent=plan.word||(plan.action==='refresh'?'Fresh letters':'Final score');$('motion-byline').textContent=plan.player===seat?'You played':names[plan.player-1];
     $('motion-skip').onclick=()=>cancel();$('motion-status').textContent='';
     const balances=[...plan.totalsBefore];balances.forEach((n,i)=>$('score-'+(i+1)).textContent=n);
     paint(plan.beforeTiles,plan);
@@ -95,12 +95,12 @@ export function createBoardScoreMotion({onComplete}){
         if(!captured&&e.kind!=='word'){captured=true;await captureCastles(plan,signal);}
         check(signal);$('score-motion').dataset.phase=e.kind;$('score-motion').dataset.player=e.player;
         $('game-table').dataset.motionTarget=e.player;
-        if(e.kind==='castles'||e.kind==='territory')paint(plan.afterTiles.map(t=>{const old=plan.beforeTiles.find(b=>b.id===t.id);return{...t,letter:old.letter,owner:e.kind==='castles'&&!t.castle?old.owner:t.owner};}),plan);
+        if(e.kind==='castles'||e.kind==='territory'||e.kind==='final-territory')paint(plan.afterTiles.map(t=>{const old=plan.beforeTiles.find(b=>b.id===t.id);return{...t,letter:old.letter,owner:e.kind==='castles'&&!t.castle?old.owner:t.owner};}),plan);
         for(const el of $('board').querySelectorAll('.tile'))el.classList.remove('motion-source','motion-castle','motion-loss');
-        const label={word:'Word points',castles:'Castle income',territory:'Territory gained',loss:'Territory lost'}[e.kind];
+        const label={word:'Word points',castles:'Castle income',territory:'Territory gained','final-territory':'Final territory',loss:'Territory lost'}[e.kind];
         const player=e.player===seat?'You':names[e.player-1];
         $('motion-label').textContent=label;$('motion-recipient').textContent=player;
-        $('motion-symbol').replaceChildren(icon({word:'book',castles:'castle',territory:'territory',loss:'capture'}[e.kind]));
+        $('motion-symbol').replaceChildren(icon({word:'book',castles:'castle',territory:'territory','final-territory':'territory',loss:'capture'}[e.kind]));
         $('motion-tally').textContent='+0';$('score-motion').dataset.side=e.player===1?'sage':'walnut';
         const bubbles=e.sources.map(s=>{
           if(s.id)tile(s.id)?.classList.add(e.kind==='castles'?'motion-castle':e.kind==='loss'?'motion-loss':'motion-source');
@@ -117,6 +117,7 @@ export function createBoardScoreMotion({onComplete}){
           animate($('player-score-'+e.player),[{transform:'scale(1)'},{transform:'scale(1.035)',offset:.35},{transform:'scale(1)'}],330,signal)]);
         await wait(100,signal);
       }
+      if(!captured)await captureCastles(plan,signal);
       check(signal);cancel();
       $('motion-status').textContent=`${plan.word||'Round complete'}. You: ${plan.totalsAfter[seat-1]} points. ${names[2-seat]}: ${plan.totalsAfter[2-seat]} points.`;
     }catch(error){if(error.name!=='AbortError')cancel();}

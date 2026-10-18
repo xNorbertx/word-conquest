@@ -9,6 +9,7 @@ export function tilePoints(tile){
 
 export function castleLabel(tile,config){
   const centre=tile.q===0&&tile.r===0,name=centre?'Centre castle':'Side castle';
+  if(config.scoringMode==='defended-final')return `${name}: +${centre?config.castleIncome.center:config.castleIncome.side} after surviving an opponent’s turn; 1 point at the finish`;
   const value=centre?(config.centerCastlePoints??config.castlePoints):config.castlePoints;
   return `${name}: ${config.castleIncome?`+${centre?config.castleIncome.center:config.castleIncome.side} each round, `:''}${value} territory points`;
 }

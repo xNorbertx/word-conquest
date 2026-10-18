@@ -67,6 +67,7 @@ export function applyCommand(game, actor, input, dictionary, dictionaryVersion, 
       fail('not_inactive', 'Abandonment is available after 30 days without a turn. You can resign now.');
     next.state.over = true; next.status = 'abandoned'; next.result = null;
   }
+  if(['resign','accept_draw'].includes(input.action))next.state=Engine.settleFinalTerritory(next.state,config);
   next.revision = game.revision + 1;
   const changed = next.state.tiles.filter(t => {
     const old = before.tiles.find(x => x.id === t.id);
@@ -75,7 +76,10 @@ export function applyCommand(game, actor, input, dictionary, dictionaryVersion, 
   const recap = {action: input.action, player: seat, at: now.toISOString(),
     word: input.action === 'word' ? Engine.wordForPath(before, input.path, input.jokers || {}) : null,
     path: input.path || [], captured, refreshed, changed, score,
-    ...(config.castleIncome && ['word','refresh'].includes(input.action)?{income:next.state.log[0].income,roundComplete:next.state.log[0].roundComplete,round:next.state.log[0].round}:{}),
+    ...(config.scoringMode==='defended-final'?{
+      income:['word','refresh'].includes(input.action)?next.state.log[0].income:[0,0],incomeTiming:'defended',
+      finalTerritory:before.finalTerritory==null&&next.state.finalTerritory!=null?next.state.finalTerritory:null
+    }:config.castleIncome && ['word','refresh'].includes(input.action)?{income:next.state.log[0].income,roundComplete:next.state.log[0].roundComplete,round:next.state.log[0].round}:{}),
     totalsBefore: Engine.scores(before, config), totalsAfter: Engine.scores(next.state, config)};
   return {next, recap};
 }

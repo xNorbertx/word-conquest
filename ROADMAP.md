@@ -8,11 +8,22 @@ See [implementation and verification status](docs/PROGRESS.md) and the single
 [manual setup checklist](docs/SETUP.md). Boxes remain unchecked until their hosted
 and real-device acceptance checks pass, not merely because source code was written.
 
+The owner approved final territory + defended castles 3/5. Version 0.12.0
+implements this for new English/Swedish games; see [timing and verification](docs/PROGRESS.md).
+Historical games keep their rules. Deployment evidence is recorded there.
+
+- [x] Implement a new pinned version, terminal tally, defender-only payouts,
+  score animations/recaps and explicit resignation/draw/abandonment timing.
+- [ ] Human-test the approved 3/5 rules: castle leads, late territory steals,
+  fairness between starting seats and score legibility on both phones.
+
+Historical research:
+
 Defended-castle 3/5 extension is complete: 1,504 new English games on the same
 seeds, compared with 2,880 exact previous controls. [Findings](docs/research/castle-35-2026-10-18/FINDINGS.md)
 show 52.1% words / 34.0% castle income / 14.0% final land in the main model.
-This is recommended for a stronger-castle human comparison against 2/4; rule
-approval, recoverable leads and starting-order fairness remain open.
+The 3/5 rules are now approved; recoverable leads and starting-order fairness
+remain human-playtest questions.
 
 - [x] Add 3/5 defended income with final territory to the research comparison;
   audit all 512 new main games, parameterized payouts and exact previous controls.
@@ -27,18 +38,19 @@ with more ordinary attacks and late reversals. Fairness remains unresolved.
 
 - [x] Compare final territory versus no territory using paired seeds, both starts,
   multiple word-search/strategy models and exact main-game accounting audits.
-- [ ] Choose the next human-playtest rules; final territory is recommended, not yet approved.
+- [x] Choose the next human-playtest rules: final territory with defended castles 3/5.
 - [ ] Human-test late territorial steals, score legibility and starting-order balance.
-- [ ] If selected, implement as a new pinned rules version, including explicit
-  terminal scoring presentation and lifecycle decisions for resignation/draw.
+- [x] Implement as new pinned rules versions, including terminal presentation
+  and lifecycle decisions for resignation/draw.
 
-No live scoring, saved games or releases changed by this research.
+The research itself did not change live scoring; the approved implementation
+is tracked above.
 
 Scoring simplification research is complete: four systems, 4,800 English games
 and 1,536 decision continuations. [Published findings](https://xnorbertx.github.io/word-conquest/research/scoring-2026-10-18/)
 recommend human-testing the proposal against words-plus-defended-castles. Rule
-selection, starting-order fairness and implementation remain pending; live scoring
-is unchanged. A later implementation needs a new pinned rules version.
+selection and implementation are now complete. Starting-order fairness remains
+a human-playtest question; existing games keep their pinned rules.
 
 Focus/sign-out 0.11.2 is released on web and Android: touch focus boxes removed,
 keyboard focus retained, and sign-out confirmation added. All 158 tests, DOM checks,

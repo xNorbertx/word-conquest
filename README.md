@@ -1,5 +1,12 @@
 # Word Conquest
 
+### Defended castles and final territory (0.12.0)
+
+New games score words, castles held through an opponent's turn (side 3 / centre 5),
+and one final point per owned tile. No capture deductions or separate final castle
+bonus. The smaller word-length bonus starts at six letters. Existing games keep
+their saved rules. See [timing, verification and release status](docs/PROGRESS.md).
+
 ### Focus and sign-out update (0.11.2)
 
 Removes brown focus boxes during touch/mouse use and keeps a subtle keyboard
