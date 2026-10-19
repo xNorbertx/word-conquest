@@ -1,5 +1,6 @@
 export const $=id=>document.getElementById(id);
 const paths={
+ phone:['M6 2h12v20H6z','M11 18h2'],
  chart:['M4 3v18h17','M8 16v-4','M13 16V7','M18 16V4'],
  moon:['M20.5 13.1A8.5 8.5 0 0 1 10.9 3.5 8.5 8.5 0 1 0 20.5 13.1Z'],
  castle:['M4 20V9h3V4h3v5h4V4h3v5h3v11H4Z','M10 20v-6h4v6'],territory:['m7 3 10 0 4 4v10l-4 4H7l-4-4V7Z','M8 12h8','M12 8v8'],capture:['m7 3 10 0 4 4v10l-4 4H7l-4-4V7Z','M8 12h8'],
@@ -26,10 +27,11 @@ export function showSheet(title,content){
   if(!$('sheet').open)$('sheet').showModal();$('sheet-content').scrollTop=0;
 }
 let confirmResolve=null;
-export function ask({title,message='',label='Confirm',cancel='Keep playing',danger=false,symbol='help'}){
-  closeSheet();$('confirm-title').textContent=title;$('confirm-message').textContent=message;$('confirm-message').hidden=!message;$('confirm-ok').textContent=label;$('confirm-ok').classList.toggle('danger',danger);$('confirm-cancel').textContent=cancel;$('confirm-icon').replaceChildren(icon(symbol));$('confirm-dialog').showModal();return new Promise(resolve=>confirmResolve=resolve);
+export function ask({title,message='',label='Confirm',cancel='Cancel',danger=false}){
+  closeSheet();$('confirm-title').textContent=title;$('confirm-message').textContent=message;$('confirm-message').hidden=!message;$('confirm-ok').textContent=label;$('confirm-ok').classList.toggle('danger',danger);$('confirm-cancel').textContent=cancel;$('confirm-dialog').showModal();return new Promise(resolve=>confirmResolve=resolve);
 }
 function finishConfirm(answer){$('confirm-dialog').close();const resolve=confirmResolve;confirmResolve=null;resolve?.(answer);}
 export function initUI(){hydrateIcons();$('close-sheet').onclick=closeSheet;$('dismiss-toast').onclick=()=>$('toast').hidden=true;$('confirm-cancel').onclick=()=>finishConfirm(false);$('confirm-ok').onclick=()=>finishConfirm(true);$('confirm-dialog').addEventListener('cancel',e=>{e.preventDefault();finishConfirm(false);});for(const d of [$('sheet'),$('confirm-dialog')])d.addEventListener('click',e=>{if(e.target!==d)return;const r=d.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom){if(d===$('sheet'))closeSheet();else finishConfirm(false);}});}
 export function closeTopDialog(){if($('joker-keyboard')?.open){$('joker-keyboard').close();return true;}if($('confirm-dialog').open){finishConfirm(false);return true;}if($('sheet').open){closeSheet();return true;}return false;}
-export function emptyState(title,copy,symbol='leaf'){const box=node('div',undefined,'empty-state'),art=node('div',undefined,'empty-art');art.append(icon(symbol));box.append(art,node('h2',title),node('p',copy));return box;}
+export function emptyState(title,copy='',symbol='grid'){const box=node('div',undefined,'empty-state'),art=node('div',undefined,'empty-art');art.append(icon(symbol));box.append(art,node('h2',title));if(copy)box.append(node('p',copy));return box;}
+export function infoSections(sections){const box=node('div',undefined,'info-sections');for(const [title,copy]of sections){const section=node('section');section.append(node('h3',title),node('p',copy));box.append(section);}return box;}

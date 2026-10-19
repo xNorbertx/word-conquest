@@ -1,5 +1,26 @@
 # Autumn Sunday UX revision - 4 October 2026
 
+## Minimal copy and components — 0.16.0
+
+Keep the ivory/sage/walnut palette and board-inspired identity. Copy is direct:
+name the screen or action, show the result, and explain only necessary choices
+or consequences. No Sunday/cozy metaphors, slogans, motivational empty states,
+decorative eyebrows or repeated instructions. Prefer “New game”, “Reset password”,
+“No active games”, “Notifications” and “Delete account?”. Do not shorten destructive
+consequences, privacy disclosures, scoring timing or accessible control names into
+ambiguity. Keep a brief junk-mail reminder in email confirmation/reset flows.
+
+Empty states are small and borderless. New-game languages share one row, with
+native radio semantics and visible keyboard focus. Invitations put optional rules
+behind a disclosure. Help derives its numbers from each game's saved rules.
+Friend search replaces the visible main list until cleared. Notification controls
+use the same action rows as account settings. Dialogs have smaller spacing and no
+large confirmation icon. Account/analytics layouts are tighter; touch targets stay
+at least 44px and long names wrap. Board geometry and play controls are unchanged.
+
+Production DOM interaction checks pass; rendered/mobile visual acceptance remains
+open because no browser or physical device is connected.
+
 ## Focus and sign-out — 0.11.2
 
 Touch/mouse interaction has no focus rectangles. Keyboard navigation uses a quiet

@@ -1,5 +1,14 @@
 # Approved visual direction: Autumn Sunday
 
+## Copy direction — 20 October 2026
+
+The warm visual palette remains approved. Product copy should be minimal and
+matter-of-fact, following the current game screen: concise names, actions and
+necessary information only. Avoid cozy/Sunday language, slogans, table metaphors,
+decorative headings and instructions that repeat obvious controls. Keep meaningful
+privacy, scoring and destructive-action details. See [UX](../docs/UX.md) for the
+app-wide 0.16.0 cleanup and remaining visual acceptance checks.
+
 Approved on 29 September 2026. This is the visual reference for future Word Conquest design work.
 
 ![Approved Autumn Sunday concept](autumn-sunday-reference.png)

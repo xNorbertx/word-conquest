@@ -51,7 +51,7 @@ test('password recovery cannot be overwritten by a Games response already in fli
  const h=setup();h.event('TOKEN_REFRESHED');await h.tick();h.event('PASSWORD_RECOVERY');h.wait.resolve({games:[]});await settle();assert.equal(h.c.currentView,'recovery');assert.equal(h.c.entering,false);
 });
 test('slow or failed refresh keeps the saved list visible and startup can retry',async()=>{
- const h=setup({cached:true});h.event('INITIAL_SESSION');await h.tick();h.wait.reject(Error('offline'));await settle();assert.equal(h.c.currentView,'home');assert.equal(h.c.entering,false);assert.match(h.calls.notice.message,/last saved list/);
+ const h=setup({cached:true});h.event('INITIAL_SESSION');await h.tick();h.wait.reject(Error('offline'));await settle();assert.equal(h.c.currentView,'home');assert.equal(h.c.entering,false);assert.match(h.calls.notice.message,/saved games/);
  h.c.fetchHome=async()=>({games:[]});await h.c.retryStartup();assert.equal(h.c.currentView,'home');
 });
 test('no-cache loading failure exposes a functioning retry',async()=>{

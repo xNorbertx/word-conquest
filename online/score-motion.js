@@ -130,7 +130,7 @@ export function createBoardScoreMotion({onComplete}){
     $('game-table').dataset.motionPlayer=plan.player;
     $('game-table').classList.toggle('score-reduced',media.matches);
     layer=node('div',undefined,'score-motion-layer');layer.setAttribute('aria-hidden','true');document.body.append(layer);
-    $('motion-word').textContent=plan.word||(plan.action==='refresh'?'Fresh letters':'Final score');$('motion-byline').textContent=plan.player===seat?'You played':names[plan.player-1];
+    $('motion-word').textContent=plan.word||(plan.action==='refresh'?'Letters refreshed':'Final score');$('motion-byline').textContent=plan.player===seat?'You played':names[plan.player-1];
     previousFocus=document.activeElement;
     dismiss=node('button',undefined,'score-motion-dismiss');dismiss.type='button';
     dismiss.setAttribute('aria-label','Skip scoring animations');

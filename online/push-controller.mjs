@@ -18,15 +18,15 @@ export function pushController({available,plugin,settings,storage,api,getUser,on
           else if(preferred()&&snapshot().state==='ready'){const actor=getUser().id;void serial(async()=>{if(actor!==getUser()?.id||!preferred())return;await api({action:'push_device',deviceId:device(),token:value,enabled:true});change('ready','',actor);}).catch(()=>change('error','Could not reconnect notifications. Try again.',actor));}
         }));
         handles.push(await plugin.addListener('registrationError',()=>{
-          const pending=registration;registration=null;pending?.reject(Error('Notifications could not connect to Google. Check your connection and try again.'));
+          const pending=registration;registration=null;pending?.reject(Error('Could not connect notifications. Check your connection and retry.'));
         }));
         handles.push(await plugin.addListener('pushNotificationReceived',notification=>{
           if(!getUser()||!preferred())return;
-          if(notification.data?.test==='true')onStatus('Test notification received on this phone.');
-          else {onUpdate();onStatus('A game has an update. Check Activity or your games.');}
+          if(notification.data?.test==='true')onStatus('Test notification received.');
+          else {onUpdate();onStatus('Game updated.');}
         }));
         handles.push(await plugin.addListener('pushNotificationActionPerformed',({notification})=>{
-          if(notification.data?.test==='true'){onStatus('Test notification received on this phone.');return;}
+          if(notification.data?.test==='true'){onStatus('Test notification received.');return;}
           const id=notification.data?.gameId;if(typeof id==='string'&&/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(id))onOpen(id);
         }));
       }catch(e){await Promise.all(handles.map(h=>h?.remove()));initialized=null;throw e;}
@@ -35,7 +35,7 @@ export function pushController({available,plugin,settings,storage,api,getUser,on
   }
   function token(){
     return new Promise((resolve,reject)=>{
-      const timer=setTimeout(()=>{registration=null;reject(Error('Notification setup timed out. Check your connection and retry.'));},timeoutMs);
+      const timer=setTimeout(()=>{registration=null;reject(Error('Notification setup timed out. Retry.'));},timeoutMs);
       const pending={resolve:value=>{clearTimeout(timer);resolve(value);},reject:error=>{clearTimeout(timer);reject(error);}};
       registration=pending;
       plugin.register().catch(e=>{if(registration===pending){registration=null;pending.reject(e);}});
@@ -58,7 +58,7 @@ export function pushController({available,plugin,settings,storage,api,getUser,on
       await api({action:'push_device',deviceId:device(),token:value,enabled:true});
       if(actor!==getUser()?.id)return;
       storage.removeItem('wc-push-snooze:'+actor);change('ready','',actor);
-      if(requestPermission)onStatus('Game notifications are connected on this phone.');
+      if(requestPermission)onStatus('Notifications enabled.');
     }catch(e){change('error',e.message||'Notifications could not connect. Please retry.',actor);throw e;}
   }
   const enable=()=>serial(async()=>{if(!available||!getUser())return;storage.setItem(key(getUser().id),'true');await connect(true);});
@@ -72,6 +72,6 @@ export function pushController({available,plugin,settings,storage,api,getUser,on
   function shouldPrompt(){return available&&!!getUser()&&snapshot().state!=='ready'&&snapshot().state!=='connecting'&&Number(storage.getItem('wc-push-snooze:'+getUser().id)||0)<=now();}
   function snooze(){if(getUser())storage.setItem('wc-push-snooze:'+getUser().id,String(now()+7*86400000));onChange(snapshot());}
   const openSettings=()=>settings.open();
-  const test=()=>serial(async()=>{if(snapshot().state!=='ready')throw Error('Connect notifications before sending a test.');await api({action:'push_test',deviceId:device()});return true;});
+  const test=()=>serial(async()=>{if(snapshot().state!=='ready')throw Error('Enable notifications first.');await api({action:'push_test',deviceId:device()});return true;});
   return {available,preferred,snapshot,initialize,enable,disable,restore,shouldPrompt,snooze,openSettings,test};
 }

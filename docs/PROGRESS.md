@@ -1,4 +1,42 @@
-# Implementation and verification - updated 19 October 2026
+# Implementation and verification - updated 20 October 2026
+
+## App-wide copy and component cleanup — 0.16.0, 20 October 2026
+
+Audited the production online client and all its dialog builders. The visual
+palette is retained, while slogans, conversational filler, decorative headings
+and repeated action instructions have been removed. Covered sign-in, signup,
+recovery, username setup/edit, Games (empty/live/finished), invitations (link,
+friend, incoming, expired, cancelled), Friends/search/requests/blocks, You,
+Analytics, notifications (off/connecting/ready/blocked/error/test), game menu,
+score breakdown, help, dictionary, privacy/export/deletion and confirmations.
+Move history, joker controls and gameplay copy that was already concise remain.
+
+Component adjustments:
+
+- Small borderless empty states; no duplicate New game CTA or decorative art.
+- Three compact language choices, with native radio semantics and keyboard focus.
+- Incoming invitation rules are behind a native disclosure. Help is split into
+  short sections, using the saved game configuration for bonuses and castle timing.
+- Friend search shows matching players without repeating the main list; clear
+  restores it. Pending groups avoid repeated labels and misleading empty states.
+- Compact notification settings use action rows; sending a test stays on the
+  same sheet with status feedback. No provider jargon or retired Activity link.
+- Smaller dialogs, confirmations without large decorative icons, tighter You
+  and Analytics spacing, wrapping long names and at least 44px action targets.
+- Accurate destructive consequences, privacy facts, reset-email non-enumeration,
+  accessibility labels, expired-session recovery and server-validation gates stay.
+
+No engine, rules, dictionary, server, database, notification-delivery logic or
+original prototype changes. No new dependency, service, cost or permission.
+The existing CI creates the signed Android pilot from the same client source.
+
+Verification: 108 production HTML/DOM checks across both theme attributes and
+all ten saved rules versions; 32 board/history/scoring scenarios across both
+seats, English/Swedish/Dutch/legacy, final states and skip/reduced motion. Analytics
+DOM checks include safe text, record links, offline handling and account isolation.
+These are not rendered screenshots: browser inventory is empty and opening IAB
+reports unavailable. Physical-phone/visual acceptance remains a limitation.
+The full regression/build and publication evidence will be recorded below.
 
 ## Reliable opening screen — 0.15.1
 

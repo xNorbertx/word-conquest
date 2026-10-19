@@ -1,5 +1,13 @@
 # Run, deploy and maintain
 
+## Copy cleanup — 0.16.0
+
+Client-only release: `npm test`, `npm run build`, publish `/online/` and the signed
+Android pilot. No Supabase deployment or migration. The new `online/copy.mjs`
+renders help from the saved rules configuration; do not hard-code current bonuses
+for historical games. Keep versioned rules/dictionaries and prototype unchanged.
+Web users refresh; Android users install the updated APK. Existing costs unchanged.
+
 ## Startup recovery — 0.15.1
 
 Run `npm test` and `npm run build`, then publish the normal `/online/` assets and

@@ -1,11 +1,11 @@
 export const seatOf=(game,userId)=>game.players.indexOf(userId)+1;
 export const isFinished=game=>!['active','invited'].includes(game.status);
-export function opponentName(game,userId){const seat=seatOf(game,userId);return game.status==='invited'?'Waiting for a friend':['cancelled','declined'].includes(game.status)?'Invitation to a friend':game.names?.[seat===2?0:1]||'Your friend';}
+export function opponentName(game,userId){const seat=seatOf(game,userId);return game.status==='invited'?'Waiting for opponent':['cancelled','declined'].includes(game.status)?'Game invitation':game.names?.[seat===2?0:1]||'Opponent';}
 export function gameStatus(game,userId){
   if(game.status==='active')return game.players[game.state.player-1]===userId?'Your turn':'Their turn';
   if(game.status==='invited')return 'Invitation sent';
-  if(game.status==='completed')return game.result==='draw'?'A draw':Number(game.result)===seatOf(game,userId)?'You won':'They won';
-  return game.status==='abandoned'?'Abandoned':game.status==='cancelled'?'Cancelled':game.status==='declined'?'Declined':game.status;
+  if(game.status==='completed')return game.result==='draw'?'Draw':Number(game.result)===seatOf(game,userId)?'You won':'You lost';
+  return game.status==='abandoned'?'Closed':game.status==='cancelled'?'Cancelled':game.status==='declined'?'Declined':game.status;
 }
 export function visibleGames(games,userId,filter='active'){
   return games.filter(g=>isFinished(g)===(filter==='finished')).sort((a,b)=>{
@@ -27,16 +27,16 @@ export function invitationToken(value){
 }
 export function activityText(kind,name){
   if(kind==='invitation received')return `${name} invited you to play`;
-  const labels={word:`${name} played a word`,refresh:`${name} refreshed their letters`,resign:`${name} left the game`,offer_draw:`${name} offered a draw`,accept_draw:'Your game ended in a draw',abandon:'Your game was abandoned','game complete':'Your game has finished','invitation accepted':`Your game with ${name} is ready`,'invitation accept':`Your game with ${name} is ready`,'invitation decline':'Your invitation was declined','invitation cancel':'Your invitation was cancelled','invitation declined':'Your invitation was declined','invitation cancelled':'Your invitation was cancelled'};
-  return labels[kind]||'Your game has an update';
+  const labels={word:`${name} played a word`,refresh:`${name} refreshed their letters`,resign:`${name} left the game`,offer_draw:`${name} offered a draw`,accept_draw:'Game drawn',abandon:'Game closed','game complete':'Game finished','invitation accepted':`Your game with ${name} is ready`,'invitation accept':`Your game with ${name} is ready`,'invitation decline':'Your invitation was declined','invitation cancel':'Your invitation was cancelled','invitation declined':'Your invitation was declined','invitation cancelled':'Your invitation was cancelled'};
+  return labels[kind]||'Game updated';
 }
 export function friendlyError(error){
   if(error.code==='client_update_required')return 'Update Word Conquest or open the latest web app to continue.';
-  if(error.code==='username_taken')return 'That username is already taken. Try another.';
+  if(error.code==='username_taken')return 'Username taken. Try another.';
   if(error.code==='username_required')return 'Choose a username to continue.';
-  const social={friend_stale:'This friend request has changed. Refresh Friends and try again.',friend_unavailable:'This player is not available for a new invitation.',friend_cooldown:'Give them a little time. You can send another request tomorrow.',friend_limit:'Your friend request limit has been reached. Try again later.',invitation_pending:'An invitation is already waiting for this friend. Open it from Games.'};
+  const social={friend_stale:'This friend request has changed. Refresh Friends and try again.',friend_unavailable:'This player is unavailable.',friend_cooldown:'You can send another request tomorrow.',friend_limit:'Request limit reached. Try again later.',invitation_pending:'Invitation already sent. Find it in Games.'};
   if(social[error.code])return social[error.code];
-  const messages={client_update_required:'Update Word Conquest or open the latest web app to play this game.',stale:'A new turn came in. Your board has been updated.',not_your_turn:'It is your friend\'s turn.',invitation_unavailable:'This invitation is no longer available.',cannot_accept_own_invitation:'This is your invitation. Share it with a friend.',rate_limit:'A little too quick. Try again in a moment.',unauthorized:'Please sign in again to continue.',not_found:'This game is no longer available.',dictionary_unavailable:'Word checking is unavailable. Your turn has not been used.',version_unavailable:'This game needs an update. Please contact your inviter.',ended:'This game has already ended.'};
+  const messages={client_update_required:'Update Word Conquest or open the latest web app to play this game.',stale:'Board updated. Choose your move again.',not_your_turn:'It is your opponent\'s turn.',invitation_unavailable:'This invitation is no longer available.',cannot_accept_own_invitation:'This is your invitation. Share it with a friend.',rate_limit:'Too many requests. Try again shortly.',unauthorized:'Sign in again to continue.',not_found:'This game is no longer available.',dictionary_unavailable:'Word checking is unavailable. Your turn has not been used.',version_unavailable:'This game’s rules are temporarily unavailable. Try again later.',ended:'This game has already ended.'};
   if(messages[error.code])return messages[error.code];
   if(['TimeoutError','AbortError','TypeError'].includes(error.name))return 'Could not connect. Please try again.';
   return error.message||'Something went wrong. Please try again.';

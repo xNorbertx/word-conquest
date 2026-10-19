@@ -15,20 +15,20 @@ export function createFriends({api,getUser,getData,setData,run,status,invite,ope
       const {social}=await api({action:'friend_action',friendId:person.id,choice,requestId:person.request_id,operationId});
       localStorage.removeItem(key);if(getUser()?.id!==actor)return;
       ++loadVersion;setData({social});searchResults=null;searchQuery='';$('friend-search-input').value='';$('friend-search-submit').disabled=false;$('friend-search-status').textContent='';closeSheet();
-      status(({request:'Friend request sent.',accept:'You are now friends.',decline:'Request declined.',cancel:'Request cancelled.',remove:'Friend removed.',block:'Player blocked.',unblock:'Player unblocked.'})[choice]);
+      status(({request:'Friend request sent.',accept:'Friend added.',decline:'Request declined.',cancel:'Request cancelled.',remove:'Friend removed.',block:'Player blocked.',unblock:'Player unblocked.'})[choice]);
     }finally{mutating=false;render();}
   }
   function options(person){
     const content=[];
-    if(person.status==='accepted')content.push(act('Remove friend',async()=>{if(await ask({title:`Remove ${person.display_name}?`,message:'Your games will stay. You can add each other again later.',label:'Remove friend',cancel:'Keep friend'}))await action(person,'remove');},'secondary full','user'));
+    if(person.status==='accepted')content.push(act('Remove friend',async()=>{if(await ask({title:`Remove ${person.display_name}?`,message:'Existing games stay available.',label:'Remove friend',cancel:'Keep friend'}))await action(person,'remove');},'secondary full','user'));
     if(person.status==='pending'&&person.requested_by===getUser()?.id)content.push(act('Cancel request',()=>action(person,'cancel'),'secondary full','close'));
-    content.push(act('Block player',async()=>{if(await ask({title:`Block ${person.display_name}?`,message:'They cannot find you or send you new friend or game invitations. Existing active games stay available; you can leave them from Game options.',label:'Block player',cancel:'Go back',danger:true,symbol:'shield'}))await action(person,'block');},'text-button danger full','shield'));
+    content.push(act('Block player',async()=>{if(await ask({title:`Block ${person.display_name}?`,message:'They cannot find or invite you. Existing games stay available until you leave them.',label:'Block player',cancel:'Cancel',danger:true,symbol:'shield'}))await action(person,'block');},'text-button danger full','shield'));
     showSheet(person.display_name,content);
   }
   function personRow(person){
     const box=node('div',undefined,'friend-row'),copy=node('div',undefined,'friend-copy');copy.append(node('strong',person.display_name));
     const incoming=person.status==='pending'&&person.requested_by!==getUser()?.id;
-    if(person.status==='pending')copy.append(node('small',incoming?'Wants to be your friend':'Request sent'));
+    if(searchResults!==null&&person.status==='pending'&&incoming)copy.append(node('small','Friend request'));
     box.append(avatar(person.display_name),copy);let primary;
     if(person.status==='accepted'){
       const waiting=data().outgoing?.find(i=>i.recipient===person.id);
@@ -44,15 +44,15 @@ export function createFriends({api,getUser,getData,setData,run,status,invite,ope
   function render(){
     const {people}=data(),incoming=people.filter(p=>p.status==='pending'&&p.requested_by!==getUser()?.id);
     const badge=$('friends-badge'),count=incoming.length;badge.hidden=!count;badge.textContent=count>9?'9+':String(count);
-    $('friend-list').replaceChildren();
+    $('friend-list').replaceChildren();$('friend-list').hidden=searchResults!==null;
     if(searchResults!==null){
-      $('friend-search-results').replaceChildren(node('p',`Results for “${searchQuery}”`,'small-note'),...searchResults.map(p=>personRow(p)));
-      if(!searchResults.length)$('friend-search-results').append(node('p','No players found. Check their username.','friend-empty-note'));
+      $('friend-search-results').replaceChildren(...searchResults.map(p=>personRow(p)));
+      if(!searchResults.length)$('friend-search-results').append(node('p','No matching players.','friend-empty-note'));
       $('clear-friend-search').hidden=false;
     }else{$('friend-search-results').replaceChildren();$('clear-friend-search').hidden=true;}
     group('Requests',incoming.map(p=>personRow(p)));
-    const friends=people.filter(p=>p.status==='accepted');group('Your friends',friends.map(p=>personRow(p)));
-    if(!friends.length&&!incoming.length)$('friend-list').append(emptyState('Good words. Better company.','Find a friend by their username.','friends'));
+    const friends=people.filter(p=>p.status==='accepted');group('Friends',friends.map(p=>personRow(p)));
+    if(!people.length)$('friend-list').append(emptyState('No friends yet','','friends'));
     group('Sent requests',people.filter(p=>p.status==='pending'&&p.requested_by===getUser()?.id).map(p=>personRow(p)));
   }
   async function refresh(){if(mutating)return;const ticket=++loadVersion,actor=getUser()?.id,{social,profile}=await api({action:'friends'});if(getUser()?.id!==actor||ticket!==loadVersion)return;setData({social,profile});render();}
@@ -65,9 +65,9 @@ export function createFriends({api,getUser,getData,setData,run,status,invite,ope
   }
   function showBlocked(){
     const blocked=data().blocked;
-    showSheet('Blocked players.',blocked.length?blocked.map(p=>{
+    showSheet('Blocked players',blocked.length?blocked.map(p=>{
       const b=node('div',undefined,'friend-row');b.append(node('strong',p.display_name),act('Unblock',()=>action(p,'unblock'),'secondary friend-action'));return b;
-    }):node('p','No one blocked.'));
+    }):node('p','No blocked players.'));
   }
   $('friend-search').onsubmit=e=>{e.preventDefault();void run(search);};
   $('clear-friend-search').onclick=()=>{++searchVersion;searchResults=null;searchQuery='';$('friend-search-input').value='';$('friend-search-status').textContent='';$('friend-search-submit').disabled=false;render();$('friend-search-input').focus();};

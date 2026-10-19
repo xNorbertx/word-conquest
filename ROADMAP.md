@@ -1,5 +1,16 @@
 # Word Conquest — app roadmap
 
+## Minimal app copy — 0.16.0
+
+- [x] Audit all production screens, empty states, dialogs, status/error copy.
+- [x] Remove slogans/filler; use concise titles and actions throughout.
+- [x] Compact language picker, empty states, Friends, notifications, dialogs,
+  You and Analytics; preserve touch/keyboard accessibility and warm palette.
+- [x] Verify version-correct help, confirmations, invitation/auth flows and
+  unaffected game/history/scoring interactions with production DOM checks.
+- [ ] Publish verified normal web app and signed Android APK.
+- [ ] Rendered phone review in light/dark; browser and device access unavailable.
+
 ## Reliable opening screen — 0.15.1
 
 - [x] Restore Games when an expired login emits TOKEN_REFRESHED before INITIAL_SESSION.

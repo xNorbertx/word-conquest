@@ -43,5 +43,5 @@ test('registration timeout is retryable and an account change cannot attach the 
   const pending=x.controller.enable();await new Promise(r=>setImmediate(r));x.setActor({id:'actor-b'});x.events.registration({value:'late-test-token-1234567890'});await pending;assert.equal(x.calls.length,0);assert.equal(x.controller.snapshot().state,'off');
 });
 test('test send requires a confirmed connection and only sends this device ID',async()=>{
-  const x=await setup();await assert.rejects(x.controller.test(),/Connect notifications/);await x.controller.enable();await x.controller.test();assert.deepEqual(x.calls.at(-1),{action:'push_test',deviceId:x.storage.getItem('wc-push-device')});
+  const x=await setup();await assert.rejects(x.controller.test(),/Enable notifications/);await x.controller.enable();await x.controller.test();assert.deepEqual(x.calls.at(-1),{action:'push_test',deviceId:x.storage.getItem('wc-push-device')});
 });
