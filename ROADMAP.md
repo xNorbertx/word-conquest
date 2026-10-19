@@ -8,7 +8,7 @@
   You and Analytics; preserve touch/keyboard accessibility and warm palette.
 - [x] Verify version-correct help, confirmations, invitation/auth flows and
   unaffected game/history/scoring interactions with production DOM checks.
-- [ ] Publish verified normal web app and signed Android APK.
+- [x] Publish verified normal web app and signed Android APK.
 - [ ] Rendered phone review in light/dark; browser and device access unavailable.
 
 ## Reliable opening screen — 0.15.1

@@ -36,7 +36,23 @@ seats, English/Swedish/Dutch/legacy, final states and skip/reduced motion. Analy
 DOM checks include safe text, record links, offline handling and account isolation.
 These are not rendered screenshots: browser inventory is empty and opening IAB
 reports unavailable. Physical-phone/visual acceptance remains a limitation.
-The full regression/build and publication evidence will be recorded below.
+Released on 20 October 2026:
+
+- Source `fdf98b74ffa604233d5b9b0498ae40747ca2529b`; [normal web app](https://xnorbertx.github.io/word-conquest/online/) published via
+  Pages `7214736cb2f117caf8b29369d6d0e1fd65db3106`. All ten public files match the tested build
+  (existing line endings normalized); original prototype and previews preserved.
+- [Android CI](https://github.com/xNorbertx/word-conquest/actions/runs/39332574883) succeeded. Version `0.16.0-fdf98b7`,
+  version code `25222030`; [APK](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25222030/word-conquest-android.apk).
+- APK SHA-256 `a21822b01cef64a7436c270c7890fbe7bc2489e6d2d40d219910d054e2483e65`; 5,006,480 bytes. Stable pilot
+  certificate, package metadata, native icons/plugin, permissions and packaged
+  web assets verified. Private-key material/test fixtures absent. Anonymous APK
+  download matches the checked hash and needs no GitHub sign-in.
+- Full suite: 242 Node regressions plus original engine/scoring/supply suites.
+  Production build and CSS parse pass. DOM checks above passed with actual
+  production markup/functions; browser rendering and device acceptance remain open.
+
+Refresh the browser app or install this APK over the existing pilot. No backend
+deployment or database migration is needed; ongoing infrastructure costs unchanged.
 
 ## Reliable opening screen — 0.15.1
 

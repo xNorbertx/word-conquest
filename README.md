@@ -1,5 +1,13 @@
 # Word Conquest
 
+### Minimal copy and compact screens (0.16.0)
+
+Shorter copy throughout account, invitations, Friends, notifications, help and
+dialogs. Compact language choices, empty states and settings. The palette,
+gameplay and saved rules stay unchanged. Refresh the [web app](https://xnorbertx.github.io/word-conquest/online/)
+or install [Android 0.16.0-fdf98b7](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25222030/word-conquest-android.apk).
+See [verification and remaining device checks](docs/PROGRESS.md).
+
 ### Dutch games (0.15.0)
 
 Choose **Nederlands** when starting a game. Dutch uses 355,792 pinned OpenTaal
