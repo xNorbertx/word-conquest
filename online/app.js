@@ -2000,7 +2000,7 @@ function renderAnalytics(root, data, { openGame: openGame2 }) {
     if (value?.gameId) item.setAttribute("aria-label", `${label}: ${value.value} ${unit}. ${detail || ""}. Open game`);
     records.append(item);
   }
-  root.replaceChildren(record, records, node("p", "Current scoring \xB7 English & Swedish", "small-note analytics-scope"));
+  root.replaceChildren(record, records, node("p", "Current scoring \xB7 English, Swedish & Dutch", "small-note analytics-scope"));
   if (!data.games && !data.words) root.append(node("p", "Your next games will start your record.", "small-note"));
 }
 
@@ -2958,6 +2958,66 @@ var rules_sv_v4_default = Object.freeze({
   wordScoring: Object.freeze({ ...rules_sv_v3_default.wordScoring, lengthBonuses: rules_v5_default.wordScoring.lengthBonuses, extraLetterBonus: 2 })
 });
 
+// server/versions/dictionary-nl-v1.meta.json
+var dictionary_nl_v1_meta_default = {
+  version: "dutch-opentaal-v1-0a831728bab0",
+  language: "nl",
+  sha256: "0a831728bab052a8eab2a1a1d33accd0d21b0f4b8ac4caea781533ca6cbcff3d",
+  words: 355792,
+  source: "OpenTaal/opentaal-wordlist",
+  sourceCommit: "b250510dda431785f962019167d1415198ff3905",
+  sourceSha256: "12e5fb5e3c73840b583b30016926d1f63a75e9bf1652a3a6634b2ba7c49ad7be",
+  licenseSha256: "4633afec7da0033afad9271d3d4e2d5e531c255339517d65ffe15fbf6e4292d8",
+  sourceUrl: "https://github.com/OpenTaal/opentaal-wordlist/tree/b250510dda431785f962019167d1415198ff3905",
+  license: "BSD-3-Clause",
+  policy: "Listed lowercase forms from wordlist.txt only; 3\u201369 A\u2013Z letters after accent folding, IJ ligature expansion, and removal of internal apostrophes/hyphens. Capitalized names, initialisms, phrases, digits, symbols and dangling word fragments are excluded. IJ uses I + J. No runtime stemming, inferred compounds or corrections import. This is not a curated tournament or family-safe dictionary.",
+  letterWeights: {
+    A: 6.78579,
+    B: 2.03528,
+    C: 2.16708,
+    D: 4.18043,
+    E: 16.56286,
+    F: 1.19928,
+    G: 3.68831,
+    H: 1.97036,
+    I: 7.04979,
+    J: 1.3039,
+    K: 2.90131,
+    L: 4.54638,
+    M: 2.37167,
+    N: 7.97037,
+    O: 5.82382,
+    P: 2.4603,
+    Q: 0.02478,
+    R: 7.65456,
+    S: 6.13053,
+    T: 6.65987,
+    U: 2.54576,
+    V: 1.83273,
+    W: 1.12113,
+    X: 0.09296,
+    Y: 0.15655,
+    Z: 0.76422
+  }
+};
+
+// server/versions/rules-nl-v1.mjs
+var rules_nl_v1_default = Object.freeze({
+  ...rules_v5_default,
+  language: "nl",
+  alphabet: "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+  // IJ is two tiles. J is ordinary, so common IJ words remain accessible.
+  letterBalance: Object.freeze({ ...rules_v5_default.letterBalance, vowels: "AEIOU", flexible: "RSTLNDG", ordinary: "BCFHJKMPVW", rare: "QXYZ" }),
+  letterWeights: Object.freeze({ ...dictionary_nl_v1_meta_default.letterWeights }),
+  wordScoring: Object.freeze({ ...rules_v5_default.wordScoring, letterGroups: Object.freeze([
+    { letters: "AEINORT", points: 1 },
+    { letters: "DGLSU", points: 2 },
+    { letters: "BHKMP", points: 3 },
+    { letters: "CFJVWZ", points: 4 },
+    { letters: "QXY", points: 5 }
+  ]) })
+});
+
 // server/rules.mjs
 var RULES_VERSION = "autumn-v5";
 var rules = Object.freeze({
@@ -2969,12 +3029,13 @@ var rules = Object.freeze({
   "autumn-sv-v2": Object.freeze({ ...rules_sv_v2_default, dictionaryEnabled: true }),
   "autumn-sv-v3": Object.freeze({ ...rules_sv_v3_default, dictionaryEnabled: true }),
   "autumn-v5": Object.freeze({ ...rules_v5_default, dictionaryEnabled: true }),
-  "autumn-sv-v4": Object.freeze({ ...rules_sv_v4_default, dictionaryEnabled: true })
+  "autumn-sv-v4": Object.freeze({ ...rules_sv_v4_default, dictionaryEnabled: true }),
+  "autumn-nl-v1": Object.freeze({ ...rules_nl_v1_default, dictionaryEnabled: true })
 });
 var SUPPORTED_RULES = Object.freeze(Object.keys(rules));
 var configFor = (version6) => typeof version6 === "string" && Object.hasOwn(rules, version6) ? rules[version6] : null;
 var config = rules[RULES_VERSION];
-var rulesLabel = (version6) => ({ "autumn-v5": "Defended castles 3 / 5", "autumn-sv-v4": "Defended castles 3 / 5", "autumn-v1": "Classic \xB7 3 captures", "autumn-v2": "Unlimited captures", "autumn-v3": "Castle income 2 / 4", "autumn-sv-v1": "Castle income 2 / 4", "autumn-v4": "Castle income 2 / 4", "autumn-sv-v2": "Castle income 2 / 4", "autumn-sv-v3": "Castle income 2 / 4" })[version6] || "Other rules";
+var rulesLabel = (version6) => ({ "autumn-nl-v1": "Defended castles 3 / 5", "autumn-v5": "Defended castles 3 / 5", "autumn-sv-v4": "Defended castles 3 / 5", "autumn-v1": "Classic \xB7 3 captures", "autumn-v2": "Unlimited captures", "autumn-v3": "Castle income 2 / 4", "autumn-sv-v1": "Castle income 2 / 4", "autumn-v4": "Castle income 2 / 4", "autumn-sv-v2": "Castle income 2 / 4", "autumn-sv-v3": "Castle income 2 / 4" })[version6] || "Other rules";
 var captureRule = (rules2) => Number.isFinite(rules2.maxEnemyTilesPerWord) ? `Capture up to ${rules2.maxEnemyTilesPerWord} opponent tiles per word.` : "No capture limit: every opponent tile in your word becomes yours.";
 var castleRule = (rules2) => rules2.scoringMode === "defended-final" ? "Side castles earn 3 and the centre earns 5 after surviving an opponent\u2019s word or refresh. Every owned tile is worth 1 point at the finish; castles have no extra final bonus." : rules2.castleIncome ? `Side castles earn ${rules2.castleIncome.side} each round; the centre earns ${rules2.castleIncome.center}. Final castle values are ${rules2.castlePoints} and ${rules2.centerCastlePoints}.` : `Castles are worth ${rules2.castlePoints} territory points.`;
 
@@ -3026,7 +3087,8 @@ var dictionary_sv_v2_meta_default = {
 // server/languages.mjs
 var LANGUAGES = Object.freeze({
   en: Object.freeze({ code: "en", label: "English", rulesVersion: RULES_VERSION, alphabet: "ABCDEFGHIJKLMNOPQRSTUVWXYZ", dictionary: dictionary_v1_meta_default }),
-  sv: Object.freeze({ code: "sv", label: "Svenska", rulesVersion: "autumn-sv-v4", alphabet: "ABCDEFGHIJKLMNOPQRSTUVWXYZ\xC5\xC4\xD6", dictionary: dictionary_sv_v2_meta_default })
+  sv: Object.freeze({ code: "sv", label: "Svenska", rulesVersion: "autumn-sv-v4", alphabet: "ABCDEFGHIJKLMNOPQRSTUVWXYZ\xC5\xC4\xD6", dictionary: dictionary_sv_v2_meta_default }),
+  nl: Object.freeze({ code: "nl", label: "Nederlands", rulesVersion: "autumn-nl-v1", alphabet: "ABCDEFGHIJKLMNOPQRSTUVWXYZ", dictionary: dictionary_nl_v1_meta_default })
 });
 var languageFor = (code) => typeof code === "string" && Object.hasOwn(LANGUAGES, code) ? LANGUAGES[code] : null;
 var languageForRules = (version6) => {
@@ -3205,7 +3267,7 @@ function createSnapshotCache(storage, { namespace = "", now = Date.now, ttl = 7 
 }
 
 // package.json
-var version = "0.14.0";
+var version = "0.15.0";
 
 // online/app.js
 init_dist();
@@ -12038,7 +12100,8 @@ function showDictionary() {
   link.target = "_blank";
   link.rel = "noopener";
   const swedish = currentView === "game" && config2.language === "sv", expanded = config2.dictionaryNormalization === "latin-accents-v1";
-  const text = swedish ? expanded ? "Swedish uses SALDO and the original Swedish list. Accents such as \xE9 use the plain letter; \xC5, \xC4 and \xD6 stay distinct." : "This game uses the original Martin Lindhe Swedish list. \xC5, \xC4 and \xD6 are distinct letters." : "English uses the Letterpress-derived list. New Swedish games combine SALDO with the original Swedish list.";
+  const dutch = currentView === "game" && config2.language === "nl";
+  const text = dutch ? "Dutch uses OpenTaal. Accents use the plain letter; apostrophes and hyphens are omitted. IJ is played as I + J." : swedish ? expanded ? "Swedish uses SALDO and the original Swedish list. Accents such as \xE9 use the plain letter; \xC5, \xC4 and \xD6 stay distinct." : "This game uses the original Martin Lindhe Swedish list. \xC5, \xC4 and \xD6 are distinct letters." : "English uses the Letterpress-derived list. Swedish uses SALDO and the original Swedish list; Dutch uses OpenTaal.";
   showSheet("Words we play.", [node("p", text), node("p", "Listed inflections and compounds count. Each game keeps its original dictionary. Uncommon or offensive words may occur."), link]);
 }
 function showHistory() {
