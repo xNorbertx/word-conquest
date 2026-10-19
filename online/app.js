@@ -3267,7 +3267,7 @@ function createSnapshotCache(storage, { namespace = "", now = Date.now, ttl = 7 
 }
 
 // package.json
-var version = "0.15.0";
+var version = "0.15.1";
 
 // online/app.js
 init_dist();
@@ -11298,6 +11298,9 @@ var usernameSetupBusy = false;
 var gameFresh = false;
 var entering = false;
 var signingOut = false;
+var entryEpoch = 0;
+var entryTimer = null;
+var startupTimer = null;
 var snapshots = createSnapshotCache(localStorage, { namespace: cfg.supabaseUrl + (cfg.cacheScope || "") });
 var native = Capacitor.isNativePlatform();
 var publicApp = "https://xnorbertx.github.io/word-conquest/online/";
@@ -11395,10 +11398,21 @@ function apiError(message, code, statusCode, requestId) {
   Object.assign(e, { code, status: statusCode, requestId });
   return e;
 }
+async function readSession() {
+  let timer;
+  try {
+    return await Promise.race([db.auth.getSession(), new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error("Could not restore your sign-in. Please try again.")), 1e4);
+    })]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
 async function api(body) {
   if (!db) throw new Error("Online play is not connected yet.");
-  const { data: { session }, error } = await db.auth.getSession();
-  if (error || !session) {
+  const { data: { session }, error } = await readSession();
+  if (error) throw error;
+  if (!session) {
     snapshots.clear();
     moveHistory.reset();
     analyticsData = null;
@@ -11468,6 +11482,7 @@ function renderPush() {
   if ($("sheet").open && $("sheet-title").textContent === "Game notifications.") showPush();
 }
 async function connectLiveUpdates(session) {
+  if (session?.user?.id !== user?.id) return;
   if (session?.access_token) await db.realtime.setAuth(session.access_token);
   if (session?.user?.id !== user?.id) return;
   if (liveUser === user?.id) return;
@@ -11596,6 +11611,7 @@ function rememberGame(saved) {
 }
 async function showHome(quiet = false, { route = true, replace = false } = {}) {
   if (!user) return;
+  homeData ??= snapshots.home(user.id);
   const ticket = quiet ? navigation : ++navigation, cached = !!homeData;
   if (!quiet && cached) {
     ++gameLoad;
@@ -12470,7 +12486,7 @@ $("recovery-form").onsubmit = (e) => {
     }
   });
 };
-$("retry-load").onclick = () => run(enterApp);
+$("retry-load").onclick = () => run(retryStartup);
 $("home-button").onclick = $("back").onclick = $("result-home").onclick = () => run(() => user ? showHome() : screen(configured ? "auth" : "setup", { route: false }));
 $("brand").onclick = (e) => {
   e.preventDefault();
@@ -12623,8 +12639,8 @@ $("preview-button").onclick = () => {
   renderGame();
 };
 async function enterApp() {
-  if (recovering || !user) return;
-  const actor = user.id;
+  if (recovering || !user || entering) return;
+  const actor = user.id, epoch = entryEpoch;
   entering = true;
   homeData ??= snapshots.home(actor);
   try {
@@ -12646,7 +12662,7 @@ async function enterApp() {
       else if (!invited && params.get("view") === "analytics") await showAnalytics({ route: false });
     }
   } finally {
-    entering = false;
+    if (epoch === entryEpoch) entering = false;
   }
 }
 async function usernameSetup(randomize = false) {
@@ -12704,6 +12720,10 @@ async function poll() {
   }
 }
 function resume() {
+  if (currentView === "loading" && !entering) {
+    void run(retryStartup);
+    return;
+  }
   if (game && currentView === "game" && !preview && !busy) {
     gameFresh = false;
     renderGame();
@@ -12747,19 +12767,31 @@ document.addEventListener("visibilitychange", () => {
   if (!document.hidden) resume();
 });
 setInterval(poll, 2e4);
-if (!db) screen("setup", { route: false });
-else db.auth.onAuthStateChange((event, session) => {
+function cancelAppEntry() {
+  ++entryEpoch;
+  clearTimeout(entryTimer);
+  entryTimer = null;
+  entering = false;
+}
+function queueAppEntry() {
+  if (entryTimer !== null || entering || recovering || !user) return;
+  const actor = user.id, epoch = entryEpoch;
+  entryTimer = setTimeout(() => {
+    entryTimer = null;
+    if (epoch !== entryEpoch || actor !== user?.id || recovering) return;
+    void run(enterApp);
+  }, 0);
+}
+function handleAuthState(event, session) {
+  clearTimeout(startupTimer);
+  startupTimer = null;
   const previousUser = user?.id;
   user = session?.user || null;
   setTimeout(() => run(() => connectLiveUpdates(session)), 0);
-  if (event === "PASSWORD_RECOVERY") {
-    authReady = false;
-    recovering = true;
-    screen("recovery", { route: false });
-    return;
-  }
-  if (!user) {
-    snapshots.clear();
+  if (previousUser !== user?.id || !user) {
+    cancelAppEntry();
+    recovering = false;
+    if (previousUser || !user) snapshots.clear();
     moveHistory.reset();
     analyticsData = null;
     analyticsActor = null;
@@ -12771,32 +12803,55 @@ else db.auth.onAuthStateChange((event, session) => {
     homeData = null;
     $("setup-username").value = "";
     friends.reset();
-    renderPush();
     ++navigation;
     ++gameLoad;
     ++homeLoad;
+  }
+  if (event === "PASSWORD_RECOVERY") {
+    cancelAppEntry();
+    ++navigation;
+    ++gameLoad;
+    ++homeLoad;
+    gameFresh = false;
+    authReady = false;
+    recovering = true;
+    screen("recovery", { route: false });
+    return;
+  }
+  if (!user) {
+    recovering = false;
+    renderPush();
     screen("auth", { route: false });
     return;
   }
-  if (recovering || !["SIGNED_IN", "INITIAL_SESSION"].includes(event) || previousUser === user.id && currentView !== "auth") return;
-  if (previousUser !== user.id) {
-    if (previousUser) snapshots.clear();
-    moveHistory.reset();
-    analyticsData = null;
-    analyticsActor = null;
-    gameRequests.reset();
-    gameFresh = false;
-    game = null;
-    homeRequests.reset();
-    ++homeLoad;
-    ++gameLoad;
-    ++navigation;
-    authReady = false;
-    homeData = null;
-    $("setup-username").value = "";
+  if (recovering || !["SIGNED_IN", "INITIAL_SESSION", "TOKEN_REFRESHED"].includes(event)) return;
+  if (previousUser !== user.id || ["loading", "auth"].includes(currentView)) queueAppEntry();
+}
+async function retryStartup() {
+  if (!db || recovering || entering) return;
+  $("loading-message").textContent = "Loading your games\u2026";
+  $("retry-load").hidden = true;
+  $("loading").querySelector(".spinner").hidden = false;
+  if (user) {
+    await enterApp();
+    return;
   }
-  setTimeout(() => run(enterApp), 0);
-});
+  const epoch = entryEpoch, { data: { session }, error } = await readSession();
+  if (epoch !== entryEpoch || recovering) return;
+  if (error) throw error;
+  handleAuthState("INITIAL_SESSION", session);
+}
+if (!db) screen("setup", { route: false });
+else {
+  startupTimer = setTimeout(() => {
+    if (currentView === "loading" && !entering) {
+      $("loading-message").textContent = "Could not connect. Please try again.";
+      $("retry-load").hidden = false;
+      $("loading").querySelector(".spinner").hidden = true;
+    }
+  }, 12e3);
+  db.auth.onAuthStateChange(handleAuthState);
+}
 document.addEventListener("visibilitychange", () => document.body.classList.toggle("app-background", document.hidden));
 /*! Bundled license information:
 
