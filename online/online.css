@@ -2114,3 +2114,66 @@ body.joker-picking { overflow:hidden; }
 .analytics-amount small { font-size:11px; color:var(--muted); }
 .analytics-scope { margin-top:20px; }
 @media(max-width:380px){.analytics-item{gap:9px}.analytics-detail{font-size:17px}.analytics-amount strong{font-size:27px}}
+
+/* Compact app surfaces. The board, palette and play controls are unchanged. */
+.empty-state { border:0; border-radius:0; padding:32px 16px; }
+.empty-state .empty-art { width:40px; height:40px; margin:0 auto 12px; border-radius:12px; }
+.empty-art .icon { width:23px; height:23px; }
+.empty-state h2 { font:600 17px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; margin:0; letter-spacing:0; }
+.empty-state p { margin-top:6px; }
+.sheet:not(.joker-keyboard) .sheet-header { padding:12px 18px 10px; gap:12px; }
+.sheet-header h2 { font-size:24px; overflow-wrap:anywhere; }
+.sheet:not(.joker-keyboard) .sheet-content { padding:18px; }
+.sheet-content>.stack-form { margin-top:0; }
+.sheet-content>p { line-height:1.5; margin-bottom:14px; }
+.sheet-content>.primary,.sheet-content>.secondary.full { margin-top:12px; }
+.sheet-content>.text-button.full { margin-top:6px; }
+.confirm-sheet .sheet-content { padding:24px!important; }
+.confirm-sheet h2 { font-size:25px; margin:0 0 16px; }
+.confirm-sheet p { margin-bottom:20px; }
+.confirm-actions { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.confirm-actions button { min-height:48px; white-space:normal; overflow-wrap:anywhere; }
+.info-sections { display:grid; gap:16px; }
+.info-sections h3 { font:650 14px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; letter-spacing:0; margin-bottom:4px; }
+.info-sections p { color:var(--muted); font-size:14px; line-height:1.5; }
+.info-disclosure { margin:12px 0; border-block:1px solid var(--line); }
+.info-disclosure summary { cursor:pointer; padding:12px 0; min-height:44px; color:var(--green); font-weight:600; }
+.info-disclosure .info-sections { padding:0 0 16px; }
+:root[data-input-mode="keyboard"] summary:focus-visible { outline:2px solid var(--green); outline-offset:2px; }
+.language-picker { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
+.language-picker legend { margin-bottom:8px; }
+.language-picker label { justify-content:center; min-width:0; min-height:48px; padding:10px 6px; font-size:14px; font-weight:600; }
+.language-picker input { position:absolute; width:1px; height:1px; min-height:0; padding:0; opacity:0; }
+:root[data-input-mode="keyboard"] .language-picker label:focus-within { outline:2px solid var(--green); outline-offset:2px; }
+.invite-waiting { margin:24px auto; max-width:390px; }
+.invite-waiting h1 { font-size:30px; margin:0 0 20px; overflow-wrap:anywhere; }
+.invite-waiting>.muted { margin:0 0 20px; max-width:none; overflow-wrap:anywhere; }
+.invite-waiting>.text-button { margin-top:12px; min-height:44px; font-size:14px; }
+.copy-field input { flex:1; }
+.notification-state { display:flex; align-items:center; gap:10px; margin:0 0 12px; color:var(--green); font-size:15px; }
+.support-contact { display:inline-block; margin-top:16px; overflow-wrap:anywhere; }
+.score-lines { margin:0 0 16px; }
+.score-line { gap:12px; }
+.friend-more { width:44px; min-width:44px; }
+#friends .section-label { margin:18px 0 6px; }
+#friends .section-label h2 { font:650 14px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; letter-spacing:0; }
+#friend-search-results:not(:empty) { padding-bottom:0; border-bottom:0; }
+.friend-row { min-height:64px; padding:8px 0; }
+.friend-row>strong { flex:1; min-width:0; overflow-wrap:anywhere; }
+.analytics-record { padding:18px 8px; margin-bottom:16px; border-radius:16px; }
+.analytics-record strong { font-size:34px; }
+.analytics-record>div { gap:5px; }
+.analytics-item { padding:14px 0; gap:10px; }
+.analytics-amount { max-width:42%; }
+.analytics-amount small { overflow-wrap:anywhere; }
+.analytics-scope { margin-top:14px; }
+#account .profile-card { padding:16px; gap:12px; border-radius:16px; }
+#account .profile-card .icon-button { width:44px; min-width:44px; }
+#account .settings-list { margin-top:16px; border-radius:16px; }
+#account .quiet-footer { margin-top:18px; }
+#username-setup,#recovery { margin-top:28px; }
+#username-setup h1,#recovery h1 { font-size:30px; margin:0 0 24px; }
+@media(max-width:350px){.friend-row{gap:6px}.friend-row>.avatar{width:30px;height:30px;font-size:15px}.friend-action{padding:10px 8px}.confirm-sheet .sheet-content{padding:18px!important}.sheet-header h2{font-size:22px}}
+
+
+.sheet-content .full>span,.confirm-sheet h2 { min-width:0; overflow-wrap:anywhere; }

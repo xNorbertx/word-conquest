@@ -1798,6 +1798,7 @@ var require_cjs = __commonJS({
 // online/ui.js
 var $ = (id) => document.getElementById(id);
 var paths = {
+  phone: ["M6 2h12v20H6z", "M11 18h2"],
   chart: ["M4 3v18h17", "M8 16v-4", "M13 16V7", "M18 16V4"],
   moon: ["M20.5 13.1A8.5 8.5 0 0 1 10.9 3.5 8.5 8.5 0 1 0 20.5 13.1Z"],
   castle: ["M4 20V9h3V4h3v5h4V4h3v5h3v11H4Z", "M10 20v-6h4v6"],
@@ -1910,7 +1911,7 @@ function showSheet(title, content) {
   $("sheet-content").scrollTop = 0;
 }
 var confirmResolve = null;
-function ask({ title, message = "", label = "Confirm", cancel = "Keep playing", danger = false, symbol = "help" }) {
+function ask({ title, message = "", label = "Confirm", cancel = "Cancel", danger = false }) {
   closeSheet();
   $("confirm-title").textContent = title;
   $("confirm-message").textContent = message;
@@ -1918,7 +1919,6 @@ function ask({ title, message = "", label = "Confirm", cancel = "Keep playing", 
   $("confirm-ok").textContent = label;
   $("confirm-ok").classList.toggle("danger", danger);
   $("confirm-cancel").textContent = cancel;
-  $("confirm-icon").replaceChildren(icon(symbol));
   $("confirm-dialog").showModal();
   return new Promise((resolve) => confirmResolve = resolve);
 }
@@ -1962,10 +1962,20 @@ function closeTopDialog() {
   }
   return false;
 }
-function emptyState(title, copy2, symbol = "leaf") {
+function emptyState(title, copy2 = "", symbol = "grid") {
   const box = node("div", void 0, "empty-state"), art = node("div", void 0, "empty-art");
   art.append(icon(symbol));
-  box.append(art, node("h2", title), node("p", copy2));
+  box.append(art, node("h2", title));
+  if (copy2) box.append(node("p", copy2));
+  return box;
+}
+function infoSections(sections) {
+  const box = node("div", void 0, "info-sections");
+  for (const [title, copy2] of sections) {
+    const section = node("section");
+    section.append(node("h3", title), node("p", copy2));
+    box.append(section);
+  }
   return box;
 }
 
@@ -1986,7 +1996,7 @@ function renderAnalytics(root, data, { openGame: openGame2 }) {
     ["Best game", data.bestGame, "points", "award", data.bestGame ? date(data.bestGame.at) : ""],
     ["Best word", data.bestWord, "points", "book", data.bestWord?.word],
     ["Longest word", data.longestWord, "letters", "book", data.longestWord?.word],
-    ["Biggest capture", data.biggestCapture, "tiles in one turn", "territory", data.biggestCapture?.word],
+    ["Biggest capture", data.biggestCapture, "tiles", "territory", data.biggestCapture?.word],
     ["Castles captured", { value: data.castlesCaptured }, "captures", "castle", ""]
   ];
   for (const [label, value, unit, symbol, detail] of entries) {
@@ -1995,13 +2005,40 @@ function renderAnalytics(root, data, { openGame: openGame2 }) {
     const copy2 = node("div", void 0, "analytics-copy"), amount2 = node("div", void 0, "analytics-amount");
     copy2.append(node("span", label, "analytics-label"));
     if (detail) copy2.append(node("strong", detail, "analytics-detail"));
-    amount2.append(node("strong", value?.value ?? "\u2014"), node("small", unit));
+    amount2.append(node("strong", value?.value ?? "\u2014"));
+    if (label !== "Castles captured") amount2.append(node("small", unit));
     item.append(icon(symbol), copy2, amount2);
     if (value?.gameId) item.setAttribute("aria-label", `${label}: ${value.value} ${unit}. ${detail || ""}. Open game`);
     records.append(item);
   }
-  root.replaceChildren(record, records, node("p", "Current scoring \xB7 English, Swedish & Dutch", "small-note analytics-scope"));
-  if (!data.games && !data.words) root.append(node("p", "Your next games will start your record.", "small-note"));
+  root.replaceChildren(record, records, node("p", "Current rules only", "small-note analytics-scope"));
+  if (!data.games && !data.words) root.append(node("p", "No games recorded yet.", "small-note"));
+}
+
+// online/copy.mjs
+function rulesSections(rules2) {
+  const defended = rules2.scoringMode === "defended-final";
+  const bonus = rules2.wordScoring.lengthBonuses.map((points, length) => points ? `${length} \u2192 +${points}` : null).filter(Boolean).join(" \xB7 ");
+  const sections = [
+    ["Words", `Start on your territory and connect ${rules2.minimumWordLength}+ letters, including diagonals. Use each tile once. With no territory left, start anywhere.`],
+    ["Captures", Number.isFinite(rules2.maxEnemyTilesPerWord) ? `Your word claims its tiles. Capture up to ${rules2.maxEnemyTilesPerWord} opponent tiles per turn.` : "Your word claims every tile it uses. No capture limit."],
+    ["Word points", "Add the value on each letter. Jokers score 0."],
+    ["Length bonus", `Letters \u2192 bonus: ${bonus}. Each further letter adds ${rules2.wordScoring.extraLetterBonus} points.`]
+  ];
+  if (defended) {
+    sections.push(
+      ["Castles", `Side: +${rules2.castleIncome.side} \xB7 Centre: +${rules2.castleIncome.center}. Earn points for castles you hold through your opponent\u2019s word or refresh. Capturing alone earns nothing.`],
+      ["Final territory", `At game end, each tile you own adds ${rules2.finalTerritoryPoints} point. No capture deductions or extra castle bonus.`]
+    );
+  } else {
+    sections.push(["Territory", `Ordinary tiles: ${rules2.normalTerritoryPoints} \xB7 Side castles: ${rules2.castlePoints} \xB7 Centre: ${rules2.centerCastlePoints ?? rules2.castlePoints}. Points change with ownership.`]);
+    if (rules2.castleIncome) sections.push(["Castle income", `After both players move, held side castles add ${rules2.castleIncome.side} points and the centre adds ${rules2.castleIncome.center}, including the final round. Earned income stays yours.`]);
+  }
+  sections.push(
+    ["Letters", `Played letters are replaced; jokers stay. Refresh replaces your owned letters, except jokers, and uses your turn.`],
+    ["Game end", `${rules2.letterBudget} letters are shared. When they run out, the second player gets a final reply if needed. Highest score wins.${rules2.castleIncome ? " Starting player is random." : ""}`]
+  );
+  return sections;
 }
 
 // assets/monogram.json
@@ -3035,9 +3072,6 @@ var rules = Object.freeze({
 var SUPPORTED_RULES = Object.freeze(Object.keys(rules));
 var configFor = (version6) => typeof version6 === "string" && Object.hasOwn(rules, version6) ? rules[version6] : null;
 var config = rules[RULES_VERSION];
-var rulesLabel = (version6) => ({ "autumn-nl-v1": "Defended castles 3 / 5", "autumn-v5": "Defended castles 3 / 5", "autumn-sv-v4": "Defended castles 3 / 5", "autumn-v1": "Classic \xB7 3 captures", "autumn-v2": "Unlimited captures", "autumn-v3": "Castle income 2 / 4", "autumn-sv-v1": "Castle income 2 / 4", "autumn-v4": "Castle income 2 / 4", "autumn-sv-v2": "Castle income 2 / 4", "autumn-sv-v3": "Castle income 2 / 4" })[version6] || "Other rules";
-var captureRule = (rules2) => Number.isFinite(rules2.maxEnemyTilesPerWord) ? `Capture up to ${rules2.maxEnemyTilesPerWord} opponent tiles per word.` : "No capture limit: every opponent tile in your word becomes yours.";
-var castleRule = (rules2) => rules2.scoringMode === "defended-final" ? "Side castles earn 3 and the centre earns 5 after surviving an opponent\u2019s word or refresh. Every owned tile is worth 1 point at the finish; castles have no extra final bonus." : rules2.castleIncome ? `Side castles earn ${rules2.castleIncome.side} each round; the centre earns ${rules2.castleIncome.center}. Final castle values are ${rules2.castlePoints} and ${rules2.centerCastlePoints}.` : `Castles are worth ${rules2.castlePoints} territory points.`;
 
 // server/versions/dictionary-v1.meta.json
 var dictionary_v1_meta_default = {
@@ -3267,7 +3301,7 @@ function createSnapshotCache(storage, { namespace = "", now = Date.now, ttl = 7 
 }
 
 // package.json
-var version = "0.15.1";
+var version = "0.16.0";
 
 // online/app.js
 init_dist();
@@ -10030,19 +10064,19 @@ function pushController({ available, plugin, settings, storage, api: api2, getUs
         handles.push(await plugin.addListener("registrationError", () => {
           const pending2 = registration;
           registration = null;
-          pending2?.reject(Error("Notifications could not connect to Google. Check your connection and try again."));
+          pending2?.reject(Error("Could not connect notifications. Check your connection and retry."));
         }));
         handles.push(await plugin.addListener("pushNotificationReceived", (notification) => {
           if (!getUser() || !preferred()) return;
-          if (notification.data?.test === "true") onStatus("Test notification received on this phone.");
+          if (notification.data?.test === "true") onStatus("Test notification received.");
           else {
             onUpdate();
-            onStatus("A game has an update. Check Activity or your games.");
+            onStatus("Game updated.");
           }
         }));
         handles.push(await plugin.addListener("pushNotificationActionPerformed", ({ notification }) => {
           if (notification.data?.test === "true") {
-            onStatus("Test notification received on this phone.");
+            onStatus("Test notification received.");
             return;
           }
           const id = notification.data?.gameId;
@@ -10060,7 +10094,7 @@ function pushController({ available, plugin, settings, storage, api: api2, getUs
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         registration = null;
-        reject(Error("Notification setup timed out. Check your connection and retry."));
+        reject(Error("Notification setup timed out. Retry."));
       }, timeoutMs);
       const pending2 = { resolve: (value) => {
         clearTimeout(timer);
@@ -10099,7 +10133,7 @@ function pushController({ available, plugin, settings, storage, api: api2, getUs
       if (actor !== getUser()?.id) return;
       storage.removeItem("wc-push-snooze:" + actor);
       change("ready", "", actor);
-      if (requestPermission) onStatus("Game notifications are connected on this phone.");
+      if (requestPermission) onStatus("Notifications enabled.");
     } catch (e) {
       change("error", e.message || "Notifications could not connect. Please retry.", actor);
       throw e;
@@ -10139,7 +10173,7 @@ function pushController({ available, plugin, settings, storage, api: api2, getUs
   }
   const openSettings = () => settings.open();
   const test = () => serial(async () => {
-    if (snapshot().state !== "ready") throw Error("Connect notifications before sending a test.");
+    if (snapshot().state !== "ready") throw Error("Enable notifications first.");
     await api2({ action: "push_test", deviceId: device() });
     return true;
   });
@@ -10186,7 +10220,7 @@ function createFriends({ api: api2, getUser, getData, setData, run: run2, status
       $("friend-search-submit").disabled = false;
       $("friend-search-status").textContent = "";
       closeSheet();
-      status2({ request: "Friend request sent.", accept: "You are now friends.", decline: "Request declined.", cancel: "Request cancelled.", remove: "Friend removed.", block: "Player blocked.", unblock: "Player unblocked." }[choice]);
+      status2({ request: "Friend request sent.", accept: "Friend added.", decline: "Request declined.", cancel: "Request cancelled.", remove: "Friend removed.", block: "Player blocked.", unblock: "Player unblocked." }[choice]);
     } finally {
       mutating = false;
       render();
@@ -10195,11 +10229,11 @@ function createFriends({ api: api2, getUser, getData, setData, run: run2, status
   function options(person) {
     const content = [];
     if (person.status === "accepted") content.push(act2("Remove friend", async () => {
-      if (await ask({ title: `Remove ${person.display_name}?`, message: "Your games will stay. You can add each other again later.", label: "Remove friend", cancel: "Keep friend" })) await action2(person, "remove");
+      if (await ask({ title: `Remove ${person.display_name}?`, message: "Existing games stay available.", label: "Remove friend", cancel: "Keep friend" })) await action2(person, "remove");
     }, "secondary full", "user"));
     if (person.status === "pending" && person.requested_by === getUser()?.id) content.push(act2("Cancel request", () => action2(person, "cancel"), "secondary full", "close"));
     content.push(act2("Block player", async () => {
-      if (await ask({ title: `Block ${person.display_name}?`, message: "They cannot find you or send you new friend or game invitations. Existing active games stay available; you can leave them from Game options.", label: "Block player", cancel: "Go back", danger: true, symbol: "shield" })) await action2(person, "block");
+      if (await ask({ title: `Block ${person.display_name}?`, message: "They cannot find or invite you. Existing games stay available until you leave them.", label: "Block player", cancel: "Cancel", danger: true, symbol: "shield" })) await action2(person, "block");
     }, "text-button danger full", "shield"));
     showSheet(person.display_name, content);
   }
@@ -10207,7 +10241,7 @@ function createFriends({ api: api2, getUser, getData, setData, run: run2, status
     const box = node("div", void 0, "friend-row"), copy2 = node("div", void 0, "friend-copy");
     copy2.append(node("strong", person.display_name));
     const incoming = person.status === "pending" && person.requested_by !== getUser()?.id;
-    if (person.status === "pending") copy2.append(node("small", incoming ? "Wants to be your friend" : "Request sent"));
+    if (searchResults !== null && person.status === "pending" && incoming) copy2.append(node("small", "Friend request"));
     box.append(avatar2(person.display_name), copy2);
     let primary;
     if (person.status === "accepted") {
@@ -10238,9 +10272,10 @@ function createFriends({ api: api2, getUser, getData, setData, run: run2, status
     badge.hidden = !count;
     badge.textContent = count > 9 ? "9+" : String(count);
     $("friend-list").replaceChildren();
+    $("friend-list").hidden = searchResults !== null;
     if (searchResults !== null) {
-      $("friend-search-results").replaceChildren(node("p", `Results for \u201C${searchQuery}\u201D`, "small-note"), ...searchResults.map((p) => personRow(p)));
-      if (!searchResults.length) $("friend-search-results").append(node("p", "No players found. Check their username.", "friend-empty-note"));
+      $("friend-search-results").replaceChildren(...searchResults.map((p) => personRow(p)));
+      if (!searchResults.length) $("friend-search-results").append(node("p", "No matching players.", "friend-empty-note"));
       $("clear-friend-search").hidden = false;
     } else {
       $("friend-search-results").replaceChildren();
@@ -10248,8 +10283,8 @@ function createFriends({ api: api2, getUser, getData, setData, run: run2, status
     }
     group("Requests", incoming.map((p) => personRow(p)));
     const friends2 = people.filter((p) => p.status === "accepted");
-    group("Your friends", friends2.map((p) => personRow(p)));
-    if (!friends2.length && !incoming.length) $("friend-list").append(emptyState("Good words. Better company.", "Find a friend by their username.", "friends"));
+    group("Friends", friends2.map((p) => personRow(p)));
+    if (!people.length) $("friend-list").append(emptyState("No friends yet", "", "friends"));
     group("Sent requests", people.filter((p) => p.status === "pending" && p.requested_by === getUser()?.id).map((p) => personRow(p)));
   }
   async function refresh() {
@@ -10284,11 +10319,11 @@ function createFriends({ api: api2, getUser, getData, setData, run: run2, status
   }
   function showBlocked() {
     const blocked = data().blocked;
-    showSheet("Blocked players.", blocked.length ? blocked.map((p) => {
+    showSheet("Blocked players", blocked.length ? blocked.map((p) => {
       const b = node("div", void 0, "friend-row");
       b.append(node("strong", p.display_name), act2("Unblock", () => action2(p, "unblock"), "secondary friend-action"));
       return b;
-    }) : node("p", "No one blocked."));
+    }) : node("p", "No blocked players."));
   }
   $("friend-search").onsubmit = (e) => {
     e.preventDefault();
@@ -10630,7 +10665,7 @@ function createBoardScoreMotion({ onComplete }) {
     layer = node("div", void 0, "score-motion-layer");
     layer.setAttribute("aria-hidden", "true");
     document.body.append(layer);
-    $("motion-word").textContent = plan.word || (plan.action === "refresh" ? "Fresh letters" : "Final score");
+    $("motion-word").textContent = plan.word || (plan.action === "refresh" ? "Letters refreshed" : "Final score");
     $("motion-byline").textContent = plan.player === seat ? "You played" : names[plan.player - 1];
     previousFocus = document.activeElement;
     dismiss = node("button", void 0, "score-motion-dismiss");
@@ -10737,13 +10772,13 @@ var seatOf = (game2, userId) => game2.players.indexOf(userId) + 1;
 var isFinished = (game2) => !["active", "invited"].includes(game2.status);
 function opponentName(game2, userId) {
   const seat = seatOf(game2, userId);
-  return game2.status === "invited" ? "Waiting for a friend" : ["cancelled", "declined"].includes(game2.status) ? "Invitation to a friend" : game2.names?.[seat === 2 ? 0 : 1] || "Your friend";
+  return game2.status === "invited" ? "Waiting for opponent" : ["cancelled", "declined"].includes(game2.status) ? "Game invitation" : game2.names?.[seat === 2 ? 0 : 1] || "Opponent";
 }
 function gameStatus(game2, userId) {
   if (game2.status === "active") return game2.players[game2.state.player - 1] === userId ? "Your turn" : "Their turn";
   if (game2.status === "invited") return "Invitation sent";
-  if (game2.status === "completed") return game2.result === "draw" ? "A draw" : Number(game2.result) === seatOf(game2, userId) ? "You won" : "They won";
-  return game2.status === "abandoned" ? "Abandoned" : game2.status === "cancelled" ? "Cancelled" : game2.status === "declined" ? "Declined" : game2.status;
+  if (game2.status === "completed") return game2.result === "draw" ? "Draw" : Number(game2.result) === seatOf(game2, userId) ? "You won" : "You lost";
+  return game2.status === "abandoned" ? "Closed" : game2.status === "cancelled" ? "Cancelled" : game2.status === "declined" ? "Declined" : game2.status;
 }
 function visibleGames(games, userId, filter2 = "active") {
   return games.filter((g) => isFinished(g) === (filter2 === "finished")).sort((a, b) => {
@@ -10775,16 +10810,16 @@ function invitationToken(value) {
 }
 function activityText(kind, name) {
   if (kind === "invitation received") return `${name} invited you to play`;
-  const labels = { word: `${name} played a word`, refresh: `${name} refreshed their letters`, resign: `${name} left the game`, offer_draw: `${name} offered a draw`, accept_draw: "Your game ended in a draw", abandon: "Your game was abandoned", "game complete": "Your game has finished", "invitation accepted": `Your game with ${name} is ready`, "invitation accept": `Your game with ${name} is ready`, "invitation decline": "Your invitation was declined", "invitation cancel": "Your invitation was cancelled", "invitation declined": "Your invitation was declined", "invitation cancelled": "Your invitation was cancelled" };
-  return labels[kind] || "Your game has an update";
+  const labels = { word: `${name} played a word`, refresh: `${name} refreshed their letters`, resign: `${name} left the game`, offer_draw: `${name} offered a draw`, accept_draw: "Game drawn", abandon: "Game closed", "game complete": "Game finished", "invitation accepted": `Your game with ${name} is ready`, "invitation accept": `Your game with ${name} is ready`, "invitation decline": "Your invitation was declined", "invitation cancel": "Your invitation was cancelled", "invitation declined": "Your invitation was declined", "invitation cancelled": "Your invitation was cancelled" };
+  return labels[kind] || "Game updated";
 }
 function friendlyError(error) {
   if (error.code === "client_update_required") return "Update Word Conquest or open the latest web app to continue.";
-  if (error.code === "username_taken") return "That username is already taken. Try another.";
+  if (error.code === "username_taken") return "Username taken. Try another.";
   if (error.code === "username_required") return "Choose a username to continue.";
-  const social = { friend_stale: "This friend request has changed. Refresh Friends and try again.", friend_unavailable: "This player is not available for a new invitation.", friend_cooldown: "Give them a little time. You can send another request tomorrow.", friend_limit: "Your friend request limit has been reached. Try again later.", invitation_pending: "An invitation is already waiting for this friend. Open it from Games." };
+  const social = { friend_stale: "This friend request has changed. Refresh Friends and try again.", friend_unavailable: "This player is unavailable.", friend_cooldown: "You can send another request tomorrow.", friend_limit: "Request limit reached. Try again later.", invitation_pending: "Invitation already sent. Find it in Games." };
   if (social[error.code]) return social[error.code];
-  const messages = { client_update_required: "Update Word Conquest or open the latest web app to play this game.", stale: "A new turn came in. Your board has been updated.", not_your_turn: "It is your friend's turn.", invitation_unavailable: "This invitation is no longer available.", cannot_accept_own_invitation: "This is your invitation. Share it with a friend.", rate_limit: "A little too quick. Try again in a moment.", unauthorized: "Please sign in again to continue.", not_found: "This game is no longer available.", dictionary_unavailable: "Word checking is unavailable. Your turn has not been used.", version_unavailable: "This game needs an update. Please contact your inviter.", ended: "This game has already ended." };
+  const messages = { client_update_required: "Update Word Conquest or open the latest web app to play this game.", stale: "Board updated. Choose your move again.", not_your_turn: "It is your opponent's turn.", invitation_unavailable: "This invitation is no longer available.", cannot_accept_own_invitation: "This is your invitation. Share it with a friend.", rate_limit: "Too many requests. Try again shortly.", unauthorized: "Sign in again to continue.", not_found: "This game is no longer available.", dictionary_unavailable: "Word checking is unavailable. Your turn has not been used.", version_unavailable: "This game\u2019s rules are temporarily unavailable. Try again later.", ended: "This game has already ended." };
   if (messages[error.code]) return messages[error.code];
   if (["TimeoutError", "AbortError", "TypeError"].includes(error.name)) return "Could not connect. Please try again.";
   return error.message || "Something went wrong. Please try again.";
@@ -11380,7 +11415,7 @@ function screen(name, { route = true, replace = false } = {}) {
   document.title = inGame ? `${opponentName(game, user?.id)} - Word Conquest` : "Word Conquest";
   window.scrollTo({ top: 0, behavior: "instant" });
 }
-function offlineNotice(show = true, message = "You are offline. Reconnect to send your turn.") {
+function offlineNotice(show = true, message = "Offline. Reconnect to play.") {
   $("connection").hidden = !show;
   $("connection").textContent = message;
 }
@@ -11459,7 +11494,7 @@ async function run(fn) {
     lastRequestId = e.requestId || null;
     status(lastProblem, true);
     if (currentView === "loading") {
-      $("loading-message").textContent = "Your games could not load.";
+      $("loading-message").textContent = "Could not load games.";
       $("retry-load").hidden = false;
       $("loading").querySelector(".spinner").hidden = true;
     }
@@ -11471,15 +11506,15 @@ function avatar(name, className = "") {
   return node("span", (name || "?").trim().slice(0, 1).toUpperCase(), "avatar " + className);
 }
 function renderPush() {
-  const info = push.snapshot(), labels = { off: "Off", connecting: "Connecting...", ready: "Connected on this phone", blocked: "Blocked in Android settings", error: "Needs attention" };
+  const info = push.snapshot(), labels = { off: "Off", connecting: "Connecting...", ready: "On", blocked: "Blocked", error: "Needs attention" };
   $("push-settings").hidden = !push.available;
   $("push-state").textContent = labels[info.state];
   $("push-prompt").hidden = !push.shouldPrompt();
-  $("push-prompt-copy").textContent = info.state === "error" ? "Notifications could not connect. Let us fix that." : info.state === "blocked" ? "Allow notifications in Android settings to hear about your turn." : "A quiet nudge when it is your turn.";
+  $("push-prompt-copy").textContent = info.state === "error" ? "Could not connect. Try again." : info.state === "blocked" ? "Allow notifications in Android settings." : "";
   $("push-prompt-copy").hidden = !["error", "blocked"].includes(info.state);
   $("push-prompt-enable").textContent = info.state === "blocked" ? "Settings" : info.state === "error" ? "Retry" : "Enable";
   $("push-prompt-enable").setAttribute("aria-label", info.state === "blocked" ? "Open Android notification settings" : info.state === "error" ? "Retry connecting notifications" : "Enable notifications");
-  if ($("sheet").open && $("sheet-title").textContent === "Game notifications.") showPush();
+  if ($("sheet").open && $("sheet-title").textContent === "Notifications") showPush();
 }
 async function connectLiveUpdates(session) {
   if (session?.user?.id !== user?.id) return;
@@ -11556,11 +11591,7 @@ function renderHome() {
     card.append(top, meta);
     list.append(card);
   }
-  if (!list.childElementCount && !invitations.childElementCount) {
-    const blank = emptyState(filter === "finished" ? "Your story starts here." : "A little friendly competition?", filter === "finished" ? "Finished games will find a home here." : "Invite someone. Take your time. Find a great word.", filter === "finished" ? "award" : "leaf");
-    if (filter === "active") blank.append(act("Invite a friend", () => showNewGame(), "primary", "plus"));
-    list.append(blank);
-  }
+  if (!list.childElementCount && !invitations.childElementCount) list.append(emptyState(filter === "finished" ? "No finished games" : "No active games", "", filter === "finished" ? "award" : "grid"));
   renderPush();
   friends.render();
 }
@@ -11618,7 +11649,7 @@ async function showHome(quiet = false, { route = true, replace = false } = {}) {
     screen("home", { route, replace });
     renderHome();
   } else if (!quiet) {
-    $("loading-message").textContent = "Loading your games\u2026";
+    $("loading-message").textContent = "Loading games\u2026";
     $("retry-load").hidden = true;
     $("loading").querySelector(".spinner").hidden = false;
     screen("loading", { route: false });
@@ -11628,7 +11659,7 @@ async function showHome(quiet = false, { route = true, replace = false } = {}) {
   try {
     result = await fetchHome();
   } catch (e) {
-    if (cached && ticket === navigation) offlineNotice(true, "Could not refresh games. Showing the last saved list.");
+    if (cached && ticket === navigation) offlineNotice(true, "Could not update. Showing your saved games.");
     throw e;
   }
   if (!result || ticket !== navigation) return;
@@ -11687,7 +11718,7 @@ async function showInvite() {
   const token = invitationToken(raw);
   if (!token) {
     localStorage.removeItem("wc-invitation");
-    throw Error("That invitation code does not look right.");
+    throw Error("Invalid invitation link.");
   }
   const { invitation: i } = await api({ action: "invitation", choice: "preview", token });
   const own = homeData?.games.find((g) => g.id === i.id && g.players[0] === user.id);
@@ -11699,13 +11730,15 @@ async function showInvite() {
   const available = i.status === "invited" && Date.parse(i.expires_at) > Date.now();
   if (!available) {
     localStorage.removeItem("wc-invitation");
-    showSheet("This invitation is no longer available.", [node("p", "Ask your friend for a new invitation."), act("Back to games", closeSheet, "primary full")]);
+    showSheet("Invitation unavailable", [node("p", "Ask for a new invitation."), act("Back to games", closeSheet, "primary full")]);
     return true;
   }
   const heading = node("div", void 0, "invitation-summary"), identity = node("div", void 0, "invitation-summary-copy"), rules2 = configFor(i.rulesVersion) || configFor("autumn-v1");
   identity.append(node("h3", i.host), node("span", languageLabel(i.rulesVersion), "invitation-language"));
   heading.append(avatar(i.host), identity);
-  showSheet("Game invitation.", [heading, node("p", `${captureRule(rules2)} ${castleRule(rules2)}`, "invitation-rules"), act("Join game", () => decideInvite("accept"), "primary full", "arrow"), act("Not this time", () => decideInvite("decline"), "text-button full")]);
+  const details = node("details", void 0, "info-disclosure");
+  details.append(node("summary", "Rules"), infoSections(rulesSections(rules2)));
+  showSheet("Game invitation", [heading, details, act("Join game", () => decideInvite("accept"), "primary full", "arrow"), act("Decline", () => decideInvite("decline"), "text-button full")]);
   return true;
 }
 async function decideInvite(choice) {
@@ -11919,7 +11952,7 @@ function renderSelection() {
   $("word").scrollLeft = $("word").scrollWidth;
   $("submit-label").textContent = busy ? "Saving\u2026" : "Play";
   $("pending").hidden = !pending();
-  $("pending-message").textContent = busy ? "Saving your move..." : "Move not confirmed yet. Retry when connected.";
+  $("pending-message").textContent = busy ? "Saving move\u2026" : "Move not confirmed. Reconnect and retry.";
   $("retry").disabled = busy;
 }
 function renderGame() {
@@ -11931,7 +11964,7 @@ function renderGame() {
   $("game-table").dataset.side = seat === 1 ? "sage" : "walnut";
   $("game-table").dataset.seat = seat;
   [1, 2].forEach((p) => {
-    const mine = p === seat, name = game.names?.[p - 1] || (mine ? "You" : "Your friend"), colour = p === 1 ? "Sage green" : "Walnut brown", card = $("player-score-" + p);
+    const mine = p === seat, name = game.names?.[p - 1] || (mine ? "You" : "Opponent"), colour = p === 1 ? "Sage green" : "Walnut brown", card = $("player-score-" + p);
     $("name-" + p).textContent = mine ? "You" : name;
     $("name-" + p).title = mine ? "You" : name;
     $("score-" + p).textContent = totals[p - 1].total;
@@ -11945,7 +11978,7 @@ function renderGame() {
   document.querySelector(".turn").style.order = 3;
   $("game-heading-name").textContent = preview ? "Practice game" : other;
   $("game-heading-subtitle").textContent = languageLabel(game.rules_version) + " \xB7 " + (game.status === "invited" ? "Invitation" : isFinished(game) ? "Finished game" : config2.castleIncome && config2.scoringMode !== "defended-final" ? `Round ${Math.min(...game.state.turns) + 1}` : `Turn ${game.state.turns.reduce((a, b) => a + b, 0) + 1}`);
-  const turnText = !preview && !gameFresh ? "Updating\u2026" : unconfirmed ? busy ? "Saving your turn..." : "Turn awaiting confirmation" : preview ? "Your turn" : active ? ownTurn ? "Your turn" : `${other}'s turn` : gameStatus(game, user?.id);
+  const turnText = !preview && !gameFresh ? "Updating\u2026" : unconfirmed ? busy ? "Saving turn\u2026" : "Turn not confirmed" : preview ? "Your turn" : active ? ownTurn ? "Your turn" : `${other}'s turn` : gameStatus(game, user?.id);
   const turnIcon = unconfirmed ? "refresh" : !active ? "flag" : ownTurn ? "arrow" : "hourglass";
   if ($("turn").dataset.label !== turnText) {
     const copy2 = node("span", void 0, "turn-copy");
@@ -11966,18 +11999,19 @@ function renderGame() {
   $("game-table").hidden = !!invite;
   if (invite) {
     $("share-link").value = `${authRedirect()}?invite=${invite.token}`;
-    $("invite-expiry").textContent = `Available until ${new Date(invite.expires_at).toLocaleDateString(void 0, { month: "short", day: "numeric" })}`;
+    $("invite-expiry").textContent = `Expires ${new Date(invite.expires_at).toLocaleDateString(void 0, { month: "short", day: "numeric" })}`;
   }
   const addressed = !!invite?.recipient;
-  $("share").querySelector("h1").textContent = addressed ? `Invitation for ${invite.recipient_name}.` : "Invite a friend.";
-  $("share").querySelector(".muted").textContent = addressed ? "Your invitation is waiting in their Games tab." : "Share your invitation to get the game going.";
+  $("share").querySelector("h1").textContent = addressed ? "Invitation sent" : "Invite a friend";
+  $("share").querySelector(".muted").textContent = addressed ? `Waiting for ${invite.recipient_name}` : "";
+  $("share").querySelector(".muted").hidden = !addressed;
   $("share-invite").hidden = addressed;
   $("share").querySelector(".copy-field").hidden = addressed;
   $("composer").hidden = !myTurn() && !preview || isFinished(game) || !!pending() && !busy;
   $("game-result").hidden = !isFinished(game);
   if (isFinished(game)) {
-    $("result-title").textContent = game.status === "completed" ? gameStatus(game, user?.id) + "." : game.status === "abandoned" ? "A game left unfinished." : "Invitation cancelled.";
-    $("result-description").textContent = game.status === "completed" ? `${totals[seat - 1].total} to ${totals[seat === 1 ? 1 : 0].total}. A little word, a little world.` : "This game ended without a result.";
+    $("result-title").textContent = game.status === "completed" ? gameStatus(game, user?.id) : game.status === "abandoned" ? "Game closed" : game.status === "declined" ? "Invitation declined" : "Invitation cancelled";
+    $("result-description").textContent = game.status === "completed" ? `${totals[seat - 1].total} \u2013 ${totals[seat === 1 ? 1 : 0].total}` : "No win or loss recorded.";
   }
   const last = history[0]?.recap;
   $("recap").hidden = !last;
@@ -12087,28 +12121,13 @@ function scoreLines(rows) {
 }
 function showScore(player) {
   const s = engine_default.scoreBreakdown(game.state, config2)[player - 1], defended = config2.scoringMode === "defended-final";
-  const rows = [["Word points", s.words], ...defended ? [] : [["Current territory", s.territory]], ...config2.castleIncome ? [["Castle income earned", s.income]] : [], ...defended && game.state.finalTerritory != null ? [["Final territory", s.territory]] : [], ["Total", s.total, true]];
-  if (defended && !game.state.over) rows.push(["Territory at finish", `+${s.pendingTerritory}`]);
-  showSheet(player === seatOf(game, user?.id) ? "Your score" : `${game.names[player - 1]}'s score`, [scoreLines(rows), node("p", defended ? "Castles pay after surviving an opponent\u2019s word or refresh. Territory is counted once at the finish." : config2.castleIncome ? "Word points and earned castle income stay yours. Current territory changes with ownership. Income pays after both players move, including the final round." : "Word points stay yours. Territory points change when tiles are captured.")]);
+  const rows = [["Words + bonuses", s.words], ...defended ? [] : [["Current territory", s.territory]], ...config2.castleIncome ? [["Castles", s.income]] : [], ...defended && game.state.finalTerritory != null ? [["Final territory", s.territory]] : [], ["Total", s.total, true]];
+  if (defended && !game.state.over) rows.push(["Territory at game end", `+${s.pendingTerritory}`]);
+  showSheet(player === seatOf(game, user?.id) ? "Your score" : `${game.names[player - 1]}'s score`, [scoreLines(rows), node("p", defended ? "Castles score after your opponent\u2019s turn. Territory scores at game end." : config2.castleIncome ? "Castles score after both players move. Territory points change with ownership." : "Territory points change with ownership.")]);
 }
 function showRules() {
-  const config3 = currentView === "game" && game ? configFor(game.rules_version) || config : config;
-  const steps = [["Find a word", `Start on a tile you own. Connect at least ${config3.minimumWordLength} letters in any of the eight directions. Use each tile once. No territory left? Start anywhere.`], ["Make it yours", `${captureRule(config3)} Neutral tiles in your word become yours too. ${config3.scoringMode === "defended-final" ? "Captures do not change the score during play." : `Ordinary tiles score ${config3.normalTerritoryPoints} for territory.`} ${castleRule(config3)}`], ["Every letter counts", `Small numbers are letter points. ${config3.scoringMode === "defended-final" ? "Length bonus: 6 letters +1, 7 +3, 8 +5, then +2 per extra letter." : "Longer words earn a bonus."} Jokers score zero. Ordinary letters in a played word are replaced; jokers stay wild.`], ["Take your time", `Both players share ${config3.letterBudget} letters. When they run out, the player who went second gets a final reply if needed. The highest final score wins. Refreshing your letters uses your turn.`]];
-  if (config3.castleIncome) steps.splice(2, 0, ["Hold your castles", config3.scoringMode === "defended-final" ? "The starting player is chosen at random. Capturing a castle earns nothing immediately. Hold it through your opponent\u2019s next word or refresh to earn income. Taking it back prevents that payment. Banked points stay yours." : "The starting player is chosen at random. A round ends after both players move. Castles pay whoever owns them then, including the final round. Earned income stays yours even if a castle is captured later."]);
-  const content = steps.map(([title, copy2], i) => {
-    const row2 = node("div", void 0, "rule-step"), text = node("div");
-    text.append(node("h3", title), node("p", copy2));
-    row2.append(node("span", i + 1, "step-number"), text);
-    return row2;
-  });
-  const legend = node("div", void 0, "rule-legend");
-  for (const [className, label] of [["owner-dot", "Sage player"], ["owner-ring", "Walnut player"]]) {
-    const item = node("span");
-    item.append(node("span", void 0, className), node("span", label));
-    legend.append(item);
-  }
-  content.push(legend, act("About the dictionary", showDictionary, "text-button"));
-  showSheet("A little word. A little world.", content);
+  const rules2 = currentView === "game" && game ? configFor(game.rules_version) || config : config;
+  showSheet("How to play", [infoSections(rulesSections(rules2)), act("Dictionary", showDictionary, "text-button", "book")]);
 }
 function showDictionary() {
   const link = node("a", "Dictionary licences", "text-link");
@@ -12118,7 +12137,7 @@ function showDictionary() {
   const swedish = currentView === "game" && config2.language === "sv", expanded = config2.dictionaryNormalization === "latin-accents-v1";
   const dutch = currentView === "game" && config2.language === "nl";
   const text = dutch ? "Dutch uses OpenTaal. Accents use the plain letter; apostrophes and hyphens are omitted. IJ is played as I + J." : swedish ? expanded ? "Swedish uses SALDO and the original Swedish list. Accents such as \xE9 use the plain letter; \xC5, \xC4 and \xD6 stay distinct." : "This game uses the original Martin Lindhe Swedish list. \xC5, \xC4 and \xD6 are distinct letters." : "English uses the Letterpress-derived list. Swedish uses SALDO and the original Swedish list; Dutch uses OpenTaal.";
-  showSheet("Words we play.", [node("p", text), node("p", "Listed inflections and compounds count. Each game keeps its original dictionary. Uncommon or offensive words may occur."), link]);
+  showSheet("Dictionary", [node("p", text), node("p", "Listed inflections and compounds are accepted. A game keeps the dictionary it started with. Lists may include uncommon or offensive words."), link]);
 }
 function showHistory() {
   moveHistory.show();
@@ -12150,15 +12169,15 @@ function showNewGame(person = null) {
   }
   const content = [picker];
   if (person) content.push(act(`Invite ${person.display_name}`, () => createGame(person, chosen), "primary full", "plus"));
-  else content.push(act("Choose a friend", () => showFriends(), "primary full", "friends"), act("Share an invitation link", () => createGame(null, chosen), "secondary full", "share"), act("I have an invitation", showJoin, "text-button full", "mail"));
-  showSheet("Start a game.", content);
+  else content.push(act("Choose a friend", () => showFriends(), "primary full", "friends"), act("Share a link", () => createGame(null, chosen), "secondary full", "share"), act("Join with a link", showJoin, "text-button full", "mail"));
+  showSheet("New game", content);
 }
 function showJoin() {
-  const form = node("form", void 0, "stack-form"), label = node("label", "Invitation link or code"), input = node("input");
+  const form = node("form", void 0, "stack-form"), label = node("label", "Invitation link"), input = node("input");
   input.id = "invite-code";
   input.autocomplete = "off";
   input.required = true;
-  input.placeholder = "Paste your invitation here";
+  input.placeholder = "Paste link";
   label.htmlFor = input.id;
   const submit4 = button("Open invitation", null, "primary full", "arrow");
   submit4.type = "submit";
@@ -12167,7 +12186,7 @@ function showJoin() {
     e.preventDefault();
     void run(async () => {
       const token = invitationToken(input.value);
-      if (!token) throw Error("Paste a complete invitation link or code.");
+      if (!token) throw Error("Enter a valid invitation link.");
       submit4.disabled = true;
       try {
         localStorage.setItem("wc-invitation", token);
@@ -12177,7 +12196,7 @@ function showJoin() {
       }
     });
   };
-  showSheet("Join a friend.", form);
+  showSheet("Join game", form);
 }
 async function createGame(person, code = "en") {
   if (creating || !user) return;
@@ -12205,17 +12224,17 @@ async function createGame(person, code = "en") {
 async function copyInvite() {
   try {
     await navigator.clipboard.writeText($("share-link").value);
-    status("Invitation copied. Send it to a friend.");
+    status("Link copied.");
   } catch {
     $("share-link").focus();
     $("share-link").select();
-    status("Select and copy the invitation link.", true);
+    status("Copy the link manually.", true);
   }
 }
 async function shareInvite() {
   if (navigator.share) {
     try {
-      await navigator.share({ title: "A game of Word Conquest", text: `Join me for a game of Word Conquest \xB7 ${languageLabel(game.rules_version)}.`, url: $("share-link").value });
+      await navigator.share({ title: "Word Conquest", text: `Word Conquest \xB7 ${languageLabel(game.rules_version)}`, url: $("share-link").value });
     } catch (e) {
       if (e.name !== "AbortError") await copyInvite();
     }
@@ -12224,7 +12243,7 @@ async function shareInvite() {
 async function quitGame() {
   if (preview || !gameFresh || busy || pending()) return;
   if (game.status === "invited") {
-    if (!invite || !await ask({ title: "Cancel this invitation?", message: "The link will stop working. You can invite someone again whenever you like.", label: "Cancel invitation", cancel: "Keep it", symbol: "mail" })) return;
+    if (!invite || !await ask({ title: "Cancel invitation?", message: "This invitation will stop working.", label: "Cancel invitation", cancel: "Keep invitation", symbol: "mail" })) return;
     busy = true;
     try {
       const result = await api({ action: "invitation", choice: "cancel", token: invite.token });
@@ -12234,26 +12253,26 @@ async function quitGame() {
     } finally {
       busy = false;
     }
-  } else if (game.status === "active" && await ask({ title: "Leave this game?", message: "Your friend wins and this counts as a loss. Your game history will stay in Finished.", label: "Leave game", danger: true, symbol: "flag" })) await action("resign");
+  } else if (game.status === "active" && await ask({ title: "Leave game?", message: "This counts as a loss. Your opponent wins.", label: "Leave game", danger: true, symbol: "flag" })) await action("resign");
 }
 async function confirmAction(kind) {
   const cost = Math.max(config2.refreshMinimumLetterCost, game.state.tiles.filter((t) => t.owner === game.state.player && t.letter !== "?").length);
-  const options = { refresh: { title: "Fresh letters?", message: `Replace your ordinary owned letters. This uses your turn and ${cost} letters from the shared supply.${config2.scoringMode === "defended-final" ? " Your opponent\u2019s defended castles still score." : ""}`, label: "Refresh letters", symbol: "refresh" }, abandon: { title: "Close this inactive game?", message: "After 30 days without a turn, you can close a game without a win or loss.", label: "Close game", symbol: "hourglass" } };
+  const options = { refresh: { title: "Refresh letters?", message: `Replace your letters, except jokers. Uses your turn and ${cost} letters from the supply.${config2.scoringMode === "defended-final" ? " Your opponent\u2019s held castles still score." : ""}`, label: "Refresh letters", symbol: "refresh" }, abandon: { title: "Close inactive game?", message: "No turns for 30 days. Closing records no win or loss.", label: "Close game", symbol: "hourglass" } };
   if (await ask(options[kind])) await action(kind);
 }
 function showGameMenu() {
   scoreMotion.cancel();
   const list = node("div", void 0, "settings-list");
-  list.append(row("Move history", "history", showHistory), row("How to play", "book", showRules, { note: rulesLabel(game.rules_version) }));
+  list.append(row("Move history", "history", showHistory), row("How to play", "book", showRules));
   if (game.status === "active" && !preview) {
-    const refresh = row("Refresh letters", "refresh", () => confirmAction("refresh"), { note: "Replace your letters instead of playing a word" });
+    const refresh = row("Refresh letters", "refresh", () => confirmAction("refresh"));
     refresh.disabled = !canPlay();
     list.append(refresh);
     if (Date.now() - Date.parse(game.last_play_at) >= 30 * 864e5) list.append(row("Close inactive game", "hourglass", () => confirmAction("abandon")));
     list.append(row("Leave game", "flag", quitGame, { danger: true }));
   }
   if (game.status === "invited") list.append(row("Cancel invitation", "close", quitGame));
-  showSheet("Game options.", list);
+  showSheet("Game options", list);
 }
 async function account({ route = true } = {}) {
   if (!user) return;
@@ -12308,7 +12327,7 @@ function editProfile() {
         homeData.profile.display_name = result.username;
         closeSheet();
         await account({ route: false });
-        status("Your username is updated.");
+        status("Username updated.");
       } catch (e2) {
         error.textContent = friendlyError(e2);
         error.hidden = false;
@@ -12321,7 +12340,7 @@ function editProfile() {
       }
     });
   };
-  showSheet("Your username.", form);
+  showSheet("Edit username", form);
 }
 async function connectPush() {
   try {
@@ -12332,45 +12351,65 @@ async function connectPush() {
 }
 function showPush() {
   const info = push.snapshot(), content = [];
-  content.push(node("p", info.state === "ready" ? "Connected on this phone. Turn updates will appear even when the app is in the background." : info.state === "connecting" ? "Connecting this phone to game notifications..." : info.problem || "Get a quiet nudge when it is your turn. You can turn this off anytime."));
+  const labels = { ready: "On this device", off: "Off", connecting: "Connecting\u2026", blocked: "Blocked", error: "Connection failed" };
+  const state = node("div", void 0, "notification-state");
+  state.append(icon("bell"), node("strong", labels[info.state]));
+  content.push(state);
+  if (info.problem) content.push(node("p", info.problem));
   if (info.state === "ready") {
-    content.push(act("Send a test notification", async () => {
-      await push.test();
-      showSheet("Test sent.", [node("p", "Firebase accepted the test. Look for a Word Conquest notification on this phone."), act("Back to notifications", showPush, "primary full")]);
-    }, "primary full", "bell"));
-    content.push(act("Android notification settings", () => push.openSettings(), "secondary full", "bell"));
-    content.push(act("Turn off notifications", async () => {
+    const list = node("div", void 0, "settings-list");
+    const test = row("Test notification", "bell", async () => {
+      test.disabled = true;
+      try {
+        await push.test();
+        status("Test sent. Check this device\u2019s notifications.");
+      } finally {
+        test.disabled = false;
+      }
+    });
+    list.append(test, row("Device settings", "phone", () => push.openSettings()), row("Turn off", "bell", async () => {
       await push.disable();
       showPush();
-    }, "text-button full"));
+    }));
+    content.push(list);
   } else if (info.state === "connecting") {
-    const waiting = act("Connecting...", () => {
+    const waiting = act("Connecting\u2026", () => {
     }, "primary full");
     waiting.disabled = true;
     content.push(waiting);
   } else {
-    content.push(act(info.state === "blocked" ? "Open Android settings" : info.state === "error" ? "Retry connection" : "Enable notifications", () => info.state === "blocked" ? push.openSettings() : connectPush(), "primary full", "bell"));
-    if (info.state === "error") content.push(act("Android notification settings", () => push.openSettings(), "text-button full"));
+    content.push(act(info.state === "blocked" ? "Open settings" : info.state === "error" ? "Retry" : "Enable notifications", () => info.state === "blocked" ? push.openSettings() : connectPush(), "primary full", "bell"));
+    if (info.state === "error") content.push(act("Device settings", () => push.openSettings(), "text-button full"));
   }
-  showSheet("Game notifications.", content);
+  showSheet("Notifications", content);
 }
 function showPrivacy() {
   const list = node("div", void 0, "settings-list");
-  list.append(row("How your data is used", "shield", showDataInfo), row("Dictionary & word list", "book", showDictionary));
-  if (user) list.append(row("Download my data", "download", exportData), row("Delete my account", "trash", showDelete, { danger: true }));
-  const contact = node("p", cfg.operatorName && cfg.supportEmail ? `${cfg.operatorName} \xB7 ${cfg.supportEmail}` : "Need a hand? Contact the friend who invited you.");
-  const content = [contact, list];
+  list.append(row("Data & privacy", "shield", showDataInfo), row("Dictionary", "book", showDictionary));
+  if (user) list.append(row("Download data", "download", exportData), row("Delete account", "trash", showDelete, { danger: true }));
+  const content = [list];
+  if (cfg.supportEmail) {
+    const contact = node("a", cfg.supportEmail, "text-link support-contact");
+    contact.href = "mailto:" + cfg.supportEmail;
+    content.push(contact);
+  }
+  if (cfg.operatorName) content.push(node("p", cfg.operatorName, "menu-note"));
   if (lastProblem) {
-    content.push(node("p", `Last issue: ${lastProblem}`, "menu-note"));
+    content.push(node("p", lastProblem, "menu-note"));
     if (lastRequestId) content.push(act("Copy support reference", async () => {
       await navigator.clipboard.writeText(lastRequestId);
       status("Support reference copied.");
     }, "text-button"));
   }
-  showSheet("Privacy & your account.", content);
+  showSheet("Privacy & account", content);
 }
 function showDataInfo() {
-  showSheet("Your privacy.", [node("p", "Signed-in players can find each other by username. During signup, anyone can check whether a username is taken. Your email stays private. Friend requests must be accepted. Only players in a game can see its board and moves."), node("p", "Supabase stores games and accounts. Resend sends account emails. Optional Android notifications use Google Firebase Cloud Messaging with a device token and game reference."), node("p", "There are no ads, contacts uploads or analytics trackers. Account deletion removes your login, profile, friendships, blocks and private inbox. Shared history stays anonymized for your opponents; backups expire under the hosting provider's retention policy.")]);
+  showSheet("Data & privacy", infoSections([
+    ["Visibility", "Players can search by username. Username availability is public; emails are private. Friend requests require acceptance. Only the players can see a game\u2019s board and moves."],
+    ["Storage", "Supabase stores accounts and games. Resend sends account emails. Optional Android notifications use Google Firebase Cloud Messaging, a device token and a game reference."],
+    ["Tracking", "No ads, contact uploads or analytics trackers."],
+    ["Deletion", "Deleting your account removes your login, profile, friendships, blocks and private inbox. Opponents retain anonymized game history. Backups expire under the hosting provider\u2019s retention policy."]
+  ]));
 }
 async function exportData() {
   const data = await api({ action: "export" }), url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" })), link = node("a");
@@ -12379,7 +12418,7 @@ async function exportData() {
   link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1e3);
   closeSheet();
-  status("Your data export is ready.");
+  status("Export ready.");
 }
 function showDelete() {
   const form = node("form", void 0, "stack-form"), label = node("label", "Type DELETE to confirm"), input = node("input");
@@ -12402,13 +12441,13 @@ function showDelete() {
         for (const key of Object.keys(localStorage)) if (key.startsWith(`wc-pending:${actor}:`) || key === `wc-create:${actor}` || key.startsWith(`wc-create:${actor}:`) || key === `wc-language:${actor}`) localStorage.removeItem(key);
         await db.auth.signOut();
         closeSheet();
-        status("Your account has been deleted.");
+        status("Account deleted.");
       } finally {
         remove2.disabled = false;
       }
     });
   };
-  showSheet("Leave Word Conquest?", [node("p", "This permanently removes your account, profile and private updates. Active games close without counting as wins or losses. Opponents keep anonymized shared history."), node("p", "For your protection, sign in again within ten minutes before deleting your account."), form]);
+  showSheet("Delete account?", [node("p", "Permanently delete your account and private data. Active games close without a win or loss. Opponents keep anonymized game history."), node("p", "You must have signed in within the last 10 minutes."), form]);
 }
 function setAuthMode(mode) {
   authMode = mode;
@@ -12440,7 +12479,7 @@ $("auth-form").onsubmit = (e) => {
       if (authMode === "recover") {
         const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo: authRedirect() });
         if (error) throw error;
-        showSheet("Check your inbox.", [node("p", "If an account uses that address, a password reset link will arrive shortly."), act("Back to sign in", () => {
+        showSheet("Check your email", [node("p", "If an account uses that email, you\u2019ll receive a reset link. Check junk mail too."), act("Back to sign in", () => {
           closeSheet();
           setAuthMode("signin");
         }, "primary full")]);
@@ -12449,7 +12488,7 @@ $("auth-form").onsubmit = (e) => {
         if (!data.session) {
           $("password").value = "";
           setAuthMode("signin");
-          showSheet("One last step.", [node("p", "Open the confirmation email, then come back here to sign in."), act("Got it", closeSheet, "primary full", "check")]);
+          showSheet("Confirm your email", [node("p", "Use the link in your email, then sign in. Check junk mail too."), act("Close", closeSheet, "primary full", "check")]);
         }
       } else {
         const { error } = await db.auth.signInWithPassword({ email, password });
@@ -12713,7 +12752,7 @@ async function poll() {
     else if (currentView === "friends") await friends.refresh();
     offlineNotice(!navigator.onLine);
   } catch {
-    offlineNotice(true, "Could not refresh. Reconnect to get the latest turn.");
+    offlineNotice(true, "Could not update. Reconnect to play.");
   } finally {
     polling = false;
     if (refreshQueued) void poll();
@@ -12829,7 +12868,7 @@ function handleAuthState(event, session) {
 }
 async function retryStartup() {
   if (!db || recovering || entering) return;
-  $("loading-message").textContent = "Loading your games\u2026";
+  $("loading-message").textContent = "Loading games\u2026";
   $("retry-load").hidden = true;
   $("loading").querySelector(".spinner").hidden = false;
   if (user) {
