@@ -1,5 +1,12 @@
 # Word Conquest
 
+### Dutch games (0.15.0)
+
+Choose **Nederlands** when starting a game. Dutch uses 355,792 pinned OpenTaal
+forms, Dutch letter weights and 1–5 letter values. IJ uses I + J; accents fold
+to plain letters. Current castle and final territory scoring is unchanged.
+[Dutch dictionary, rules and licensing](docs/DUTCH.md) · [Release status](docs/PROGRESS.md).
+
 ### Analytics and calmer scoring (0.14.0)
 
 You → Analytics replaces Activity. Current-rules English/Swedish games supply

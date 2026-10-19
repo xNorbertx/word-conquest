@@ -7,7 +7,7 @@ const assert=require('node:assert/strict'),crypto=require('node:crypto');
   const q={select:()=>q,eq:()=>q,contains:()=>q,single:async()=>({data:{id:players[0],username:'Test'}}),maybeSingle:async()=>({data:table==='games'?game:null}),in:async()=>({data:players.map(id=>({id,display_name:'Test'}))})};return q;
  },rpc:async(name,args)=>name==='wc_rate_limit'?{data:true}:{data:{game:args.p_next,recap:args.p_recap,replayed:false}}};
  const handler=createHandler(db),checks=[];
- for(const [version,word] of [['autumn-v4','CAT'],['autumn-sv-v2','FÅR'],['autumn-sv-v3','MOSKEERNA'],['autumn-sv-v3','OBOKAD'],['autumn-sv-v3','OBOKAT']]){
+ for(const [version,word] of [['autumn-nl-v1','FIETS'],['autumn-nl-v1','CAFE'],['autumn-nl-v1','ZEEEN'],['autumn-v4','CAT'],['autumn-sv-v2','FÅR'],['autumn-sv-v3','MOSKEERNA'],['autumn-sv-v3','OBOKAD'],['autumn-sv-v3','OBOKAT']]){
   const c=d.configFor(version),state=d.Engine.newGame(c);state.player=1;state.startingPlayer=1;
   const path=[...word].map((letter,i)=>{const id=`${i-4},0`;Object.assign(state.tiles.find(t=>t.id===id),{letter,owner:i===0?1:0});return id;});
   game={id:crypto.randomUUID(),players,state,status:'active',revision:0,rules_version:version,dictionary_version:l.languageForRules(version).dictionary.version};

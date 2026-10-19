@@ -1,0 +1,6 @@
+Dutch dictionary: OpenTaal (https://opentaal.org)
+https://github.com/OpenTaal/opentaal-wordlist/tree/b250510dda431785f962019167d1415198ff3905
+Selected licence: BSD-3-Clause (upstream also offers CC BY 3.0).
+Modified for Word Conquest: Listed lowercase forms from wordlist.txt only; 3–69 A–Z letters after accent folding, IJ ligature expansion, and removal of internal apostrophes/hyphens. Capitalized names, initialisms, phrases, digits, symbols and dangling word fragments are excluded. IJ uses I + J. No runtime stemming, inferred compounds or corrections import. This is not a curated tournament or family-safe dictionary.
+Source SHA-256: 12e5fb5e3c73840b583b30016926d1f63a75e9bf1652a3a6634b2ba7c49ad7be
+Snapshot SHA-256: 0a831728bab052a8eab2a1a1d33accd0d21b0f4b8ac4caea781533ca6cbcff3d

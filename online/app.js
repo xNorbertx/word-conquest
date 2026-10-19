@@ -355,7 +355,8 @@ function showRules(){
 function showDictionary(){
   const link=node('a','Dictionary licences','text-link');link.href='dictionary-license.txt';link.target='_blank';link.rel='noopener';
   const swedish=currentView==='game'&&config.language==='sv',expanded=config.dictionaryNormalization==='latin-accents-v1';
-  const text=swedish?(expanded?'Swedish uses SALDO and the original Swedish list. Accents such as é use the plain letter; Å, Ä and Ö stay distinct.':'This game uses the original Martin Lindhe Swedish list. Å, Ä and Ö are distinct letters.'):'English uses the Letterpress-derived list. New Swedish games combine SALDO with the original Swedish list.';
+  const dutch=currentView==='game'&&config.language==='nl';
+  const text=dutch?'Dutch uses OpenTaal. Accents use the plain letter; apostrophes and hyphens are omitted. IJ is played as I + J.':swedish?(expanded?'Swedish uses SALDO and the original Swedish list. Accents such as é use the plain letter; Å, Ä and Ö stay distinct.':'This game uses the original Martin Lindhe Swedish list. Å, Ä and Ö are distinct letters.'):'English uses the Letterpress-derived list. Swedish uses SALDO and the original Swedish list; Dutch uses OpenTaal.';
   showSheet('Words we play.',[node('p',text),node('p','Listed inflections and compounds count. Each game keeps its original dictionary. Uncommon or offensive words may occur.'),link]);
 }
 function showHistory(){moveHistory.show();}

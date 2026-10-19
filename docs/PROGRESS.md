@@ -1,4 +1,37 @@
-# Implementation and verification - updated 18 October 2026
+# Implementation and verification - updated 19 October 2026
+
+## Dutch / OpenTaal — 0.15.0
+
+- Added immutable `autumn-nl-v1` rules and the 355,792-form
+  `dutch-opentaal-v1-0a831728bab0` snapshot. Source revision, raw input/license
+  hashes, import policy and reproduction are recorded in [DUTCH.md](DUTCH.md).
+- Dutch frequencies and 1–5 letter values; J remains an ordinary letter for IJ.
+  Shared defended-castle and final-territory mechanics are unchanged.
+- Nederlands in new-game/friend invitations, game cards and game headings;
+  dictionary information and personal Analytics include Dutch. Three language
+  choices use stacked radio rows to avoid cramping narrow phone screens.
+- Full local regression: 218 tests plus original engine/scoring/supply suites
+  pass. Includes a complete Dutch game persisted through PostgreSQL-compatible
+  functions, invitation acceptance, repeat commits, stale revision handling,
+  wrong dictionary rejection, joker validation and final territory settlement.
+- Production compressed bundle accepts FIETS, CAFE and ZEEEN and still accepts
+  the legacy English/Swedish and expanded Swedish samples. Local peak RSS while
+  testing all dictionary versions: 133 MiB; not a hosted memory measurement.
+- Production DOM checks pass for all three labels, account-scoped selection,
+  friend/link invitation language, dictionary text and license link. CUA browser
+  inventory is empty: no rendered phone/browser acceptance claim.
+- `game-api` deployed to the existing project on 19 October. Live full-game,
+  normal-web publication and signed APK evidence will be recorded below.
+- Hosted Dutch game completed in 34 word turns (17 each), scores 97–127. Tested
+  friend and link invitations, old-client accept/open/turn guards, creation and
+  command retries, stale revisions, opponent reload, every defence-income award,
+  final territory, game list, stats and Analytics. Only existing isolated
+  `example.invalid` test accounts were used; no owner games or credentials changed.
+  This run averaged 867 ms per turn (first 1,084 ms); home was 588 ms. These are
+  observations, not latency guarantees.
+- No new permissions, dependencies, services or fixed costs. Prior Android
+  joker acceptance remains pending; this change does not claim to resolve it.
+
 
 ## Normal web URL promotion — 19 October 2026
 

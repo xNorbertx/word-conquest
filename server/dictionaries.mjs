@@ -2,6 +2,7 @@
 import {LANGUAGES} from './languages.mjs';
 import legacySwedish from './versions/dictionary-sv-v1.meta.json' with {type:'json'};
 const loaders=new Map([
+  [LANGUAGES.nl.dictionary.version,()=>import('./versions/dictionary-nl-v1.json',{with:{type:'json'}})],
   [LANGUAGES.en.dictionary.version,()=>import('./versions/dictionary-v1.json',{with:{type:'json'}})],
   [legacySwedish.version,()=>import('./versions/dictionary-sv-v1.json',{with:{type:'json'}})],
   [LANGUAGES.sv.dictionary.version,()=>import('./versions/dictionary-sv-v2.json',{with:{type:'json'}})]

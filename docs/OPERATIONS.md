@@ -1,5 +1,15 @@
 # Run, deploy and maintain
 
+## Dutch games — 0.15.0
+
+Run `npm test`, `npm run build` and the production bundle check described in
+[DUTCH.md](DUTCH.md). Deploy `game-api` before publishing normal `/online/`
+assets and the signed Android APK. No database migration or new service.
+Do not remove the Dutch backend/rules snapshot after games have been created;
+a client rollback may hide the new-game option, but saved games must retain
+their rules and dictionary. Dictionary corrections need a new version. The
+original prototype remains available and unchanged. No new fixed ongoing cost.
+
 ## Analytics and calmer scoring — 0.14.0
 
 Build/test with `npm test` and `npm run build`. Deploy `game-api` to the existing

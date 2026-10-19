@@ -1763,7 +1763,7 @@ input:read-only {
 .is-scoring.score-reduced .tile>polygon:first-child{transition:none}
 
 /* Fortified castles retain player fills and ownership markers at every stage. */
-.language-picker{display:flex;gap:10px;border:0;padding:0;margin:0 0 14px;min-width:0}
+.language-picker{display:flex;flex-direction:column;gap:8px;border:0;padding:0;margin:0 0 14px;min-width:0}
 .language-picker legend{font-size:13px;font-weight:650;padding:0;margin-bottom:10px}
 .language-picker label{position:relative;display:flex;align-items:center;gap:9px;flex:1;min-height:48px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;font-size:15px;cursor:pointer}
 .language-picker label:has(input:checked){background:var(--green-soft);border-color:var(--green);color:var(--green)}

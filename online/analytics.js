@@ -20,6 +20,6 @@ export function renderAnalytics(root,data,{openGame}){
     item.append(icon(symbol),copy,amount);if(value?.gameId)item.setAttribute('aria-label',`${label}: ${value.value} ${unit}. ${detail||''}. Open game`);
     records.append(item);
   }
-  root.replaceChildren(record,records,node('p','Current scoring · English & Swedish','small-note analytics-scope'));
+  root.replaceChildren(record,records,node('p','Current scoring · English, Swedish & Dutch','small-note analytics-scope'));
   if(!data.games&&!data.words)root.append(node('p','Your next games will start your record.','small-note'));
 }

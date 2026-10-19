@@ -1,5 +1,15 @@
 # Word Conquest — app roadmap
 
+## Dutch language — 0.15.0
+
+- [x] OpenTaal pinned, filtered, licensed and reproducibly imported.
+- [x] Dutch board/replacements/scoring, pre-invitation language selection,
+  labels, jokers and Analytics; existing versions preserved.
+- [x] Regression, production-bundle and live backend verification.
+- [ ] Publish normal web and signed Android pilot; record release evidence.
+- [ ] Physical Dutch gameplay acceptance on the Seeker/iPhone.
+
+
 Follow-up 0.14.0:
 - [x] Replace Activity under You with private current-rules Analytics.
 - [x] Add outcomes, best game/date, best word, longest word, largest single-turn
