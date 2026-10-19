@@ -11,8 +11,8 @@ Follow-up 0.14.0:
 - [ ] Rendered phone-size review in light/dark and actual Android joker selection.
   Browser inventory is empty, opening IAB reports unavailable, and ADB has no
   attached device. Do not count DOM tests as visual or physical-device evidence.
-Web review and signed Android review APK are published; the stable web version
-remains unchanged. Release evidence is maintained in [PROGRESS](docs/PROGRESS.md).
+Version 0.14.0 is live at the normal web URL as of 19 October; the signed Android
+APK is available. Rendered visual/device acceptance remains open. Release evidence is maintained in [PROGRESS](docs/PROGRESS.md).
 
 Updated: 18 October 2026
 

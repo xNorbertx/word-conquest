@@ -1,5 +1,17 @@
 # Implementation and verification - updated 18 October 2026
 
+## Normal web URL promotion — 19 October 2026
+
+The owner could not see the update because 0.14.0 was published only under
+`/previews/0.14.0/`. Promoted the same verified files to the normal
+[web app](https://xnorbertx.github.io/word-conquest/online/); Pages commit `555ddb0398144afe59b6f51ab29b97aee32bf7a4`.
+Only `online/app.js`, `online/index.html` and `online/online.css` changed; public
+configuration and licenses already matched. The prototype and review path remain.
+Source is still `79867c7`; no gameplay, backend, APK or dependency changes were
+needed. Public asset verification checks the normal URL against the tested build.
+The previous review-only status below is historical. Browser inventory remains
+empty, so rendered visual and physical Seeker acceptance are still outstanding.
+
 ## Analytics, score pacing and picker follow-up — 0.14.0
 
 Implementation, automated checks, hosted verification and review build complete.
