@@ -7,7 +7,7 @@
   sign-out, account switching and existing game navigation.
 - [x] Bound session waits and offer a working retry when startup cannot connect.
 - [x] Regression coverage includes the installed Supabase SDK's actual event order.
-- [ ] Publish and verify normal web assets and signed Android pilot.
+- [x] Publish and verify normal web assets and signed Android pilot.
 - [ ] Device acceptance: reopen after a long idle on iPhone and Seeker, with/without
   connectivity. No connected browser or physical device was available locally.
 

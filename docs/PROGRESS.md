@@ -28,7 +28,25 @@ recovery, deep links and app resume. Browser inventory is empty, so these are
 behavioral/SDK tests, not rendered or physical-device acceptance. No new service,
 cost, permission, database migration or gameplay change. Original prototype kept.
 
-Release verification will be recorded below after publication.
+Released on 19 October 2026:
+
+- Source `0530065a1f5c70256d8f19a2daccd5caa5bc3973`; normal [web app](https://xnorbertx.github.io/word-conquest/online/) published via
+  Pages `6ab4341e7b3f965bf47babf65bcdff3e0f9bfbc2`. All ten public assets match the verified build
+  (line endings normalized for existing files); original prototype preserved.
+- [Android CI](https://github.com/xNorbertx/word-conquest/actions/runs/39330240550) passed. Version `0.15.1-0530065`,
+  version code `25220891`; [APK](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25220891/word-conquest-android.apk).
+- APK SHA-256 `fba9610f0b06f1ea3fa984ec3f051f81dd366d540d59b690e162d2a4453c006b`; 5,006,762 bytes. Stable pilot
+  signing certificate, package metadata, native icons/plugin, permissions and
+  packaged client assets verified. Anonymous download matches the checked hash;
+  private-key material and test fixtures are absent.
+- 241 Node regressions plus original engine/scoring/supply suites pass, including
+  20 startup regressions. Production build and actual HTML/DOM checks pass:
+  cached cards/navigation appear and the spinner screen hides before the network
+  response. CUA browser inventory and ADB device list are empty. Rendered browser
+  and physical-device startup acceptance remain unverified.
+
+Refresh the browser app or install the new pilot over the existing APK. No
+backend deployment, SQL migration, new dependency or recurring cost is needed.
 
 ## Prevent obsolete scoring in newly created games — 19 October 2026
 
