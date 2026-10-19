@@ -1,5 +1,23 @@
 # Run, deploy and maintain
 
+## Startup recovery — 0.15.1
+
+Run `npm test` and `npm run build`, then publish the normal `/online/` assets and
+signed Android APK. This is a shared client-only fix; no backend deployment or
+migration is required. The existing caches contain only per-account presentation
+snapshots. Sign-out/account switching clears them; never use them to authorize
+a move. Do not filter startup to INITIAL_SESSION/SIGNED_IN only: an expired
+saved login can emit TOKEN_REFRESHED first. Never await Supabase operations
+inside its auth callback; app entry and realtime setup remain deferred.
+
+Check reopening after idle, normal sign-in, password recovery and slow/offline
+connections. Cached Games should appear before its network refresh. A missing
+initial auth event exposes retry after 12 seconds; session reads have a 10-second
+deadline and API fetches retain a 20-second deadline. Offline refresh failure
+keeps the last saved list. An APK update is required for the Android startup fix;
+refresh the web tab to load the new browser bundle. Existing infrastructure and
+ongoing costs are unchanged.
+
 ## Current rules required for new games
 
 The game API rejects fresh creation using a rules version other than that

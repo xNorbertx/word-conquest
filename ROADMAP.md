@@ -1,5 +1,16 @@
 # Word Conquest — app roadmap
 
+## Reliable opening screen — 0.15.1
+
+- [x] Restore Games when an expired login emits TOKEN_REFRESHED before INITIAL_SESSION.
+- [x] Keep cached Games visible during refresh; coalesce startup and protect recovery,
+  sign-out, account switching and existing game navigation.
+- [x] Bound session waits and offer a working retry when startup cannot connect.
+- [x] Regression coverage includes the installed Supabase SDK's actual event order.
+- [ ] Publish and verify normal web assets and signed Android pilot.
+- [ ] Device acceptance: reopen after a long idle on iPhone and Seeker, with/without
+  connectivity. No connected browser or physical device was available locally.
+
 ## Scoring creation fix — 19 October 2026
 
 - [x] Reject new games using retired rules; preserve existing-game/retry behavior.

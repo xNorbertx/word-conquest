@@ -1,5 +1,35 @@
 # Implementation and verification - updated 19 October 2026
 
+## Reliable opening screen — 0.15.1
+
+Reproduced the reported logo workaround: Supabase refreshes an expired saved
+session and emits TOKEN_REFRESHED before INITIAL_SESSION. The previous callback
+set `user` on the first event but did not enter the app; it then skipped the
+second event because that user was already assigned and the screen was loading.
+The result was zero startup calls. The logo manually called `showHome`.
+
+All three sign-in/session events can now initiate startup when needed. Deferred
+entry is coalesced and invalidated across sign-out, account changes and password
+recovery. Routine token refresh leaves an open game alone. Games renders its
+existing per-account snapshot before waiting for a fresh list, including the
+Home/logo path. Cached data remains presentation-only; fresh server validation
+still gates turns and username completion.
+
+A session read now times out after 10 seconds without treating connectivity as
+a sign-out or deleting the cache. Initial auth silence offers Retry after 12
+seconds. Retry can restore a session even before `user` exists. Focus/reconnect
+also retries a stranded loading screen. Existing API fetch deadlines remain
+20 seconds; no promise that first-ever sign-in or poor connectivity is instant.
+
+Twenty new regressions exercise actual production startup functions, including
+the pinned Supabase SDK with an expired session and controlled refresh response,
+cached/uncached entry, failure/retry, pending auth, account switching, password
+recovery, deep links and app resume. Browser inventory is empty, so these are
+behavioral/SDK tests, not rendered or physical-device acceptance. No new service,
+cost, permission, database migration or gameplay change. Original prototype kept.
+
+Release verification will be recorded below after publication.
+
 ## Prevent obsolete scoring in newly created games — 19 October 2026
 
 A reported live match was created after the defended-castle release but had

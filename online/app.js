@@ -39,6 +39,7 @@ let currentView='loading',homeData=null,filter='active',polling=false,gameLoad=0
 let liveChannel=null,liveUser=null,refreshQueued=false,highlightLast=false,focusTile=null,authMode='signin',authBusy=false;
 let lastRequestId=null,lastProblem=null,usernameSetupBusy=false;
 let gameFresh=false,entering=false,signingOut=false;
+let entryEpoch=0,entryTimer=null,startupTimer=null;
 const snapshots=createSnapshotCache(localStorage,{namespace:cfg.supabaseUrl+(cfg.cacheScope||'')});
 const native=Capacitor.isNativePlatform();
 const publicApp='https://xnorbertx.github.io/word-conquest/online/';
@@ -74,9 +75,16 @@ function offlineNotice(show=true,message='You are offline. Reconnect to send you
 const pendingKey=()=>`wc-pending:${user?.id}:${game?.id}`;
 function pending(){if(preview)return null;try{return JSON.parse(localStorage.getItem(pendingKey())||'null');}catch{return null;}}
 function apiError(message,code,statusCode,requestId){const e=new Error(message);Object.assign(e,{code,status:statusCode,requestId});return e;}
+async function readSession(){
+  // Auth may be waiting on a token refresh or a lock held by another tab.
+  // Do not turn a stalled refresh into a sign-out or discard the saved list.
+  let timer;
+  try{return await Promise.race([db.auth.getSession(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('Could not restore your sign-in. Please try again.')),10000);})]);}
+  finally{clearTimeout(timer);}
+}
 async function api(body){
   if(!db)throw new Error('Online play is not connected yet.');
-  const {data:{session},error}=await db.auth.getSession();if(error||!session){snapshots.clear();moveHistory.reset();analyticsData=null;analyticsActor=null;gameFresh=false;authReady=false;homeData=null;game=null;++navigation;++gameLoad;++homeLoad;screen('auth',{route:false});throw apiError('Sign in to continue.','unauthorized',401);}
+  const {data:{session},error}=await readSession();if(error)throw error;if(!session){snapshots.clear();moveHistory.reset();analyticsData=null;analyticsActor=null;gameFresh=false;authReady=false;homeData=null;game=null;++navigation;++gameLoad;++homeLoad;screen('auth',{route:false});throw apiError('Sign in to continue.','unauthorized',401);}
   const response=await fetch(`${cfg.supabaseUrl}/functions/v1/game-api`,{method:'POST',signal:AbortSignal.timeout(20000),headers:{'Content-Type':'application/json',apikey:cfg.supabaseAnonKey,Authorization:`Bearer ${session.access_token}`},body:JSON.stringify({...body,supportedRules:SUPPORTED_RULES,supportsFriends:true,supportsUsernameOnboarding:true,supportsGameSummaries:true,supportsFastReads:true})});
   const result=await response.json();if(!response.ok){if(user?.id===session.user.id){if(result.code==='username_required')showUsernameSetup();else if(['unauthorized','account_deleting'].includes(result.code)){snapshots.clear();moveHistory.reset();analyticsData=null;analyticsActor=null;gameFresh=false;game=null;homeData=null;authReady=false;++navigation;++gameLoad;++homeLoad;screen('auth',{route:false});}}throw apiError(result.error||'Request failed.',result.code,response.status,result.requestId);}return result;
 }
@@ -95,7 +103,7 @@ function renderPush(){
   if($('sheet').open&&$('sheet-title').textContent==='Game notifications.')showPush();
 }
 async function connectLiveUpdates(session){
-  if(session?.access_token)await db.realtime.setAuth(session.access_token);if(session?.user?.id!==user?.id)return;if(liveUser===user?.id)return;
+  if(session?.user?.id!==user?.id)return;if(session?.access_token)await db.realtime.setAuth(session.access_token);if(session?.user?.id!==user?.id)return;if(liveUser===user?.id)return;
   if(liveChannel){void db.removeChannel(liveChannel);liveChannel=null;}liveUser=user?.id||null;if(!liveUser)return;
   const refresh=()=>{refreshQueued=true;void poll();};
   liveChannel=db.channel(`games:${liveUser}`).on('postgres_changes',{event:'UPDATE',schema:'public',table:'games'},refresh).on('postgres_changes',{event:'*',schema:'public',table:'friendships'},refresh).on('postgres_changes',{event:'INSERT',schema:'public',table:'notifications'},refresh).subscribe(state=>{if(state==='SUBSCRIBED'){refreshQueued=true;void poll();}});
@@ -138,7 +146,7 @@ function rememberGame(saved){
   const summary=gameSummary(saved);if(index<0)homeData.games.unshift(summary);else homeData.games[index]=summary;
 }
 async function showHome(quiet=false,{route=true,replace=false}={}){
-  if(!user)return;
+  if(!user)return;homeData??=snapshots.home(user.id);
   const ticket=quiet?navigation:++navigation,cached=!!homeData;
   if(!quiet&&cached){++gameLoad;screen('home',{route,replace});renderHome();}
   else if(!quiet){$('loading-message').textContent='Loading your games…';$('retry-load').hidden=true;$('loading').querySelector('.spinner').hidden=false;screen('loading',{route:false});}
@@ -465,7 +473,7 @@ $('auth-form').onsubmit=e=>{e.preventDefault();void run(async()=>{
 $('signup').onclick=()=>setAuthMode(authMode==='signin'?'signup':'signin');$('recover').onclick=()=>setAuthMode('recover');
 $('show-password').onclick=()=>{const showing=$('password').type==='password';$('password').type=showing?'text':'password';$('show-password').setAttribute('aria-label',showing?'Hide password':'Show password');$('show-password').setAttribute('aria-pressed',String(showing));};
 $('recovery-form').onsubmit=e=>{e.preventDefault();void run(async()=>{const submit=e.currentTarget?.querySelector('button')||$('recovery-form').querySelector('button');submit.disabled=true;try{const {error}=await db.auth.updateUser({password:$('new-password').value});if(error)throw error;recovering=false;$('new-password').value='';status('Password updated.');await enterApp();}finally{submit.disabled=false;}});};
-$('retry-load').onclick=()=>run(enterApp);
+$('retry-load').onclick=()=>run(retryStartup);
 $('home-button').onclick=$('back').onclick=$('result-home').onclick=()=>run(()=>user?showHome():screen(configured?'auth':'setup',{route:false}));
 $('brand').onclick=e=>{e.preventDefault();void run(()=>user?showHome():screen(configured?'auth':'setup',{route:false}));};
 $('analytics-button').onclick=()=>run(()=>showAnalytics());$('analytics-back').onclick=()=>run(()=>account());$('analytics-refresh').onclick=()=>run(()=>showAnalytics({route:false}));$('account-button').onclick=()=>run(()=>account());
@@ -514,7 +522,7 @@ $('board').onkeydown=e=>{
 };
 $('preview-button').onclick=()=>{preview=true;config=defaultConfig;game={id:'preview',rules_version:RULES_VERSION,state:{...Engine.newGame(config),player:1,startingPlayer:1},status:'active',players:[],names:['You','Alex'],revision:0};history=[];invite=null;selection=[];jokers={};screen('game',{route:false});renderGame();};
 async function enterApp(){
-  if(recovering||!user)return;const actor=user.id;entering=true;
+  if(recovering||!user||entering)return;const actor=user.id,epoch=entryEpoch;entering=true;
   homeData??=snapshots.home(actor);
   try{
     const target=notificationGame||launchGame;
@@ -529,7 +537,7 @@ async function enterApp(){
       if(notificationGame)await openNotification();
       else if(!invited&&params.get('view')==='friends')await showFriends({route:false});else if(!invited&&params.get('view')==='account')await account({route:false});else if(!invited&&params.get('view')==='analytics')await showAnalytics({route:false});
     }
-  }finally{entering=false;}
+  }finally{if(epoch===entryEpoch)entering=false;}
 }
 async function usernameSetup(randomize=false){
   if(usernameSetupBusy||!user)return;usernameSetupBusy=true;const actor=user.id,input=$('setup-username'),error=$('setup-username-error');
@@ -548,17 +556,48 @@ async function poll(){
   catch{offlineNotice(true,'Could not refresh. Reconnect to get the latest turn.');}
   finally{polling=false;if(refreshQueued)void poll();}
 }
-function resume(){if(game&&currentView==='game'&&!preview&&!busy){gameFresh=false;renderGame();}void poll();}
+function resume(){if(currentView==='loading'&&!entering){void run(retryStartup);return;}if(game&&currentView==='game'&&!preview&&!busy){gameFresh=false;renderGame();}void poll();}
 if(native){void push.initialize().catch(()=>{});void App.addListener('appStateChange',({isActive})=>{if(isActive){resume();if(authReady)void push.restore().catch(()=>{});}else scoreMotion.cancel();});void App.addListener('backButton',()=>{if(closeTopDialog())return;if(currentView!=='home'&&currentView!=='username-setup'&&user)void run(()=>showHome());else void App.minimizeApp();});}
 window.addEventListener('popstate',()=>run(async()=>{if(!user)return;closeSheet();const route=new URLSearchParams(location.search);if(route.get('game'))await openGame(route.get('game'),false,{route:false});else if(route.get('view')==='friends')await showFriends({route:false});else if(route.get('view')==='account')await account({route:false});else if(route.get('view')==='analytics')await showAnalytics({route:false});else await showHome(false,{route:false});}));
 window.addEventListener('online',()=>{resume();if(authReady)void push.restore().catch(()=>{});});window.addEventListener('offline',()=>offlineNotice());window.addEventListener('focus',resume);document.addEventListener('visibilitychange',()=>{if(!document.hidden)resume();});setInterval(poll,20000);
-if(!db)screen('setup',{route:false});else db.auth.onAuthStateChange((event,session)=>{
-  const previousUser=user?.id;user=session?.user||null;setTimeout(()=>run(()=>connectLiveUpdates(session)),0);
-  if(event==='PASSWORD_RECOVERY'){authReady=false;recovering=true;screen('recovery',{route:false});return;}
-  if(!user){snapshots.clear();moveHistory.reset();analyticsData=null;analyticsActor=null;gameRequests.reset();gameFresh=false;game=null;homeRequests.reset();authReady=false;homeData=null;$('setup-username').value='';friends.reset();renderPush();++navigation;++gameLoad;++homeLoad;screen('auth',{route:false});return;}
-  if(recovering||!['SIGNED_IN','INITIAL_SESSION'].includes(event)||(previousUser===user.id&&currentView!=='auth'))return;
-  if(previousUser!==user.id){if(previousUser)snapshots.clear();moveHistory.reset();analyticsData=null;analyticsActor=null;gameRequests.reset();gameFresh=false;game=null;homeRequests.reset();++homeLoad;++gameLoad;++navigation;authReady=false;homeData=null;$('setup-username').value='';}
-  setTimeout(()=>run(enterApp),0);
-});
+function cancelAppEntry(){++entryEpoch;clearTimeout(entryTimer);entryTimer=null;entering=false;}
+function queueAppEntry(){
+  if(entryTimer!==null||entering||recovering||!user)return;
+  const actor=user.id,epoch=entryEpoch;
+  // Leave the auth callback before any Supabase calls (including getSession).
+  entryTimer=setTimeout(()=>{
+    entryTimer=null;if(epoch!==entryEpoch||actor!==user?.id||recovering)return;
+    void run(enterApp);
+  },0);
+}
+function handleAuthState(event,session){
+  clearTimeout(startupTimer);startupTimer=null;
+  const previousUser=user?.id;user=session?.user||null;
+  setTimeout(()=>run(()=>connectLiveUpdates(session)),0);
+  if(previousUser!==user?.id||!user){
+    cancelAppEntry();recovering=false;if(previousUser||!user)snapshots.clear();
+    moveHistory.reset();analyticsData=null;analyticsActor=null;gameRequests.reset();gameFresh=false;game=null;homeRequests.reset();
+    authReady=false;homeData=null;$('setup-username').value='';friends.reset();++navigation;++gameLoad;++homeLoad;
+  }
+  if(event==='PASSWORD_RECOVERY'){cancelAppEntry();++navigation;++gameLoad;++homeLoad;gameFresh=false;authReady=false;recovering=true;screen('recovery',{route:false});return;}
+  if(!user){recovering=false;renderPush();screen('auth',{route:false});return;}
+  // Refreshing an expired saved token can precede INITIAL_SESSION. Both must
+  // start the app; a routine refresh must leave an already-open game alone.
+  if(recovering||!['SIGNED_IN','INITIAL_SESSION','TOKEN_REFRESHED'].includes(event))return;
+  if(previousUser!==user.id||['loading','auth'].includes(currentView))queueAppEntry();
+}
+async function retryStartup(){
+  if(!db||recovering||entering)return;
+  $('loading-message').textContent='Loading your games…';$('retry-load').hidden=true;$('loading').querySelector('.spinner').hidden=false;
+  if(user){await enterApp();return;}
+  const epoch=entryEpoch,{data:{session},error}=await readSession();
+  if(epoch!==entryEpoch||recovering)return;if(error)throw error;
+  handleAuthState('INITIAL_SESSION',session);
+}
+if(!db)screen('setup',{route:false});else {
+  // The SDK can stall before its first auth event on an unavailable network.
+  startupTimer=setTimeout(()=>{if(currentView==='loading'&&!entering){$('loading-message').textContent='Could not connect. Please try again.';$('retry-load').hidden=false;$('loading').querySelector('.spinner').hidden=true;}},12000);
+  db.auth.onAuthStateChange(handleAuthState);
+}
 
 document.addEventListener('visibilitychange',()=>document.body.classList.toggle('app-background',document.hidden));
