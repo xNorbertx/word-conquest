@@ -1795,6 +1795,215 @@ var require_cjs = __commonJS({
   }
 });
 
+// online/ui.js
+var $ = (id) => document.getElementById(id);
+var paths = {
+  chart: ["M4 3v18h17", "M8 16v-4", "M13 16V7", "M18 16V4"],
+  moon: ["M20.5 13.1A8.5 8.5 0 0 1 10.9 3.5 8.5 8.5 0 1 0 20.5 13.1Z"],
+  castle: ["M4 20V9h3V4h3v5h4V4h3v5h3v11H4Z", "M10 20v-6h4v6"],
+  territory: ["m7 3 10 0 4 4v10l-4 4H7l-4-4V7Z", "M8 12h8", "M12 8v8"],
+  capture: ["m7 3 10 0 4 4v10l-4 4H7l-4-4V7Z", "M8 12h8"],
+  friends: ["M15 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0", "M2 21v-2a7 6 0 0 1 14 0v2", "M18 3a4 4 0 0 1 0 8", "M19 14a6 5 0 0 1 3 5v2"],
+  search: ["M17 10a7 7 0 1 1-14 0 7 7 0 0 1 14 0", "m15 15 6 6"],
+  back: ["m14 6-6 6 6 6"],
+  arrow: ["M4 12h15", "m13 6 6 6-6 6"],
+  chevron: ["m9 6 6 6-6 6"],
+  close: ["m6 6 12 12", "m18 6-12 12"],
+  plus: ["M12 5v14", "M5 12h14"],
+  more: ["M5 12h.01", "M12 12h.01", "M19 12h.01"],
+  grid: ["M4 4h6v6H4z", "M14 4h6v6h-6z", "M4 14h6v6H4z", "M14 14h6v6h-6z"],
+  bell: ["M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9", "M10 21h4"],
+  user: ["M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0", "M4 21v-2a8 6 0 0 1 16 0v2"],
+  help: ["M9 8a3 3 0 0 1 6 0c0 2-3 2-3 5", "M12 17h.01", "M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0"],
+  book: ["M12 5C9 3 5 3 2 4v15c4-1 7-1 10 1 3-2 6-2 10-1V4c-3-1-7-1-10 1v15"],
+  shield: ["m12 2 8 4v6c0 5-8 10-8 10S4 17 4 12V6z", "m8 12 3 3 5-6"],
+  logout: ["M10 4H4v16h6", "M10 12h12", "m17 7 5 5-5 5"],
+  edit: ["m15 4 5 5", "m3 21 5-1L21 7a2.8 2.8 0 0 0-4-4L4 16z"],
+  check: ["m5 12 4 4L19 6"],
+  "check-all": ["m3 12 4 4L17 6", "m12 16 9-10"],
+  share: ["M12 16V3", "m7 8 5-5 5 5", "M5 12v8h14v-8"],
+  copy: ["M9 9h11v12H9z", "M5 15H3V3h11v2"],
+  eye: ["M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12", "M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0"],
+  lock: ["M5 10h14v12H5z", "M8 10V6a4 4 0 0 1 8 0v4"],
+  expand: ["M8 3H3v5", "M16 3h5v5", "M21 16v5h-5", "M8 21H3v-5"],
+  shrink: ["M3 8h5V3", "M16 3v5h5", "M21 16h-5v5", "M8 21v-5H3"],
+  undo: ["M3 10h10a7 7 0 0 1 0 14", "m8 5-5 5 5 5"],
+  refresh: ["M20 7a8 8 0 0 0-14-2L3 8", "M3 3v5h5", "M4 17a8 8 0 0 0 14 2l3-3", "M21 21v-5h-5"],
+  hourglass: ["M6 3h12", "M6 21h12", "M7 3v4l5 5-5 5v4", "M17 3v4l-5 5 5 5v4"],
+  award: ["M16 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0", "m8 11-2 10 6-3 6 3-2-10"],
+  flag: ["M4 22V3", "M4 3c5-5 10 5 16 0v11c-6 5-11-5-16 0"],
+  handshake: ["m3 6 4-3 5 3 5-3 4 3-4 10-4 4-4-1-6-9", "m12 6-5 5 2 2 4-3 5 5"],
+  history: ["M3 10a9 9 0 1 1 1 7", "M3 3v7h7", "M12 7v5l3 2"],
+  info: ["M12 11v6", "M12 7h.01", "M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0"],
+  download: ["M12 3v12", "m7 10 5 5 5-5", "M4 17v4h16v-4"],
+  trash: ["M3 6h18", "M9 6V3h6v3", "m5 6 1 15h12l1-15", "M10 10v7", "M14 10v7"],
+  "user-plus": ["M11 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0", "M1 21v-2a7 6 0 0 1 14 0v2", "M19 6v8", "M15 10h8"],
+  mail: ["M3 5h18v14H3z", "m3 5 9 8 9-8"],
+  leaf: ["M20 3C9 0 2 7 5 15c8 6 16-1 15-12Z", "M3 21 15 9"]
+};
+function svg(tag, attrs = {}, text) {
+  const n = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  for (const [key, value] of Object.entries(attrs)) n.setAttribute(key, value);
+  if (text !== void 0) n.textContent = text;
+  return n;
+}
+function icon(name) {
+  const n = svg("svg", { viewBox: "0 0 24 24", class: "icon", "aria-hidden": "true", focusable: "false" });
+  for (const d of paths[name] || paths.info) n.append(svg("path", { d }));
+  return n;
+}
+function hydrateIcons(root = document) {
+  for (const el of root.querySelectorAll("[data-icon]")) el.replaceChildren(icon(el.dataset.icon));
+}
+function node(tag, text, className) {
+  const n = document.createElement(tag);
+  if (text !== void 0) n.textContent = text;
+  if (className) n.className = className;
+  return n;
+}
+function button(label, handler, className = "secondary", symbol) {
+  const n = node("button", void 0, className);
+  n.type = "button";
+  if (symbol) n.append(icon(symbol));
+  n.append(node("span", label));
+  n.onclick = handler;
+  return n;
+}
+function setting(label, symbol, handler, { note, danger = false } = {}) {
+  const n = button("", handler, "settings-row" + (danger ? " danger" : ""));
+  n.replaceChildren(icon(symbol));
+  const copy2 = node("span", label);
+  if (note) copy2.append(node("small", note));
+  n.append(copy2, icon("chevron"));
+  return n;
+}
+var toastTimer;
+function notify(message, error = false) {
+  clearTimeout(toastTimer);
+  if (error && $("sheet").open) {
+    let alert = $("sheet-content").querySelector(".form-alert");
+    if (!alert) {
+      alert = node("p", void 0, "form-alert");
+      alert.setAttribute("role", "alert");
+      $("sheet-content").prepend(alert);
+    }
+    alert.textContent = message;
+    alert.scrollIntoView({ block: "nearest" });
+    return;
+  }
+  $("toast-text").textContent = message;
+  $("toast").classList.toggle("error", error);
+  $("toast").firstElementChild.replaceWith(icon(error ? "info" : "check"));
+  $("toast").hidden = false;
+  if (!error) toastTimer = setTimeout(() => $("toast").hidden = true, 4e3);
+}
+function closeSheet() {
+  if ($("joker-keyboard")?.open) $("joker-keyboard").close();
+  if ($("sheet").open) $("sheet").close();
+}
+function showSheet(title, content) {
+  if ($("joker-keyboard")?.open) $("joker-keyboard").close();
+  $("sheet-title").textContent = title;
+  $("sheet-content").replaceChildren(...Array.isArray(content) ? content : [content]);
+  hydrateIcons($("sheet-content"));
+  if (!$("sheet").open) $("sheet").showModal();
+  $("sheet-content").scrollTop = 0;
+}
+var confirmResolve = null;
+function ask({ title, message = "", label = "Confirm", cancel = "Keep playing", danger = false, symbol = "help" }) {
+  closeSheet();
+  $("confirm-title").textContent = title;
+  $("confirm-message").textContent = message;
+  $("confirm-message").hidden = !message;
+  $("confirm-ok").textContent = label;
+  $("confirm-ok").classList.toggle("danger", danger);
+  $("confirm-cancel").textContent = cancel;
+  $("confirm-icon").replaceChildren(icon(symbol));
+  $("confirm-dialog").showModal();
+  return new Promise((resolve) => confirmResolve = resolve);
+}
+function finishConfirm(answer) {
+  $("confirm-dialog").close();
+  const resolve = confirmResolve;
+  confirmResolve = null;
+  resolve?.(answer);
+}
+function initUI() {
+  hydrateIcons();
+  $("close-sheet").onclick = closeSheet;
+  $("dismiss-toast").onclick = () => $("toast").hidden = true;
+  $("confirm-cancel").onclick = () => finishConfirm(false);
+  $("confirm-ok").onclick = () => finishConfirm(true);
+  $("confirm-dialog").addEventListener("cancel", (e) => {
+    e.preventDefault();
+    finishConfirm(false);
+  });
+  for (const d of [$("sheet"), $("confirm-dialog")]) d.addEventListener("click", (e) => {
+    if (e.target !== d) return;
+    const r = d.getBoundingClientRect();
+    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) {
+      if (d === $("sheet")) closeSheet();
+      else finishConfirm(false);
+    }
+  });
+}
+function closeTopDialog() {
+  if ($("joker-keyboard")?.open) {
+    $("joker-keyboard").close();
+    return true;
+  }
+  if ($("confirm-dialog").open) {
+    finishConfirm(false);
+    return true;
+  }
+  if ($("sheet").open) {
+    closeSheet();
+    return true;
+  }
+  return false;
+}
+function emptyState(title, copy2, symbol = "leaf") {
+  const box = node("div", void 0, "empty-state"), art = node("div", void 0, "empty-art");
+  art.append(icon(symbol));
+  box.append(art, node("h2", title), node("p", copy2));
+  return box;
+}
+
+// online/analytics.js
+function renderAnalytics(root, data, { openGame: openGame2 }) {
+  const record = node("div", void 0, "analytics-record");
+  for (const [key, label] of [["wins", "Wins"], ["losses", "Losses"], ["draws", "Draws"]]) {
+    const item = node("div");
+    item.append(node("strong", data[key]), node("span", label));
+    record.append(item);
+  }
+  const records = node("div", void 0, "analytics-records");
+  const date = (value) => {
+    const d = new Date(value);
+    return value && !Number.isNaN(+d) ? d.toLocaleDateString(void 0, { day: "numeric", month: "short", year: "numeric" }) : "";
+  };
+  const entries = [
+    ["Best game", data.bestGame, "points", "award", data.bestGame ? date(data.bestGame.at) : ""],
+    ["Best word", data.bestWord, "points", "book", data.bestWord?.word],
+    ["Longest word", data.longestWord, "letters", "book", data.longestWord?.word],
+    ["Biggest capture", data.biggestCapture, "tiles in one turn", "territory", data.biggestCapture?.word],
+    ["Castles captured", { value: data.castlesCaptured }, "captures", "castle", ""]
+  ];
+  for (const [label, value, unit, symbol, detail] of entries) {
+    const item = value?.gameId ? button("", () => openGame2(value.gameId), "analytics-item") : node("div", void 0, "analytics-item");
+    item.replaceChildren();
+    const copy2 = node("div", void 0, "analytics-copy"), amount2 = node("div", void 0, "analytics-amount");
+    copy2.append(node("span", label, "analytics-label"));
+    if (detail) copy2.append(node("strong", detail, "analytics-detail"));
+    amount2.append(node("strong", value?.value ?? "\u2014"), node("small", unit));
+    item.append(icon(symbol), copy2, amount2);
+    if (value?.gameId) item.setAttribute("aria-label", `${label}: ${value.value} ${unit}. ${detail || ""}. Open game`);
+    records.append(item);
+  }
+  root.replaceChildren(record, records, node("p", "Current scoring \xB7 English & Swedish", "small-note analytics-scope"));
+  if (!data.games && !data.words) root.append(node("p", "Your next games will start your record.", "small-note"));
+}
+
 // assets/monogram.json
 var monogram_default = {
   viewBox: "0 0 108 108",
@@ -2996,7 +3205,7 @@ function createSnapshotCache(storage, { namespace = "", now = Date.now, ttl = 7 
 }
 
 // package.json
-var version = "0.13.0";
+var version = "0.14.0";
 
 // online/app.js
 init_dist();
@@ -9881,179 +10090,6 @@ function createPushControls(options) {
   return pushController({ ...options, available: Capacitor.getPlatform() === "android", plugin: PushNotifications, settings: NotificationSettings, storage: localStorage });
 }
 
-// online/ui.js
-var $ = (id) => document.getElementById(id);
-var paths = {
-  moon: ["M20.5 13.1A8.5 8.5 0 0 1 10.9 3.5 8.5 8.5 0 1 0 20.5 13.1Z"],
-  castle: ["M4 20V9h3V4h3v5h4V4h3v5h3v11H4Z", "M10 20v-6h4v6"],
-  territory: ["m7 3 10 0 4 4v10l-4 4H7l-4-4V7Z", "M8 12h8", "M12 8v8"],
-  capture: ["m7 3 10 0 4 4v10l-4 4H7l-4-4V7Z", "M8 12h8"],
-  friends: ["M15 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0", "M2 21v-2a7 6 0 0 1 14 0v2", "M18 3a4 4 0 0 1 0 8", "M19 14a6 5 0 0 1 3 5v2"],
-  search: ["M17 10a7 7 0 1 1-14 0 7 7 0 0 1 14 0", "m15 15 6 6"],
-  back: ["m14 6-6 6 6 6"],
-  arrow: ["M4 12h15", "m13 6 6 6-6 6"],
-  chevron: ["m9 6 6 6-6 6"],
-  close: ["m6 6 12 12", "m18 6-12 12"],
-  plus: ["M12 5v14", "M5 12h14"],
-  more: ["M5 12h.01", "M12 12h.01", "M19 12h.01"],
-  grid: ["M4 4h6v6H4z", "M14 4h6v6h-6z", "M4 14h6v6H4z", "M14 14h6v6h-6z"],
-  bell: ["M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9", "M10 21h4"],
-  user: ["M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0", "M4 21v-2a8 6 0 0 1 16 0v2"],
-  help: ["M9 8a3 3 0 0 1 6 0c0 2-3 2-3 5", "M12 17h.01", "M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0"],
-  book: ["M12 5C9 3 5 3 2 4v15c4-1 7-1 10 1 3-2 6-2 10-1V4c-3-1-7-1-10 1v15"],
-  shield: ["m12 2 8 4v6c0 5-8 10-8 10S4 17 4 12V6z", "m8 12 3 3 5-6"],
-  logout: ["M10 4H4v16h6", "M10 12h12", "m17 7 5 5-5 5"],
-  edit: ["m15 4 5 5", "m3 21 5-1L21 7a2.8 2.8 0 0 0-4-4L4 16z"],
-  check: ["m5 12 4 4L19 6"],
-  "check-all": ["m3 12 4 4L17 6", "m12 16 9-10"],
-  share: ["M12 16V3", "m7 8 5-5 5 5", "M5 12v8h14v-8"],
-  copy: ["M9 9h11v12H9z", "M5 15H3V3h11v2"],
-  eye: ["M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12", "M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0"],
-  lock: ["M5 10h14v12H5z", "M8 10V6a4 4 0 0 1 8 0v4"],
-  expand: ["M8 3H3v5", "M16 3h5v5", "M21 16v5h-5", "M8 21H3v-5"],
-  shrink: ["M3 8h5V3", "M16 3v5h5", "M21 16h-5v5", "M8 21v-5H3"],
-  undo: ["M3 10h10a7 7 0 0 1 0 14", "m8 5-5 5 5 5"],
-  refresh: ["M20 7a8 8 0 0 0-14-2L3 8", "M3 3v5h5", "M4 17a8 8 0 0 0 14 2l3-3", "M21 21v-5h-5"],
-  hourglass: ["M6 3h12", "M6 21h12", "M7 3v4l5 5-5 5v4", "M17 3v4l-5 5 5 5v4"],
-  award: ["M16 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0", "m8 11-2 10 6-3 6 3-2-10"],
-  flag: ["M4 22V3", "M4 3c5-5 10 5 16 0v11c-6 5-11-5-16 0"],
-  handshake: ["m3 6 4-3 5 3 5-3 4 3-4 10-4 4-4-1-6-9", "m12 6-5 5 2 2 4-3 5 5"],
-  history: ["M3 10a9 9 0 1 1 1 7", "M3 3v7h7", "M12 7v5l3 2"],
-  info: ["M12 11v6", "M12 7h.01", "M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0"],
-  download: ["M12 3v12", "m7 10 5 5 5-5", "M4 17v4h16v-4"],
-  trash: ["M3 6h18", "M9 6V3h6v3", "m5 6 1 15h12l1-15", "M10 10v7", "M14 10v7"],
-  "user-plus": ["M11 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0", "M1 21v-2a7 6 0 0 1 14 0v2", "M19 6v8", "M15 10h8"],
-  mail: ["M3 5h18v14H3z", "m3 5 9 8 9-8"],
-  leaf: ["M20 3C9 0 2 7 5 15c8 6 16-1 15-12Z", "M3 21 15 9"]
-};
-function svg(tag, attrs = {}, text) {
-  const n = document.createElementNS("http://www.w3.org/2000/svg", tag);
-  for (const [key, value] of Object.entries(attrs)) n.setAttribute(key, value);
-  if (text !== void 0) n.textContent = text;
-  return n;
-}
-function icon(name) {
-  const n = svg("svg", { viewBox: "0 0 24 24", class: "icon", "aria-hidden": "true", focusable: "false" });
-  for (const d of paths[name] || paths.info) n.append(svg("path", { d }));
-  return n;
-}
-function hydrateIcons(root = document) {
-  for (const el of root.querySelectorAll("[data-icon]")) el.replaceChildren(icon(el.dataset.icon));
-}
-function node(tag, text, className) {
-  const n = document.createElement(tag);
-  if (text !== void 0) n.textContent = text;
-  if (className) n.className = className;
-  return n;
-}
-function button(label, handler, className = "secondary", symbol) {
-  const n = node("button", void 0, className);
-  n.type = "button";
-  if (symbol) n.append(icon(symbol));
-  n.append(node("span", label));
-  n.onclick = handler;
-  return n;
-}
-function setting(label, symbol, handler, { note, danger = false } = {}) {
-  const n = button("", handler, "settings-row" + (danger ? " danger" : ""));
-  n.replaceChildren(icon(symbol));
-  const copy2 = node("span", label);
-  if (note) copy2.append(node("small", note));
-  n.append(copy2, icon("chevron"));
-  return n;
-}
-var toastTimer;
-function notify(message, error = false) {
-  clearTimeout(toastTimer);
-  if (error && $("sheet").open) {
-    let alert = $("sheet-content").querySelector(".form-alert");
-    if (!alert) {
-      alert = node("p", void 0, "form-alert");
-      alert.setAttribute("role", "alert");
-      $("sheet-content").prepend(alert);
-    }
-    alert.textContent = message;
-    alert.scrollIntoView({ block: "nearest" });
-    return;
-  }
-  $("toast-text").textContent = message;
-  $("toast").classList.toggle("error", error);
-  $("toast").firstElementChild.replaceWith(icon(error ? "info" : "check"));
-  $("toast").hidden = false;
-  if (!error) toastTimer = setTimeout(() => $("toast").hidden = true, 4e3);
-}
-function closeSheet() {
-  if ($("joker-keyboard")?.open) $("joker-keyboard").close();
-  if ($("sheet").open) $("sheet").close();
-}
-function showSheet(title, content) {
-  if ($("joker-keyboard")?.open) $("joker-keyboard").close();
-  $("sheet-title").textContent = title;
-  $("sheet-content").replaceChildren(...Array.isArray(content) ? content : [content]);
-  hydrateIcons($("sheet-content"));
-  if (!$("sheet").open) $("sheet").showModal();
-  $("sheet-content").scrollTop = 0;
-}
-var confirmResolve = null;
-function ask({ title, message = "", label = "Confirm", cancel = "Keep playing", danger = false, symbol = "help" }) {
-  closeSheet();
-  $("confirm-title").textContent = title;
-  $("confirm-message").textContent = message;
-  $("confirm-message").hidden = !message;
-  $("confirm-ok").textContent = label;
-  $("confirm-ok").classList.toggle("danger", danger);
-  $("confirm-cancel").textContent = cancel;
-  $("confirm-icon").replaceChildren(icon(symbol));
-  $("confirm-dialog").showModal();
-  return new Promise((resolve) => confirmResolve = resolve);
-}
-function finishConfirm(answer) {
-  $("confirm-dialog").close();
-  const resolve = confirmResolve;
-  confirmResolve = null;
-  resolve?.(answer);
-}
-function initUI() {
-  hydrateIcons();
-  $("close-sheet").onclick = closeSheet;
-  $("dismiss-toast").onclick = () => $("toast").hidden = true;
-  $("confirm-cancel").onclick = () => finishConfirm(false);
-  $("confirm-ok").onclick = () => finishConfirm(true);
-  $("confirm-dialog").addEventListener("cancel", (e) => {
-    e.preventDefault();
-    finishConfirm(false);
-  });
-  for (const d of [$("sheet"), $("confirm-dialog")]) d.addEventListener("click", (e) => {
-    if (e.target !== d) return;
-    const r = d.getBoundingClientRect();
-    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) {
-      if (d === $("sheet")) closeSheet();
-      else finishConfirm(false);
-    }
-  });
-}
-function closeTopDialog() {
-  if ($("joker-keyboard")?.open) {
-    $("joker-keyboard").close();
-    return true;
-  }
-  if ($("confirm-dialog").open) {
-    finishConfirm(false);
-    return true;
-  }
-  if ($("sheet").open) {
-    closeSheet();
-    return true;
-  }
-  return false;
-}
-function emptyState(title, copy2, symbol = "leaf") {
-  const box = node("div", void 0, "empty-state"), art = node("div", void 0, "empty-art");
-  art.append(icon(symbol));
-  box.append(art, node("h2", title), node("p", copy2));
-  return box;
-}
-
 // online/friends.js
 function createFriends({ api: api2, getUser, getData, setData, run: run2, status: status2, invite: invite2, openGame: openGame2 }) {
   let searchVersion = 0, loadVersion = 0, searchResults = null, searchQuery = "", mutating = false;
@@ -10468,43 +10504,54 @@ function createBoardScoreMotion({ onComplete }) {
   async function wordPoints(plan, event, balances, signal) {
     const letters = event.sources.filter((s) => s.id), bonus = event.sources.find((s) => s.bonus);
     let tally = 0;
-    async function award(source) {
+    async function add(amount2, ms) {
+      const old = balances[event.player - 1];
+      balances[event.player - 1] += amount2;
+      await count($("score-" + event.player), old, balances[event.player - 1], ms, signal, String);
+    }
+    for (const source of letters) {
       check(signal);
-      const target = source.id ? tile(source.id) : null;
-      if (target) {
-        owner(target, plan.afterTiles.find((t) => t.id === source.id));
-        target.classList.add("motion-source");
-      }
-      if (source.bonus) {
-        $("score-motion").dataset.phase = "length";
-        $("motion-label").textContent = "Length bonus";
-        $("motion-tally").textContent = "+0";
-      }
+      const target = tile(source.id);
+      owner(target, plan.afterTiles.find((t) => t.id === source.id));
+      target.classList.add("motion-source");
+      const previous = tally;
+      tally += source.amount;
       if (!media.matches) {
         const p = sourcePoint(source);
-        p.y -= source.bonus ? -18 : 14;
-        const el = node("span", "+0", `score-point side-${event.player}${source.bonus ? " bonus" : ""}`);
+        p.y -= 18;
+        const el = node("span", void 0, `score-point letter-point side-${event.player}`);
+        el.append(node("span", plan.word[plan.path.indexOf(source.id)], "score-letter"), node("span", signed(source.amount), "score-letter-value"));
         el.style.left = p.x + "px";
         el.style.top = p.y + "px";
         layer.append(el);
-        await Promise.all([count(el, 0, source.amount, 100, signal), animate(el, [{ opacity: 0, transform: "translate(-50%,0) scale(.8)" }, { opacity: 1, transform: "translate(-50%,-50%) scale(1)" }], 120, signal)]);
-        await fly({ el, p }, event.player, signal, 0, source.bonus ? 320 : 220);
-      }
-      const old = balances[event.player - 1];
-      balances[event.player - 1] += source.amount;
-      const previous = tally;
-      tally += source.amount;
-      await Promise.all([
-        count($("score-" + event.player), old, balances[event.player - 1], 110, signal, String),
-        count($("motion-tally"), source.bonus ? 0 : previous, source.bonus ? source.amount : tally, 110, signal)
-      ]);
-      target?.classList.remove("motion-source");
+        await Promise.all([
+          count($("motion-tally"), previous, tally, 240, signal),
+          animate(el, [{ opacity: 0, transform: "translate(-50%,-25%) scale(.94)" }, { opacity: 1, transform: "translate(-50%,-50%) scale(1)" }], 240, signal)
+        ]);
+        await wait(180, signal);
+        await fly({ el, p }, event.player, signal, 0, 560);
+      } else $("motion-tally").textContent = signed(tally);
+      await add(source.amount, 160);
+      target.classList.remove("motion-source");
+      if (!media.matches) await wait(60, signal);
     }
-    for (const letter2 of letters) await award(letter2);
-    if (media.matches) await wait(260, signal);
+    await wait(media.matches ? 300 : 340, signal);
     if (bonus) {
-      await award(bonus);
-      await wait(media.matches ? 260 : 100, signal);
+      $("score-motion").dataset.phase = "length";
+      $("motion-label").textContent = "Length bonus";
+      $("motion-symbol").replaceChildren(icon("plus"));
+      await count($("motion-tally"), 0, bonus.amount, 320, signal);
+      await wait(media.matches ? 500 : 1e3, signal);
+      if (!media.matches) {
+        const p = centre($("motion-tally")), el = node("span", signed(bonus.amount), `score-point bonus side-${event.player}`);
+        el.style.left = p.x + "px";
+        el.style.top = p.y + "px";
+        layer.append(el);
+        await animate(el, [{ opacity: 0, transform: "translate(-50%,-50%) scale(.96)" }, { opacity: 1, transform: "translate(-50%,-50%) scale(1)" }], 240, signal);
+        await fly({ el, p }, event.player, signal, 0, 680);
+      }
+      await add(bonus.amount, 260);
+      await wait(media.matches ? 250 : 400, signal);
     }
   }
   async function play(plan, { seat, names }) {
@@ -10546,7 +10593,7 @@ function createBoardScoreMotion({ onComplete }) {
     balances.forEach((n, i) => $("score-" + (i + 1)).textContent = n);
     paint(plan.beforeTiles, plan);
     try {
-      await wait(100, signal);
+      await wait(280, signal);
       let captured = false;
       for (const e of plan.events) {
         if (!captured && e.kind !== "word") {
@@ -10884,7 +10931,7 @@ function createJokerKeyboard() {
   dialog.id = "joker-keyboard";
   dialog.setAttribute("aria-label", "Joker letter");
   document.body.append(dialog);
-  let session = null, keys = [];
+  let session = null, keys = [], pointerStartedHere = false;
   const lock = (on) => document.body.classList.toggle("joker-picking", on);
   const target = (id) => document.getElementById("board")?.querySelector(`[data-id="${id}"]`);
   function close() {
@@ -10904,6 +10951,20 @@ function createJokerKeyboard() {
     e.preventDefault();
     close();
   });
+  dialog.addEventListener("pointerdown", () => {
+    pointerStartedHere = true;
+  }, true);
+  dialog.addEventListener("pointercancel", () => {
+    pointerStartedHere = false;
+  }, true);
+  dialog.addEventListener("click", (e) => {
+    const fresh = e.detail === 0 || pointerStartedHere;
+    pointerStartedHere = false;
+    if (!fresh) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    }
+  }, true);
   dialog.addEventListener("click", (e) => {
     if (e.target !== dialog) return;
     const r = dialog.getBoundingClientRect();
@@ -11020,6 +11081,7 @@ function createJokerKeyboard() {
       close();
       return;
     }
+    pointerStartedHere = false;
     session = { ...next, path: [...next.path], assignments: { ...next.assignments } };
     paint();
     if (!dialog.open) dialog.showModal();
@@ -11189,7 +11251,7 @@ var push = createPushControls({ api, getUser: () => user, onStatus: (message) =>
 var friends = createFriends({ api, getUser: () => user, getData: () => homeData, setData: (partial) => {
   if (homeData) Object.assign(homeData, partial);
 }, run, status, invite: (person) => showNewGame(person), openGame });
-var screens = ["loading", "setup", "auth", "username-setup", "recovery", "home", "friends", "activity", "account", "game"];
+var screens = ["loading", "setup", "auth", "username-setup", "recovery", "home", "friends", "analytics", "account", "game"];
 var homeRequests = createHomeRequests(() => api({ action: "home" }));
 var gameRequests = createHomeRequests((key) => api({ action: "game", gameId: key.split("/")[1] }));
 var scoreLedger = createScoreLedger(localStorage);
@@ -11241,9 +11303,9 @@ function screen(name, { route = true, replace = false } = {}) {
   $("game-heading").hidden = !inGame;
   $("game-menu").hidden = !inGame;
   $("help-button").hidden = inGame;
-  $("main-nav").hidden = !user || !["home", "friends", "activity", "account"].includes(name);
+  $("main-nav").hidden = !user || !["home", "friends", "analytics", "account"].includes(name);
   for (const [id, view] of [["home-button", "home"], ["friends-button", "friends"], ["account-button", "account"]]) {
-    if (view === name || view === "account" && name === "activity") $(id).setAttribute("aria-current", "page");
+    if (view === name || view === "account" && name === "analytics") $(id).setAttribute("aria-current", "page");
     else $(id).removeAttribute("aria-current");
   }
   if (route && user) {
@@ -11277,6 +11339,8 @@ async function api(body) {
   if (error || !session) {
     snapshots.clear();
     moveHistory.reset();
+    analyticsData = null;
+    analyticsActor = null;
     gameFresh = false;
     authReady = false;
     homeData = null;
@@ -11295,6 +11359,8 @@ async function api(body) {
       else if (["unauthorized", "account_deleting"].includes(result.code)) {
         snapshots.clear();
         moveHistory.reset();
+        analyticsData = null;
+        analyticsActor = null;
         gameFresh = false;
         game = null;
         homeData = null;
@@ -11418,30 +11484,14 @@ function renderHome() {
     if (filter === "active") blank.append(act("Invite a friend", () => showNewGame(), "primary", "plus"));
     list.append(blank);
   }
-  renderActivity();
   renderPush();
   friends.render();
-}
-function renderActivity() {
-  if (!homeData) return;
-  const unread = homeData.notifications.filter((n) => !n.read_at).length;
-  $("activity-badge").hidden = !unread;
-  $("activity-badge").textContent = unread > 9 ? "9+" : String(unread);
-  $("activity-state").textContent = unread ? `${unread} unread updates` : "";
-  $("read-inbox").disabled = !unread;
-  $("inbox").replaceChildren();
-  for (const n of homeData.notifications) {
-    const g = homeData.games.find((g2) => g2.id === n.game_id), name = g ? opponentName(g, user.id) : "Your friend";
-    const item = act("", () => openGame(n.game_id), "activity-item" + (n.read_at ? "" : " unread"));
-    item.replaceChildren(avatar(name), node("span"), icon("chevron"));
-    item.children[1].append(node("strong", activityText(n.kind, name)), node("small", timeAgo(n.created_at)));
-    $("inbox").append(item);
-  }
-  if (!homeData.notifications.length) $("inbox").append(emptyState("All caught up.", "Game updates will appear here.", "bell"));
 }
 function showUsernameSetup() {
   snapshots.clear();
   moveHistory.reset();
+  analyticsData = null;
+  analyticsActor = null;
   gameFresh = false;
   authReady = false;
   if (currentView !== "username-setup") {
@@ -11512,15 +11562,35 @@ async function showHome(quiet = false, { route = true, replace = false } = {}) {
   offlineNotice(!navigator.onLine);
   return true;
 }
-async function showActivity({ route = true } = {}) {
+var analyticsData = null;
+var analyticsActor = null;
+var analyticsRequest = 0;
+async function showAnalytics({ route = true } = {}) {
   if (!user) return;
-  const ticket = ++navigation, actor = user.id;
-  if (!homeData) await fetchHome();
-  if (ticket !== navigation || actor !== user?.id || !homeData) return;
-  if (homeData.profile.username === null) return showUsernameSetup();
+  const actor = user.id, ticket = ++navigation, request = ++analyticsRequest;
   ++gameLoad;
-  screen("activity", { route });
-  renderActivity();
+  screen("analytics", { route });
+  if (analyticsActor !== actor) {
+    analyticsData = null;
+    analyticsActor = actor;
+  }
+  const root = $("analytics-content");
+  root.replaceChildren();
+  if (analyticsData) renderAnalytics(root, analyticsData, { openGame: (id) => run(() => openGame(id)) });
+  $("analytics-status").textContent = analyticsData ? "Updating\u2026" : "Loading\u2026";
+  $("analytics-refresh").disabled = true;
+  try {
+    const result = await api({ action: "analytics" });
+    if (request !== analyticsRequest || ticket !== navigation || actor !== user?.id || currentView !== "analytics") return;
+    analyticsData = result.analytics;
+    renderAnalytics(root, analyticsData, { openGame: (id) => run(() => openGame(id)) });
+    $("analytics-status").textContent = "";
+  } catch (e) {
+    if (ticket === navigation && actor === user?.id) $("analytics-status").textContent = analyticsData ? "Could not update. Tap refresh to retry." : "Could not load. Tap refresh to retry.";
+    throw e;
+  } finally {
+    if (request === analyticsRequest) $("analytics-refresh").disabled = false;
+  }
 }
 async function showFriends({ route = true } = {}) {
   if (!user) return;
@@ -12343,7 +12413,9 @@ $("brand").onclick = (e) => {
   e.preventDefault();
   void run(() => user ? showHome() : screen(configured ? "auth" : "setup", { route: false }));
 };
-$("activity-button").onclick = () => run(() => showActivity());
+$("analytics-button").onclick = () => run(() => showAnalytics());
+$("analytics-back").onclick = () => run(() => account());
+$("analytics-refresh").onclick = () => run(() => showAnalytics({ route: false }));
 $("account-button").onclick = () => run(() => account());
 $("friends-button").onclick = () => run(() => showFriends());
 $("active-games").onclick = () => {
@@ -12399,12 +12471,6 @@ async function confirmSignOut() {
   }
 }
 $("setup-signout").onclick = $("signout").onclick = () => run(confirmSignOut);
-$("read-inbox").onclick = () => run(async () => {
-  await api({ action: "read_notifications" });
-  await fetchHome();
-  renderActivity();
-  status("All caught up.");
-});
 $("submit-word").onclick = () => run(() => action("word"));
 $("retry").onclick = () => run(sendPending);
 $("clear-word").onclick = clearWord;
@@ -12514,7 +12580,7 @@ async function enterApp() {
       if (notificationGame) await openNotification();
       else if (!invited && params.get("view") === "friends") await showFriends({ route: false });
       else if (!invited && params.get("view") === "account") await account({ route: false });
-      else if (!invited && params.get("view") === "activity") await showActivity({ route: false });
+      else if (!invited && params.get("view") === "analytics") await showAnalytics({ route: false });
     }
   } finally {
     entering = false;
@@ -12566,10 +12632,6 @@ async function poll() {
     } else if (currentView === "game" && !preview) await openGame(game.id, true);
     else if (currentView === "home") await showHome(true);
     else if (currentView === "friends") await friends.refresh();
-    else if (currentView === "activity") {
-      await fetchHome();
-      renderActivity();
-    }
     offlineNotice(!navigator.onLine);
   } catch {
     offlineNotice(true, "Could not refresh. Reconnect to get the latest turn.");
@@ -12608,7 +12670,7 @@ window.addEventListener("popstate", () => run(async () => {
   if (route.get("game")) await openGame(route.get("game"), false, { route: false });
   else if (route.get("view") === "friends") await showFriends({ route: false });
   else if (route.get("view") === "account") await account({ route: false });
-  else if (route.get("view") === "activity") await showActivity({ route: false });
+  else if (route.get("view") === "analytics") await showAnalytics({ route: false });
   else await showHome(false, { route: false });
 }));
 window.addEventListener("online", () => {
@@ -12636,6 +12698,8 @@ else db.auth.onAuthStateChange((event, session) => {
   if (!user) {
     snapshots.clear();
     moveHistory.reset();
+    analyticsData = null;
+    analyticsActor = null;
     gameRequests.reset();
     gameFresh = false;
     game = null;
@@ -12655,6 +12719,8 @@ else db.auth.onAuthStateChange((event, session) => {
   if (previousUser !== user.id) {
     if (previousUser) snapshots.clear();
     moveHistory.reset();
+    analyticsData = null;
+    analyticsActor = null;
     gameRequests.reset();
     gameFresh = false;
     game = null;
