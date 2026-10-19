@@ -1,5 +1,12 @@
 # Word Conquest — app roadmap
 
+## Scoring creation fix — 19 October 2026
+
+- [x] Reject new games using retired rules; preserve existing-game/retry behavior.
+- [x] Verify both invitation paths, all languages, missing-version clients and
+  agreed length bonuses on the deployed server. See docs/PROGRESS.md.
+
+
 ## Dutch language — 0.15.0
 
 - [x] OpenTaal pinned, filtered, licensed and reproducibly imported.

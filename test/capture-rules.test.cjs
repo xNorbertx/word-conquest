@@ -52,18 +52,18 @@ async function apiFixture(version='autumn-v2'){
   const {createHandler}=await import('../server/api.mjs'),{g}=await position(version),calls=[];
   const storage={auth:{getUser:async()=>({data:{user:{id:A}}})},rpc:async(name,args)=>{
     calls.push({name,args});if(name==='wc_rate_limit')return {data:true};
-    if(name==='wc_create')return {data:{...g,id:args.p_id,state:args.p_state,rules_version:args.p_rules}};
+    if(name==='wc_create')return {data:args.p_id===G?g:{...g,id:args.p_id,state:args.p_state,rules_version:args.p_rules}};
     if(name==='wc_invitation')return {data:args.p_action==='preview'?{id:G,status:'invited',host:'Mara'}:g};
     throw Error('Unexpected mutation '+name);
-  },from:table=>{const q={upsert:async()=>({}),select:()=>q,eq:()=>q,contains:()=>q,order:()=>q,in:async()=>({data:[{id:A,display_name:'Norbert'},{id:B,display_name:'Mara'}]}),limit:async()=>({data:[]}),single:async()=>({data:table==='profiles'?{id:A,deleting:false}:g}),maybeSingle:async()=>({data:table==='invitations'?null:g})};return q;}};
+  },from:table=>{let selectedId;const q={upsert:async()=>({}),select:()=>q,eq:(k,v)=>{if(k==='id')selectedId=v;return q;},contains:()=>q,order:()=>q,in:async()=>({data:[{id:A,display_name:'Norbert'},{id:B,display_name:'Mara'}]}),limit:async()=>({data:[]}),single:async()=>({data:table==='profiles'?{id:A,deleting:false}:g}),maybeSingle:async()=>({data:table==='invitations'||table==='games'&&selectedId!==G?null:g})};return q;}};
   const handler=createHandler(storage);
   return {calls,g,send:body=>handler(new Request('https://example.invalid',{method:'POST',headers:{Authorization:'Bearer test','Content-Type':'application/json'},body:JSON.stringify(body)}))};
 }
 
-test('API creates explicit v2 games and preserves v1 defaults for older clients',async()=>{
+test('API rejects new obsolete games while still validating unknown rules and client support',async()=>{
   const x=await apiFixture();
-  const old=await x.send({action:'create',gameId:G});assert.equal(old.status,200);assert.equal((await old.json()).game.rules_version,'autumn-v1');
-  const current=await x.send({action:'create',gameId:crypto.randomUUID(),rulesVersion:'autumn-v2',supportedRules:['autumn-v1','autumn-v2']});assert.equal(current.status,200);assert.equal((await current.json()).game.rules_version,'autumn-v2');
+  const old=await x.send({action:'create',gameId:crypto.randomUUID()});assert.equal(old.status,409);assert.equal((await old.json()).code,'client_update_required');
+  const current=await x.send({action:'create',gameId:crypto.randomUUID(),rulesVersion:'autumn-v2',supportedRules:['autumn-v1','autumn-v2']});assert.equal(current.status,409);assert.equal((await current.json()).code,'client_update_required');
   const count=x.calls.filter(c=>c.name==='wc_create').length;
   assert.equal((await x.send({action:'create',gameId:G,rulesVersion:'unknown'})).status,400);
   assert.equal((await x.send({action:'create',gameId:G,rulesVersion:'autumn-v2'})).status,409);
@@ -82,10 +82,10 @@ test('old clients must update before opening, joining or moving in v2; v1 remain
   const old=await apiFixture('autumn-v1');assert.equal((await old.send({action:'game',gameId:G})).status,200);
 });
 
-test('v3 create uses a server state and older clients cannot join, open or submit',async()=>{
+test('current creation uses server state and older clients still cannot join, open or submit v3',async()=>{
  const x=await apiFixture('autumn-v3'),supportedRules=['autumn-v1','autumn-v2','autumn-v3'];
- const created=await x.send({action:'create',gameId:G,rulesVersion:'autumn-v3',supportedRules,startingPlayer:99,state:{player:99,castleIncome:[999,999]}});
- assert.equal(created.status,200);const g=(await created.json()).game;assert.equal(g.rules_version,'autumn-v3');assert.ok([1,2].includes(g.state.player));assert.equal(g.state.player,g.state.startingPlayer);assert.deepEqual(g.state.castleIncome,[0,0]);
+ const created=await x.send({action:'create',gameId:crypto.randomUUID(),rulesVersion:'autumn-v5',supportedRules:[...supportedRules,'autumn-v5'],startingPlayer:99,state:{player:99,castleIncome:[999,999]}});
+ assert.equal(created.status,200);const g=(await created.json()).game;assert.equal(g.rules_version,'autumn-v5');assert.ok([1,2].includes(g.state.player));assert.equal(g.state.player,g.state.startingPlayer);assert.deepEqual(g.state.castleIncome,[0,0]);
  for(const body of [{action:'game',gameId:G},{action:'invitation',choice:'accept',token:T},{action:'turn',gameId:G,command:command(x.g,['-3,0','-2,0','-1,0'])}]){
   const r=await x.send({...body,supportedRules:['autumn-v1','autumn-v2']});assert.equal(r.status,409);assert.equal((await r.json()).code,'client_update_required');
  }

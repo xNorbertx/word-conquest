@@ -138,6 +138,15 @@ export function createHandler(db, settings={}) {
           const language=languageForRules(version);
           if(input.language!==undefined&&(!languageFor(input.language)||input.language!==language.code))throw new Fault('invalid_language','Choose the language before creating this game.');
           requireRules({rules_version:version});
+          // Supporting a historical ruleset permits continuing saved games, not
+          // starting new ones. Old browser tabs/APKs must refresh/update first.
+          // Preserve retries of already-created games; the RPC still checks the
+          // creator and friend recipient and returns the original saved state.
+          if(version!==languageFor(language.code).rulesVersion){
+            const saved=unwrap(await db.from('games').select('players,rules_version').eq('id',input.gameId).maybeSingle());
+            if(!saved||saved.players[0]!==actor)throw new Fault('client_update_required','Refresh Word Conquest or update the app before starting a new game.',409);
+            requireRules(saved);
+          }
           // New board is computed here; a retried create returns its original stored board.
           if(input.friendId!==undefined&&!uuid(input.friendId))throw new Fault('invalid_friend','Choose a friend.');
           const game=unwrap(await db.rpc(input.friendId?'wc_create_friend':'wc_create',{p_actor:actor,...(input.friendId?{p_friend:input.friendId}:{}),p_id:input.gameId,p_token:crypto.randomUUID(),

@@ -82,11 +82,11 @@ test('API creates the selected language on the server, preserves retries and rej
   return{data:saved.get(args.p_id)};
  }};
  const handler=createHandler(mock);async function call(body){const response=await handler(new Request('https://api.example',{method:'POST',headers:{Authorization:'Bearer test'},body:JSON.stringify({action:'create',supportedRules:d.SUPPORTED_RULES,...body})}));return{status:response.status,...await response.json()};}
- const id=crypto.randomUUID(),first=await call({gameId:id,language:'sv',rulesVersion:version,state:{tiles:[]},dictionaryVersion:enMeta.version});assert.equal(first.status,200);assert.equal(first.game.dictionary_version,meta.version);assert.equal(first.game.state.tiles.length,69);
- const retry=await call({gameId:id,language:'sv',rulesVersion:version});assert.deepEqual(retry.game,first.game);
+ const id=crypto.randomUUID(),first=await call({gameId:id,language:'sv',rulesVersion:l.LANGUAGES.sv.rulesVersion,state:{tiles:[]},dictionaryVersion:enMeta.version});assert.equal(first.status,200);assert.equal(first.game.dictionary_version,l.LANGUAGES.sv.dictionary.version);assert.equal(first.game.state.tiles.length,69);
+ const retry=await call({gameId:id,language:'sv',rulesVersion:l.LANGUAGES.sv.rulesVersion});assert.deepEqual(retry.game,first.game);
  assert.equal((await call({gameId:crypto.randomUUID(),language:'sv',rulesVersion:'autumn-v3'})).code,'invalid_language');
- assert.equal((await call({gameId:crypto.randomUUID(),language:'sv',rulesVersion:version,supportedRules:['autumn-v1','autumn-v2','autumn-v3']})).code,'client_update_required');
- const en=await call({gameId:crypto.randomUUID(),language:'en',rulesVersion:'autumn-v3',friendId:B});assert.equal(en.game.dictionary_version,enMeta.version);assert.equal(calls,3);
+ assert.equal((await call({gameId:crypto.randomUUID(),language:'sv',rulesVersion:l.LANGUAGES.sv.rulesVersion,supportedRules:['autumn-v1','autumn-v2','autumn-v3']})).code,'client_update_required');
+ const en=await call({gameId:crypto.randomUUID(),language:'en',rulesVersion:d.RULES_VERSION,friendId:B});assert.equal(en.game.dictionary_version,enMeta.version);assert.equal(calls,3);
 });
 test('a complete Swedish game survives database saves, retries, invitation acceptance and final scoring',async()=>{
  const random=rng(73),id=crypto.randomUUID(),token=crypto.randomUUID();let g=await rpc('wc_create',[A,id,token,JSON.stringify(d.Engine.newGame(c,random)),version,meta.version]);

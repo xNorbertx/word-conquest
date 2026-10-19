@@ -79,7 +79,7 @@ test('API creates the selected language on the server, preserves retries and rej
  const retry=await call({gameId:id,language:'nl',rulesVersion:version});assert.deepEqual(retry.game,first.game);
  assert.equal((await call({gameId:crypto.randomUUID(),language:'nl',rulesVersion:'autumn-v3'})).code,'invalid_language');
  assert.equal((await call({gameId:crypto.randomUUID(),language:'nl',rulesVersion:version,supportedRules:['autumn-v1','autumn-v2','autumn-v3']})).code,'client_update_required');
- const en=await call({gameId:crypto.randomUUID(),language:'en',rulesVersion:'autumn-v3',friendId:B});assert.equal(en.game.dictionary_version,enMeta.version);assert.equal(calls,3);
+ const en=await call({gameId:crypto.randomUUID(),language:'en',rulesVersion:d.RULES_VERSION,friendId:B});assert.equal(en.game.dictionary_version,enMeta.version);assert.equal(calls,3);
 });
 test('a complete Dutch game survives database saves, retries, invitation acceptance and final scoring',async()=>{
  const random=rng(73),id=crypto.randomUUID(),token=crypto.randomUUID();let g=await rpc('wc_create',[A,id,token,JSON.stringify(d.Engine.newGame(c,random)),version,meta.version]);

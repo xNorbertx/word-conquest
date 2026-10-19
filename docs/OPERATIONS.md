@@ -1,5 +1,15 @@
 # Run, deploy and maintain
 
+## Current rules required for new games
+
+The game API rejects fresh creation using a rules version other than that
+language's `LANGUAGES[code].rulesVersion`. Keep historical versions available
+for turns and existing creation retries. When releasing rules, deploy backend
+support before clients; old clients get an update prompt on new creation.
+Do not confuse `supportedRules` (read/play compatibility) with the versions
+permitted for a new game. No new SQL migration or table is needed for this gate.
+
+
 ## Dutch games — 0.15.0
 
 Run `npm test`, `npm run build` and the production bundle check described in

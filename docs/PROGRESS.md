@@ -1,5 +1,39 @@
 # Implementation and verification - updated 19 October 2026
 
+## Prevent obsolete scoring in newly created games — 19 October 2026
+
+A reported live match was created after the defended-castle release but had
+`autumn-v4` rules. Its saved receipts correctly reflected the wrong creation
+choice: length bonuses 5→3, 6→6, 7→10, immediate territory gains/deductions and
+2/4 castle income. Checking current rule constants alone missed the defect.
+
+Root cause: `supportedRules` was treated as both permission to continue a
+historical game and permission to create a new one. An old browser tab or APK
+could explicitly request an obsolete rules version. The available evidence
+does not identify which device/build originated the request.
+
+`game-api` now permits fresh creation only with the language registry's current
+rules. Retired versions return `409 client_update_required`, without inserting
+a game or invitation. An already-saved game ID owned by the creator may still
+replay its original creation; the existing transactional RPC retains creator,
+friend-recipient and idempotency checks. Existing turns/invitations are not
+migrated. Current creation has no extra database read; only retired requests
+perform the saved-game lookup. Read lookup failures fail closed.
+
+Verification: 221 regression tests plus original engine/scoring/supply suites
+pass; production build passes. Live isolated-account checks rejected all seven
+retired versions for both link and friend invitations, plus an omitted-version
+request, and confirmed no game rows were inserted. An existing legacy test game
+replayed without changing scores or timestamps. English, Swedish and Dutch
+current games all created/retried with 5→0, 6→1, 7→3 bonuses; those three test
+invitations were cancelled afterwards. No reported player game was altered.
+
+Deployed to the existing `game-api` on 19 October. Server-only change: published
+web and Android 0.15.0 remain valid and require no replacement build. Old tabs
+must refresh and old APKs must update before starting a new game. An existing
+match retains the full scoring system it began with. No new costs or migration.
+
+
 ## Dutch / OpenTaal — 0.15.0
 
 Released on 19 October 2026:
