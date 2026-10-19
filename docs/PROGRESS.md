@@ -2,6 +2,24 @@
 
 ## Dutch / OpenTaal — 0.15.0
 
+Released on 19 October 2026:
+
+- Source `022e4a1142c29b2ba8d70e81acbc40905db8fe07`; [normal web app](https://xnorbertx.github.io/word-conquest/online/)
+  published via Pages `7238e980f6433c57efa5652cd5ecf5d7dfdb2f93`. All ten public assets match the local
+  tested build (line-ending normalization for pre-existing prototype/config
+  files); the five original prototype files remain unchanged.
+- [Android CI](https://github.com/xNorbertx/word-conquest/actions/runs/39315310572) succeeded. Version `0.15.0-022e4a1`,
+  code `25214313`, 5,006,164 bytes.
+  [APK download](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25214313/word-conquest-android.apk) works anonymously; downloaded hash matches.
+- APK SHA-256: `0aa446d77dd9f5ac972b2333c2f492ebb7a0785c99bb516370254c50f789d7b0`.
+- Verified stable signing certificate
+  `306e097ad7c8d10fe0a5829e4e49420de84ac258e5056f9583447bdcc944c266`,
+  package/version, notification permission, native icons/appearance plugin and
+  exact packaged web/license assets. Private keys and test fixtures are absent.
+- Remaining: rendered visual review and physical Dutch gameplay on phones.
+  Browser inventory was empty; no connected Seeker was used. Existing unrelated
+  Android joker acceptance remains open. No app-store submission or new costs.
+
 - Added immutable `autumn-nl-v1` rules and the 355,792-form
   `dutch-opentaal-v1-0a831728bab0` snapshot. Source revision, raw input/license
   hashes, import policy and reproduction are recorded in [DUTCH.md](DUTCH.md).
@@ -21,7 +39,7 @@
   friend/link invitation language, dictionary text and license link. CUA browser
   inventory is empty: no rendered phone/browser acceptance claim.
 - `game-api` deployed to the existing project on 19 October. Live full-game,
-  normal-web publication and signed APK evidence will be recorded below.
+  normal-web publication and signed APK verification are complete.
 - Hosted Dutch game completed in 34 word turns (17 each), scores 97–127. Tested
   friend and link invitations, old-client accept/open/turn guards, creation and
   command retries, stale revisions, opponent reload, every defence-income award,

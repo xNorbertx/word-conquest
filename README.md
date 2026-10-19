@@ -6,6 +6,9 @@ Choose **Nederlands** when starting a game. Dutch uses 355,792 pinned OpenTaal
 forms, Dutch letter weights and 1–5 letter values. IJ uses I + J; accents fold
 to plain letters. Current castle and final territory scoring is unchanged.
 [Dutch dictionary, rules and licensing](docs/DUTCH.md) · [Release status](docs/PROGRESS.md).
+Live at the [normal web address](https://xnorbertx.github.io/word-conquest/online/) and in
+[Android 0.15.0-022e4a1](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25214313/word-conquest-android.apk). Update both players' apps
+and start a new game to choose Nederlands. Physical-device acceptance remains open.
 
 ### Analytics and calmer scoring (0.14.0)
 

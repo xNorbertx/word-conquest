@@ -1,5 +1,12 @@
 # Android pilot and build pipeline
 
+Version 0.15.0-022e4a1 adds Dutch games using OpenTaal. Install this
+[signed APK](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25214313/word-conquest-android.apk) over the existing pilot; no GitHub login is
+needed. Both players need the update for Dutch games. No new permissions,
+native dependencies or signing changes. Existing games keep their rules.
+The previous Android joker acceptance item remains open. See [DUTCH.md](DUTCH.md)
+and [release verification](PROGRESS.md).
+
 Version 0.14.0 adds Analytics and slower scoring, plus a new joker opening-gesture
 guard. The owner's 0.12.1 Android issue was not resolved by the earlier capture
 fix alone; this follow-up still needs physical-device confirmation. No new

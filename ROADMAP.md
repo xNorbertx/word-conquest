@@ -6,7 +6,7 @@
 - [x] Dutch board/replacements/scoring, pre-invitation language selection,
   labels, jokers and Analytics; existing versions preserved.
 - [x] Regression, production-bundle and live backend verification.
-- [ ] Publish normal web and signed Android pilot; record release evidence.
+- [x] Publish normal web and signed Android pilot; record release evidence.
 - [ ] Physical Dutch gameplay acceptance on the Seeker/iPhone.
 
 
