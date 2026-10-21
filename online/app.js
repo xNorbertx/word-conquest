@@ -1898,7 +1898,15 @@ function notify(message, error = false) {
   $("toast").hidden = false;
   if (!error) toastTimer = setTimeout(() => $("toast").hidden = true, 4e3);
 }
+function showUnknownWord(word) {
+  closeSheet();
+  $("toast").hidden = true;
+  $("unknown-word").textContent = word;
+  if (!$("unknown-word-dialog").open) $("unknown-word-dialog").showModal();
+  $("close-unknown-word").focus({ preventScroll: true });
+}
 function closeSheet() {
+  if ($("unknown-word-dialog")?.open) $("unknown-word-dialog").close();
   if ($("joker-keyboard")?.open) $("joker-keyboard").close();
   if ($("sheet").open) $("sheet").close();
 }
@@ -1930,6 +1938,7 @@ function finishConfirm(answer) {
 }
 function initUI() {
   hydrateIcons();
+  $("close-unknown-word").onclick = () => $("unknown-word-dialog").close();
   $("close-sheet").onclick = closeSheet;
   $("dismiss-toast").onclick = () => $("toast").hidden = true;
   $("confirm-cancel").onclick = () => finishConfirm(false);
@@ -1948,6 +1957,10 @@ function initUI() {
   });
 }
 function closeTopDialog() {
+  if ($("unknown-word-dialog")?.open) {
+    $("unknown-word-dialog").close();
+    return true;
+  }
   if ($("joker-keyboard")?.open) {
     $("joker-keyboard").close();
     return true;
@@ -3301,7 +3314,7 @@ function createSnapshotCache(storage, { namespace = "", now = Date.now, ttl = 7 
 }
 
 // package.json
-var version = "0.16.0";
+var version = "0.16.1";
 
 // online/app.js
 init_dist();
@@ -10456,10 +10469,83 @@ function createScoreLedger(storage) {
   } };
 }
 
+// online/score-playback.mjs
+function scoreSections(plan) {
+  const sections = [], totals = [...plan.totalsBefore];
+  for (const event of plan.events) {
+    const kind = event.kind === "loss" || event.kind === "final-territory" ? "territory" : event.kind;
+    let section = sections.at(-1);
+    if (section?.kind !== kind) {
+      section = { kind, events: [], totalsBefore: [...totals] };
+      sections.push(section);
+    }
+    section.events.push(event);
+    totals[event.player - 1] += event.amount;
+    section.totalsAfter = [...totals];
+  }
+  if (plan.castleCaptures?.length && !sections.some((s) => s.kind === "castles")) {
+    const index2 = sections.findIndex((s) => s.kind === "territory"), at = index2 < 0 ? sections.length : index2;
+    const before = at ? sections[at - 1].totalsAfter : plan.totalsBefore;
+    sections.splice(at, 0, { kind: "castles", events: [], totalsBefore: [...before], totalsAfter: [...before] });
+  }
+  return sections;
+}
+function createScorePlayback({ render, settle, complete }) {
+  let run2 = null;
+  function cancel() {
+    const old = run2;
+    run2 = null;
+    old?.controller?.abort();
+  }
+  function finish4() {
+    if (!run2) return;
+    cancel();
+    complete();
+  }
+  async function play(plan) {
+    cancel();
+    const current = { controller: null };
+    run2 = current;
+    try {
+      for (const [index2, section] of scoreSections(plan).entries()) {
+        if (run2 !== current) return;
+        const controller = new AbortController();
+        current.controller = controller;
+        try {
+          await render(section, controller.signal, index2);
+        } catch (error) {
+          if (!controller.signal.aborted) throw error;
+        }
+        if (run2 !== current) return;
+        settle(section);
+      }
+      if (run2 === current) finish4();
+    } catch {
+      if (run2 === current) finish4();
+    }
+  }
+  return { play, cancel, skipSection: () => run2?.controller?.abort(), skipAll: finish4 };
+}
+var DOUBLE_TAP_MS = 400;
+function createScoreTap({ section, all, now = () => performance.now() }) {
+  let last = -Infinity;
+  return {
+    tap() {
+      const time = now(), double = time - last <= DOUBLE_TAP_MS;
+      last = time;
+      if (double) all();
+      else section();
+    },
+    get remaining() {
+      return Math.max(0, DOUBLE_TAP_MS - (now() - last));
+    }
+  };
+}
+
 // online/score-motion.js
 var signed = (n) => n < 0 ? "\u2212" + Math.abs(n) : "+" + n;
 function createBoardScoreMotion({ onComplete }) {
-  let controller = null, active = false, layer = null, dismiss = null, previousFocus = null, started = 0;
+  let playback = null, active = false, layer = null, dismiss = null, previousFocus = null, started = 0;
   const media = matchMedia("(prefers-reduced-motion: reduce)");
   const check = (signal) => {
     if (signal.aborted) throw new DOMException("Cancelled", "AbortError");
@@ -10575,8 +10661,8 @@ function createBoardScoreMotion({ onComplete }) {
   function cancel(restore = true) {
     const wasActive = active, returnFocus = dismiss && document.activeElement === dismiss ? previousFocus : null;
     active = false;
-    controller?.abort();
-    controller = null;
+    playback?.cancel();
+    playback = null;
     layer?.remove();
     layer = null;
     dismiss?.remove();
@@ -10653,8 +10739,6 @@ function createBoardScoreMotion({ onComplete }) {
   }
   async function play(plan, { seat, names }) {
     cancel(false);
-    controller = new AbortController();
-    const signal = controller.signal;
     active = true;
     started = performance.now();
     $("game-table").classList.add("is-scoring");
@@ -10670,85 +10754,112 @@ function createBoardScoreMotion({ onComplete }) {
     previousFocus = document.activeElement;
     dismiss = node("button", void 0, "score-motion-dismiss");
     dismiss.type = "button";
-    dismiss.setAttribute("aria-label", "Skip scoring animations");
-    dismiss.onclick = (event) => {
+    dismiss.setAttribute("aria-label", "Skip this scoring section. Double-tap to skip all.");
+    const consume = (event) => {
       event.preventDefault();
       event.stopPropagation();
-      cancel();
     };
+    const taps = createScoreTap({ section: () => playback?.skipSection(), all: () => playback?.skipAll() });
+    dismiss.onclick = (event) => {
+      consume(event);
+      taps.tap();
+    };
+    dismiss.ondblclick = consume;
     dismiss.onkeydown = (event) => {
+      if (event.key === "Tab") {
+        consume(event);
+        return;
+      }
+      if (event.repeat && ["Enter", " ", "Escape"].includes(event.key)) {
+        consume(event);
+        return;
+      }
       if (event.key === "Escape") {
-        event.preventDefault();
-        event.stopPropagation();
-        cancel();
+        consume(event);
+        playback?.skipSection();
       }
     };
     document.body.append(dismiss);
     dismiss.focus({ preventScroll: true });
     $("motion-status").textContent = "";
-    const balances = [...plan.totalsBefore];
-    balances.forEach((n, i) => $("score-" + (i + 1)).textContent = n);
+    plan.totalsBefore.forEach((n, i) => $("score-" + (i + 1)).textContent = n);
     paint(plan.beforeTiles, plan);
-    try {
-      await wait(280, signal);
-      let captured = false;
-      for (const e of plan.events) {
-        if (!captured && e.kind !== "word") {
-          captured = true;
-          await captureCastles(plan, signal);
+    const owned = plan.afterTiles.map((t) => ({ ...t, letter: plan.beforeTiles.find((b) => b.id === t.id).letter }));
+    playback = createScorePlayback({
+      async render(section, signal, index2) {
+        $("score-motion").dataset.section = section.kind;
+        const balances = [...section.totalsBefore];
+        if (index2 === 0) await wait(280, signal);
+        if (section.kind === "castles") await captureCastles(plan, signal);
+        for (const e of section.events) {
+          check(signal);
+          $("score-motion").dataset.phase = e.kind;
+          $("score-motion").dataset.player = e.player;
+          $("game-table").dataset.motionTarget = e.player;
+          if (e.kind === "castles" || e.kind === "territory" || e.kind === "final-territory") paint(plan.afterTiles.map((t) => {
+            const old2 = plan.beforeTiles.find((b) => b.id === t.id);
+            return { ...t, letter: old2.letter };
+          }), plan);
+          for (const el of $("board").querySelectorAll(".tile")) el.classList.remove("motion-source", "motion-castle", "motion-loss");
+          const label = { word: "Word points", castles: "Castle income", territory: "Territory gained", "final-territory": "Final territory", loss: "Territory lost" }[e.kind];
+          const player = e.player === seat ? "You" : names[e.player - 1];
+          $("motion-label").textContent = label;
+          $("motion-recipient").textContent = player;
+          $("motion-symbol").replaceChildren(icon({ word: "book", castles: "castle", territory: "territory", "final-territory": "territory", loss: "capture" }[e.kind]));
+          $("motion-tally").textContent = "+0";
+          $("score-motion").dataset.side = e.player === 1 ? "sage" : "walnut";
+          if (e.kind === "word") {
+            await wordPoints(plan, e, balances, signal);
+            continue;
+          }
+          const bubbles = e.sources.map((s) => {
+            if (s.id) tile(s.id)?.classList.add(e.kind === "castles" ? "motion-castle" : e.kind === "loss" ? "motion-loss" : "motion-source");
+            const p = sourcePoint(s);
+            p.y -= s.bonus ? -18 : 14;
+            const el = node("span", "+0", `score-point side-${e.player}${e.kind === "castles" ? " gold" : ""}${s.bonus ? " bonus" : ""}`);
+            el.style.left = p.x + "px";
+            el.style.top = p.y + "px";
+            layer.append(el);
+            return { ...s, el, p };
+          });
+          await Promise.all([
+            count($("motion-tally"), 0, e.amount, 510, signal),
+            ...bubbles.map((b) => count(b.el, 0, b.amount, 440, signal, (n) => signed(n) + (b.bonus ? " length" : ""))),
+            ...bubbles.map((b) => animate(b.el, [{ opacity: 0, transform: "translate(-50%,0) scale(.7)" }, { opacity: 1, transform: "translate(-50%,-50%) scale(1)" }], 260, signal))
+          ]);
+          await wait(media.matches ? 420 : 230, signal);
+          await Promise.all(bubbles.map((b, i) => fly(b, e.player, signal, media.matches ? 0 : Math.min(i * 40, 280))));
+          const old = balances[e.player - 1];
+          balances[e.player - 1] += e.amount;
+          await Promise.all([
+            count($("score-" + e.player), old, balances[e.player - 1], 280, signal, String),
+            animate($("player-score-" + e.player), [{ transform: "scale(1)" }, { transform: "scale(1.035)", offset: 0.35 }, { transform: "scale(1)" }], 330, signal)
+          ]);
+          await wait(100, signal);
         }
-        check(signal);
-        $("score-motion").dataset.phase = e.kind;
-        $("score-motion").dataset.player = e.player;
-        $("game-table").dataset.motionTarget = e.player;
-        if (e.kind === "castles" || e.kind === "territory" || e.kind === "final-territory") paint(plan.afterTiles.map((t) => {
-          const old2 = plan.beforeTiles.find((b) => b.id === t.id);
-          return { ...t, letter: old2.letter };
-        }), plan);
-        for (const el of $("board").querySelectorAll(".tile")) el.classList.remove("motion-source", "motion-castle", "motion-loss");
-        const label = { word: "Word points", castles: "Castle income", territory: "Territory gained", "final-territory": "Final territory", loss: "Territory lost" }[e.kind];
-        const player = e.player === seat ? "You" : names[e.player - 1];
-        $("motion-label").textContent = label;
-        $("motion-recipient").textContent = player;
-        $("motion-symbol").replaceChildren(icon({ word: "book", castles: "castle", territory: "territory", "final-territory": "territory", loss: "capture" }[e.kind]));
-        $("motion-tally").textContent = "+0";
-        $("score-motion").dataset.side = e.player === 1 ? "sage" : "walnut";
-        if (e.kind === "word") {
-          await wordPoints(plan, e, balances, signal);
-          continue;
+      },
+      settle(section) {
+        section.totalsAfter.forEach((n, i) => $("score-" + (i + 1)).textContent = n);
+        paint(owned, plan);
+        layer.replaceChildren();
+      },
+      complete() {
+        const shield = dismiss, focus = previousFocus, guard = taps.remaining;
+        if (guard > 0) {
+          dismiss = null;
+          shield.onclick = consume;
+          shield.onkeydown = consume;
+          setTimeout(() => {
+            const restore = document.activeElement === shield;
+            shield.remove();
+            if (restore && focus?.isConnected) focus.focus({ preventScroll: true });
+          }, guard);
         }
-        const bubbles = e.sources.map((s) => {
-          if (s.id) tile(s.id)?.classList.add(e.kind === "castles" ? "motion-castle" : e.kind === "loss" ? "motion-loss" : "motion-source");
-          const p = sourcePoint(s);
-          p.y -= s.bonus ? -18 : 14;
-          const el = node("span", "+0", `score-point side-${e.player}${e.kind === "castles" ? " gold" : ""}${s.bonus ? " bonus" : ""}`);
-          el.style.left = p.x + "px";
-          el.style.top = p.y + "px";
-          layer.append(el);
-          return { ...s, el, p };
-        });
-        await Promise.all([
-          count($("motion-tally"), 0, e.amount, 510, signal),
-          ...bubbles.map((b) => count(b.el, 0, b.amount, 440, signal, (n) => signed(n) + (b.bonus ? " length" : ""))),
-          ...bubbles.map((b) => animate(b.el, [{ opacity: 0, transform: "translate(-50%,0) scale(.7)" }, { opacity: 1, transform: "translate(-50%,-50%) scale(1)" }], 260, signal))
-        ]);
-        await wait(media.matches ? 420 : 230, signal);
-        await Promise.all(bubbles.map((b, i) => fly(b, e.player, signal, media.matches ? 0 : Math.min(i * 40, 280))));
-        const old = balances[e.player - 1];
-        balances[e.player - 1] += e.amount;
-        await Promise.all([
-          count($("score-" + e.player), old, balances[e.player - 1], 280, signal, String),
-          animate($("player-score-" + e.player), [{ transform: "scale(1)" }, { transform: "scale(1.035)", offset: 0.35 }, { transform: "scale(1)" }], 330, signal)
-        ]);
-        await wait(100, signal);
+        cancel();
+        $("motion-status").textContent = `${plan.word || "Round complete"}. You: ${plan.totalsAfter[seat - 1]} points. ${names[2 - seat]}: ${plan.totalsAfter[2 - seat]} points.`;
       }
-      if (!captured) await captureCastles(plan, signal);
-      check(signal);
-      cancel();
-      $("motion-status").textContent = `${plan.word || "Round complete"}. You: ${plan.totalsAfter[seat - 1]} points. ${names[2 - seat]}: ${plan.totalsAfter[2 - seat]} points.`;
-    } catch (error) {
-      if (error.name !== "AbortError") cancel();
-    }
+    });
+    await playback.play(plan);
   }
   window.addEventListener("resize", () => {
     if (active) cancel();
@@ -10813,6 +10924,7 @@ function activityText(kind, name) {
   const labels = { word: `${name} played a word`, refresh: `${name} refreshed their letters`, resign: `${name} left the game`, offer_draw: `${name} offered a draw`, accept_draw: "Game drawn", abandon: "Game closed", "game complete": "Game finished", "invitation accepted": `Your game with ${name} is ready`, "invitation accept": `Your game with ${name} is ready`, "invitation decline": "Your invitation was declined", "invitation cancel": "Your invitation was cancelled", "invitation declined": "Your invitation was declined", "invitation cancelled": "Your invitation was cancelled" };
   return labels[kind] || "Game updated";
 }
+var isUnknownWordError = (error) => error?.code === "illegal_move" && error.message === "That word is not in the dictionary.";
 function friendlyError(error) {
   if (error.code === "client_update_required") return "Update Word Conquest or open the latest web app to continue.";
   if (error.code === "username_taken") return "Username taken. Try another.";
@@ -12051,7 +12163,7 @@ function clearWord() {
 async function sendPending() {
   const command = pending();
   if (!command || busy) return;
-  const sentGame = game.id, sentUser = user.id, storageKey = pendingKey();
+  const sentGame = game.id, sentUser = user.id, storageKey = pendingKey(), sentWord = command.action === "word" ? engine_default.wordForPath(game.state, command.path, command.jokers) : "";
   busy = true;
   ++gameLoad;
   gameRequests.reset();
@@ -12094,7 +12206,10 @@ async function sendPending() {
     if (user?.id === sentUser) {
       lastProblem = friendlyError(e);
       lastRequestId = e.requestId || null;
-      if (!pending()) status(lastProblem, true);
+      if (!pending()) {
+        if (isUnknownWordError(e) && command.action === "word" && game?.id === sentGame && currentView === "game") showUnknownWord(sentWord);
+        else status(lastProblem, true);
+      }
     }
   } finally {
     busy = false;
