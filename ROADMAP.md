@@ -8,7 +8,7 @@
 - [x] Centered modal only for dictionary rejection, large Close action, native
   focus/inert background and preserved selected letters/jokers.
 - [x] Regression and production DOM interaction checks, both themes and languages.
-- [ ] Publish and verify normal web assets and signed Android APK.
+- [x] Publish and verify normal web assets and signed Android APK.
 - [ ] Physical phone review; browser access is unavailable in this session.
 
 ## Minimal app copy — 0.16.0

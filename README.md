@@ -6,6 +6,7 @@ Tap anywhere to finish the current scoring section; double-tap to finish the
 whole move. Word letters and length bonus are one section, followed by castles
 and territory when applicable. Unknown words open a centered blocking dialog
 with a large Close button; the selected word stays available to edit.
+Refresh the [web app](https://xnorbertx.github.io/word-conquest/online/) or install [Android 0.16.1-6cc21ca](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25392152/word-conquest-android.apk).
 See [verification and release status](docs/PROGRESS.md).
 
 ### Minimal copy and compact screens (0.16.0)

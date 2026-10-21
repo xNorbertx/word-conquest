@@ -1,4 +1,4 @@
-# Implementation and verification - updated 20 October 2026
+# Implementation and verification - updated 21 October 2026
 
 ## Scoring sections and dictionary warning — 0.16.1, 21 October 2026
 
@@ -26,8 +26,22 @@ check focus, safe text, close/back/navigation, and theme attributes. These are
 behavioral checks, not rendered mobile visual approval: browser inventory is
 empty and IAB returns unavailable.
 
-No scoring/engine/dictionary/backend changes, migration, dependency, permission
-or new cost. Original prototype preserved. Web/APK publication is pending.
+Full regression result: **257/257** Node tests and original engine/scoring/supply
+suites pass. Build and existing Android CI also pass. No scoring/engine/dictionary/
+backend change, migration, dependency, permission or new cost. Prototype preserved.
+
+Released on 21 October 2026:
+
+- Source `6cc21ca3018be559d49657f8ebc196750d4504ee`; [normal web app](https://xnorbertx.github.io/word-conquest/online/) published via
+  Pages `8a4dcd2bdf9b34efc4a5bf3b348db501ee2c032a`. All ten public assets match the tested build
+  (existing line endings normalized); prototype and previews retained.
+- [Android CI](https://github.com/xNorbertx/word-conquest/actions/runs/39678159718) succeeded. Signed APK
+  `0.16.1-6cc21ca`, code `25392152`; [download](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25392152/word-conquest-android.apk).
+  Package, manifest, stable certificate, shared web assets and anonymous download
+  verified; no fixture/private-key material included.
+- SHA-256 `00e22d79cf68ad941cf976b95d9bdd0b8227c7fcaa6902d61db3d738f4531a1e`; 5,008,290 bytes.
+- Browser and physical-device surfaces remain unavailable; rendered phone review
+  is still outstanding. Refresh web or install the APK to receive this release.
 
 ## App-wide copy and component cleanup — 0.16.0, 20 October 2026
 
