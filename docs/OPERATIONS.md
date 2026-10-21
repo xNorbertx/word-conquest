@@ -1,5 +1,16 @@
 # Run, deploy and maintain
 
+## Scoring section controls — 0.16.1
+
+Client-only: run `npm test`, `npm run build`, publish `/online/` and build the
+signed Android pilot with the existing workflow. No Supabase deployment or
+migration. Refresh the web page or install the updated APK. Costs are unchanged.
+`online/score-playback.mjs` groups immutable score receipts and controls skipping;
+it does not calculate rules or submit turns. Each section settles to its planned
+total. Keep the brief final-click shield so double taps cannot click Play behind it.
+The invalid-word dialog uses `showModal()` to block background interaction and
+is triggered only by the known dictionary rejection, not every illegal move.
+
 ## Copy cleanup — 0.16.0
 
 Client-only release: `npm test`, `npm run build`, publish `/online/` and the signed

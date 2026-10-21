@@ -1,5 +1,13 @@
 # Word Conquest
 
+### Scoring controls and word warning (0.16.1)
+
+Tap anywhere to finish the current scoring section; double-tap to finish the
+whole move. Word letters and length bonus are one section, followed by castles
+and territory when applicable. Unknown words open a centered blocking dialog
+with a large Close button; the selected word stays available to edit.
+See [verification and release status](docs/PROGRESS.md).
+
 ### Minimal copy and compact screens (0.16.0)
 
 Shorter copy throughout account, invitations, Friends, notifications, help and
@@ -25,8 +33,7 @@ outcomes, best completed score/date, word records, biggest capture in one turn
 and total castle captures. Older rules are deliberately excluded.
 
 Letter scoring now has a readable letter/value token, slower colour transition
-and flight. The length bonus holds for a full second before travelling. One tap
-still skips everything. The joker picker now rejects a trailing opening-gesture
+and flight. The length bonus holds for a full second before travelling. In 0.16.1, one tap skips a section and a double-tap skips everything. The joker picker now rejects a trailing opening-gesture
 click; physical Android confirmation is still required. See
 [verification and release status](docs/PROGRESS.md).
 [Live web app](https://xnorbertx.github.io/word-conquest/online/) · [Android review APK](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25134997/word-conquest-android.apk).

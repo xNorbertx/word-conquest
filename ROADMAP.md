@@ -1,5 +1,16 @@
 # Word Conquest — app roadmap
 
+## Section skipping and invalid-word dialog — 0.16.1
+
+- [x] One tap completes word/bonus, castles or territory; double-tap ends all.
+- [x] Exact intermediate receipt totals, cancellation/replay safety and a brief
+  final-tap shield to prevent accidental Play/history clicks.
+- [x] Centered modal only for dictionary rejection, large Close action, native
+  focus/inert background and preserved selected letters/jokers.
+- [x] Regression and production DOM interaction checks, both themes and languages.
+- [ ] Publish and verify normal web assets and signed Android APK.
+- [ ] Physical phone review; browser access is unavailable in this session.
+
 ## Minimal app copy — 0.16.0
 
 - [x] Audit all production screens, empty states, dialogs, status/error copy.

@@ -1,8 +1,9 @@
 import {$,node,svg,icon} from './ui.js';
+import {createScorePlayback,createScoreTap} from './score-playback.mjs';
 
 const signed=n=>n<0?'−'+Math.abs(n):'+'+n;
 export function createBoardScoreMotion({onComplete}){
-  let controller=null,active=false,layer=null,dismiss=null,previousFocus=null,started=0;
+  let playback=null,active=false,layer=null,dismiss=null,previousFocus=null,started=0;
   const media=matchMedia('(prefers-reduced-motion: reduce)');
   const check=signal=>{if(signal.aborted)throw new DOMException('Cancelled','AbortError');};
   const wait=(ms,signal)=>new Promise((resolve,reject)=>{
@@ -68,7 +69,7 @@ export function createBoardScoreMotion({onComplete}){
   }
   function cancel(restore=true){
     const wasActive=active,returnFocus=dismiss&&document.activeElement===dismiss?previousFocus:null;
-    active=false;controller?.abort();controller=null;layer?.remove();layer=null;
+    active=false;playback?.cancel();playback=null;layer?.remove();layer=null;
     dismiss?.remove();dismiss=null;previousFocus=null;
     $('game-table').classList.remove('is-scoring');$('board').inert=false;$('score-motion').hidden=true;
     if(wasActive&&restore)onComplete();
@@ -125,7 +126,7 @@ export function createBoardScoreMotion({onComplete}){
   }
 
   async function play(plan,{seat,names}){
-    cancel(false);controller=new AbortController();const signal=controller.signal;active=true;started=performance.now();
+    cancel(false);active=true;started=performance.now();
     $('game-table').classList.add('is-scoring');$('score-motion').hidden=false;$('board').inert=true;
     $('game-table').dataset.motionPlayer=plan.player;
     $('game-table').classList.toggle('score-reduced',media.matches);
@@ -133,49 +134,72 @@ export function createBoardScoreMotion({onComplete}){
     $('motion-word').textContent=plan.word||(plan.action==='refresh'?'Letters refreshed':'Final score');$('motion-byline').textContent=plan.player===seat?'You played':names[plan.player-1];
     previousFocus=document.activeElement;
     dismiss=node('button',undefined,'score-motion-dismiss');dismiss.type='button';
-    dismiss.setAttribute('aria-label','Skip scoring animations');
-    // Consume the completed click before removing the shield. Removing it on
-    // pointerdown could send the following click to a control underneath.
-    dismiss.onclick=event=>{event.preventDefault();event.stopPropagation();cancel();};
-    dismiss.onkeydown=event=>{if(event.key==='Escape'){event.preventDefault();event.stopPropagation();cancel();}};
+    dismiss.setAttribute('aria-label','Skip this scoring section. Double-tap to skip all.');
+    const consume=event=>{event.preventDefault();event.stopPropagation();};
+    const taps=createScoreTap({section:()=>playback?.skipSection(),all:()=>playback?.skipAll()});
+    dismiss.onclick=event=>{consume(event);taps.tap();};
+    dismiss.ondblclick=consume;
+    dismiss.onkeydown=event=>{
+      if(event.key==='Tab'){consume(event);return;}
+      if(event.repeat&&['Enter',' ','Escape'].includes(event.key)){consume(event);return;}
+      if(event.key==='Escape'){consume(event);playback?.skipSection();}
+    };
     document.body.append(dismiss);dismiss.focus({preventScroll:true});
     $('motion-status').textContent='';
-    const balances=[...plan.totalsBefore];balances.forEach((n,i)=>$('score-'+(i+1)).textContent=n);
+    plan.totalsBefore.forEach((n,i)=>$('score-'+(i+1)).textContent=n);
     paint(plan.beforeTiles,plan);
-    try{
-      await wait(280,signal);
-      let captured=false;
-      for(const e of plan.events){
-        if(!captured&&e.kind!=='word'){captured=true;await captureCastles(plan,signal);}
-        check(signal);$('score-motion').dataset.phase=e.kind;$('score-motion').dataset.player=e.player;
-        $('game-table').dataset.motionTarget=e.player;
-        if(e.kind==='castles'||e.kind==='territory'||e.kind==='final-territory')paint(plan.afterTiles.map(t=>{const old=plan.beforeTiles.find(b=>b.id===t.id);return{...t,letter:old.letter};}),plan);
-        for(const el of $('board').querySelectorAll('.tile'))el.classList.remove('motion-source','motion-castle','motion-loss');
-        const label={word:'Word points',castles:'Castle income',territory:'Territory gained','final-territory':'Final territory',loss:'Territory lost'}[e.kind];
-        const player=e.player===seat?'You':names[e.player-1];
-        $('motion-label').textContent=label;$('motion-recipient').textContent=player;
-        $('motion-symbol').replaceChildren(icon({word:'book',castles:'castle',territory:'territory','final-territory':'territory',loss:'capture'}[e.kind]));
-        $('motion-tally').textContent='+0';$('score-motion').dataset.side=e.player===1?'sage':'walnut';
-        if(e.kind==='word'){await wordPoints(plan,e,balances,signal);continue;}
-        const bubbles=e.sources.map(s=>{
-          if(s.id)tile(s.id)?.classList.add(e.kind==='castles'?'motion-castle':e.kind==='loss'?'motion-loss':'motion-source');
-          const p=sourcePoint(s);p.y-=s.bonus?-18:14;
-          const el=node('span','+0',`score-point side-${e.player}${e.kind==='castles'?' gold':''}${s.bonus?' bonus':''}`);
-          el.style.left=p.x+'px';el.style.top=p.y+'px';layer.append(el);return{...s,el,p};
-        });
-        await Promise.all([count($('motion-tally'),0,e.amount,510,signal),...bubbles.map(b=>count(b.el,0,b.amount,440,signal,n=>signed(n)+(b.bonus?' length':''))),
-          ...bubbles.map(b=>animate(b.el,[{opacity:0,transform:'translate(-50%,0) scale(.7)'},{opacity:1,transform:'translate(-50%,-50%) scale(1)'}],260,signal))]);
-        await wait(media.matches?420:230,signal);
-        await Promise.all(bubbles.map((b,i)=>fly(b,e.player,signal,media.matches?0:Math.min(i*40,280))));
-        const old=balances[e.player-1];balances[e.player-1]+=e.amount;
-        await Promise.all([count($('score-'+e.player),old,balances[e.player-1],280,signal,String),
-          animate($('player-score-'+e.player),[{transform:'scale(1)'},{transform:'scale(1.035)',offset:.35},{transform:'scale(1)'}],330,signal)]);
-        await wait(100,signal);
+    const owned=plan.afterTiles.map(t=>({...t,letter:plan.beforeTiles.find(b=>b.id===t.id).letter}));
+    playback=createScorePlayback({
+      async render(section,signal,index){
+        $('score-motion').dataset.section=section.kind;
+        const balances=[...section.totalsBefore];
+        if(index===0)await wait(280,signal);
+        if(section.kind==='castles')await captureCastles(plan,signal);
+        for(const e of section.events){
+          check(signal);$('score-motion').dataset.phase=e.kind;$('score-motion').dataset.player=e.player;
+          $('game-table').dataset.motionTarget=e.player;
+          if(e.kind==='castles'||e.kind==='territory'||e.kind==='final-territory')paint(plan.afterTiles.map(t=>{const old=plan.beforeTiles.find(b=>b.id===t.id);return{...t,letter:old.letter};}),plan);
+          for(const el of $('board').querySelectorAll('.tile'))el.classList.remove('motion-source','motion-castle','motion-loss');
+          const label={word:'Word points',castles:'Castle income',territory:'Territory gained','final-territory':'Final territory',loss:'Territory lost'}[e.kind];
+          const player=e.player===seat?'You':names[e.player-1];
+          $('motion-label').textContent=label;$('motion-recipient').textContent=player;
+          $('motion-symbol').replaceChildren(icon({word:'book',castles:'castle',territory:'territory','final-territory':'territory',loss:'capture'}[e.kind]));
+          $('motion-tally').textContent='+0';$('score-motion').dataset.side=e.player===1?'sage':'walnut';
+          if(e.kind==='word'){await wordPoints(plan,e,balances,signal);continue;}
+          const bubbles=e.sources.map(s=>{
+            if(s.id)tile(s.id)?.classList.add(e.kind==='castles'?'motion-castle':e.kind==='loss'?'motion-loss':'motion-source');
+            const p=sourcePoint(s);p.y-=s.bonus?-18:14;
+            const el=node('span','+0',`score-point side-${e.player}${e.kind==='castles'?' gold':''}${s.bonus?' bonus':''}`);
+            el.style.left=p.x+'px';el.style.top=p.y+'px';layer.append(el);return{...s,el,p};
+          });
+          await Promise.all([count($('motion-tally'),0,e.amount,510,signal),...bubbles.map(b=>count(b.el,0,b.amount,440,signal,n=>signed(n)+(b.bonus?' length':''))),
+            ...bubbles.map(b=>animate(b.el,[{opacity:0,transform:'translate(-50%,0) scale(.7)'},{opacity:1,transform:'translate(-50%,-50%) scale(1)'}],260,signal))]);
+          await wait(media.matches?420:230,signal);
+          await Promise.all(bubbles.map((b,i)=>fly(b,e.player,signal,media.matches?0:Math.min(i*40,280))));
+          const old=balances[e.player-1];balances[e.player-1]+=e.amount;
+          await Promise.all([count($('score-'+e.player),old,balances[e.player-1],280,signal,String),
+            animate($('player-score-'+e.player),[{transform:'scale(1)'},{transform:'scale(1.035)',offset:.35},{transform:'scale(1)'}],330,signal)]);
+          await wait(100,signal);
+        }
+      },
+      settle(section){
+        // Never add a partly animated amount twice when a section is skipped.
+        section.totalsAfter.forEach((n,i)=>$('score-'+(i+1)).textContent=n);
+        paint(owned,plan);layer.replaceChildren();
+      },
+      complete(){
+        // Keep only the invisible input shield briefly after the final tap. A
+        // second tap must not land on Play/history when there is no next section.
+        const shield=dismiss,focus=previousFocus,guard=taps.remaining;
+        if(guard>0){
+          dismiss=null;shield.onclick=consume;shield.onkeydown=consume;
+          setTimeout(()=>{const restore=document.activeElement===shield;shield.remove();if(restore&&focus?.isConnected)focus.focus({preventScroll:true});},guard);
+        }
+        cancel();
+        $('motion-status').textContent=`${plan.word||'Round complete'}. You: ${plan.totalsAfter[seat-1]} points. ${names[2-seat]}: ${plan.totalsAfter[2-seat]} points.`;
       }
-      if(!captured)await captureCastles(plan,signal);
-      check(signal);cancel();
-      $('motion-status').textContent=`${plan.word||'Round complete'}. You: ${plan.totalsAfter[seat-1]} points. ${names[2-seat]}: ${plan.totalsAfter[2-seat]} points.`;
-    }catch(error){if(error.name!=='AbortError')cancel();}
+    });
+    await playback.play(plan);
   }
   // The real saved state wins immediately if layout or app visibility changes.
   window.addEventListener('resize',()=>{if(active)cancel();});

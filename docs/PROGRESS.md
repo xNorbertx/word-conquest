@@ -1,5 +1,34 @@
 # Implementation and verification - updated 20 October 2026
 
+## Scoring sections and dictionary warning — 0.16.1, 21 October 2026
+
+Single click/tap immediately finishes the current section: word letters plus
+length bonus; castle captures/income; territory (including historical deductions
+or final territory for both players). Double-tap within 400ms finishes all. No
+added visible instructions. Escape skips a section. The existing readable
+letter/bonus pacing remains, with exact intermediate totals from the server
+receipt; partial counts cannot add an amount twice. A short input shield after
+the final tap prevents its second tap reaching Play/history beneath it.
+
+Only the server's unknown-word rejection opens the new centered native modal.
+It shows the word, “Not in the dictionary” and a full-width 56px Close action.
+The background is inert; native focus, Escape and Android Back dismiss it.
+Selected letters/jokers remain for editing unless the refreshed board changed.
+Other errors/popups retain their existing behavior. Late replies cannot place
+this modal over another game/account. Both color themes use existing tokens.
+
+Verification: section controller and production renderer regressions cover
+normal/reduced motion, per-section skips, bonus skips, double taps in/across
+phases, final-tap guards, interruptions/replay and exact totals. The local
+virtual-clock DOM check passed 256 board/history scenarios across both seats,
+English/Swedish/Dutch/legacy and live/final states; 14 actual dialog DOM cases
+check focus, safe text, close/back/navigation, and theme attributes. These are
+behavioral checks, not rendered mobile visual approval: browser inventory is
+empty and IAB returns unavailable.
+
+No scoring/engine/dictionary/backend changes, migration, dependency, permission
+or new cost. Original prototype preserved. Web/APK publication is pending.
+
 ## App-wide copy and component cleanup — 0.16.0, 20 October 2026
 
 Audited the production online client and all its dialog builders. The visual

@@ -22,8 +22,8 @@ import {createBoardViewport} from './board-viewport.mjs';
 import {LANGUAGES,languageFor,languageLabel} from '../server/languages.mjs';
 import {Engine,config as defaultConfig,configFor,RULES_VERSION,SUPPORTED_RULES} from '../server/domain.mjs';
 let config=defaultConfig;
-import {$,svg,icon,node,button,setting,notify,showSheet,closeSheet,ask,initUI,closeTopDialog,emptyState,infoSections} from './ui.js';
-import {seatOf,isFinished,opponentName,gameStatus,visibleGames,timeAgo,invitationToken,activityText,friendlyError} from './presentation.mjs';
+import {$,svg,icon,node,button,setting,notify,showUnknownWord,showSheet,closeSheet,ask,initUI,closeTopDialog,emptyState,infoSections} from './ui.js';
+import {seatOf,isFinished,opponentName,gameStatus,visibleGames,timeAgo,invitationToken,activityText,friendlyError,isUnknownWordError} from './presentation.mjs';
 
 trackFocusInput();initUI();$('app-version').textContent=appVersion;
 const appearance=Capacitor.getPlatform()==='android'?registerPlugin('Appearance'):null;
@@ -325,7 +325,7 @@ function choose(id){
 }
 function clearWord(){if(busy||pending())return;selection=[];jokers={};highlightLast=false;jokerKeyboard.close();renderGame();}
 async function sendPending(){
-  const command=pending();if(!command||busy)return;const sentGame=game.id,sentUser=user.id,storageKey=pendingKey();busy=true;++gameLoad;gameRequests.reset();renderGame();
+  const command=pending();if(!command||busy)return;const sentGame=game.id,sentUser=user.id,storageKey=pendingKey(),sentWord=command.action==='word'?Engine.wordForPath(game.state,command.path,command.jokers):'';busy=true;++gameLoad;gameRequests.reset();renderGame();
   try{
     const result=await api({action:'turn',gameId:sentGame,command});localStorage.removeItem(storageKey);
     if(user?.id===sentUser&&game?.id===sentGame&&result.game.revision>=game.revision){
@@ -340,7 +340,7 @@ async function sendPending(){
       }
     }
   }
-  catch(e){if(e.status>=400&&e.status<500&&![401,429].includes(e.status)){localStorage.removeItem(storageKey);if(user?.id===sentUser&&game?.id===sentGame){if(e.code!=='illegal_move'){selection=[];jokers={};}await openGame(sentGame,true).catch(()=>{});}}if(user?.id===sentUser){lastProblem=friendlyError(e);lastRequestId=e.requestId||null;if(!pending())status(lastProblem,true);}}
+  catch(e){if(e.status>=400&&e.status<500&&![401,429].includes(e.status)){localStorage.removeItem(storageKey);if(user?.id===sentUser&&game?.id===sentGame){if(e.code!=='illegal_move'){selection=[];jokers={};}await openGame(sentGame,true).catch(()=>{});}}if(user?.id===sentUser){lastProblem=friendlyError(e);lastRequestId=e.requestId||null;if(!pending()){if(isUnknownWordError(e)&&command.action==='word'&&game?.id===sentGame&&currentView==='game')showUnknownWord(sentWord);else status(lastProblem,true);}}}
   finally{busy=false;if(game&&currentView==='game'&&!scoreMotion.active)renderGame();if(refreshQueued)void poll();}
 }
 async function action(kind){

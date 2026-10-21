@@ -1,5 +1,18 @@
 # Autumn Sunday UX revision - 4 October 2026
 
+## Scoring controls and word rejection — 0.16.1
+
+Single tap skips the current scoring section; double-tap skips all. Group word
+letters with the length bonus, and group both recipients within castles or
+territory. No visible skip button or instructional copy. Preserve readable
+letter timing, reduced-motion support and exact balances when skipping midway.
+
+Unknown words use a centered modal on phone and desktop: short title, prominent
+selected word, one large full-width Close button, subdued blurred backdrop.
+Background controls are inert until dismissed. Keep the word available to edit.
+Use native dialog focus/Escape/Back handling and existing light/dark colors.
+Other warnings and popups are unchanged in this iteration.
+
 ## Minimal copy and components — 0.16.0
 
 Keep the ivory/sage/walnut palette and board-inspired identity. Copy is direct:

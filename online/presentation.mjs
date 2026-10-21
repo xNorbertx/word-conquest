@@ -30,6 +30,8 @@ export function activityText(kind,name){
   const labels={word:`${name} played a word`,refresh:`${name} refreshed their letters`,resign:`${name} left the game`,offer_draw:`${name} offered a draw`,accept_draw:'Game drawn',abandon:'Game closed','game complete':'Game finished','invitation accepted':`Your game with ${name} is ready`,'invitation accept':`Your game with ${name} is ready`,'invitation decline':'Your invitation was declined','invitation cancel':'Your invitation was cancelled','invitation declined':'Your invitation was declined','invitation cancelled':'Your invitation was cancelled'};
   return labels[kind]||'Game updated';
 }
+export const isUnknownWordError=error=>error?.code==='illegal_move'&&error.message==='That word is not in the dictionary.';
+
 export function friendlyError(error){
   if(error.code==='client_update_required')return 'Update Word Conquest or open the latest web app to continue.';
   if(error.code==='username_taken')return 'Username taken. Try another.';
