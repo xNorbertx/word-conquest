@@ -3314,7 +3314,7 @@ function createSnapshotCache(storage, { namespace = "", now = Date.now, ttl = 7 
 }
 
 // package.json
-var version = "0.16.2";
+var version = "0.16.3";
 
 // online/app.js
 init_dist();
@@ -10802,7 +10802,7 @@ function createBoardScoreMotion({ onComplete }) {
           const label = { word: "Word points", castles: "Castle income", territory: "Territory gained", "final-territory": "Final territory", loss: "Territory lost" }[e.kind];
           const player = e.player === seat ? "You" : names[e.player - 1];
           $("motion-label").textContent = label;
-          $("motion-recipient").textContent = player;
+          $("score-motion").setAttribute("aria-label", `${label} for ${player}`);
           $("motion-symbol").replaceChildren(icon({ word: "book", castles: "castle", territory: "territory", "final-territory": "territory", loss: "capture" }[e.kind]));
           $("motion-tally").textContent = "+0";
           $("score-motion").dataset.side = e.player === 1 ? "sage" : "walnut";
@@ -11197,6 +11197,7 @@ function createJokerKeyboard() {
     const to = target(id)?.getBoundingClientRect();
     if (!from?.width || !to?.width || typeof Element.prototype.animate !== "function" || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const flying = node("span", letter2, "joker-letter-flight");
+    flying.setAttribute("data-side", dialog.getAttribute("data-side"));
     document.body.append(flying);
     Object.assign(flying.style, { left: from.left + "px", top: from.top + "px", width: from.width + "px", height: from.height + "px" });
     flying.animate([{ opacity: 1, transform: "translate(0,0) scale(1)" }, { opacity: 0, transform: `translate(${to.left + to.width / 2 - from.left - from.width / 2}px,${to.top + to.height / 2 - from.top - from.height / 2}px) scale(.7)` }], { duration: 230, easing: "cubic-bezier(.2,.8,.2,1)" }).finished.catch(() => {
@@ -11288,6 +11289,7 @@ function createJokerKeyboard() {
       close();
       return;
     }
+    dialog.setAttribute("data-side", next.side === "walnut" ? "walnut" : "sage");
     pointerStartedHere = false;
     session = { ...next, path: [...next.path], assignments: { ...next.assignments } };
     paint();
@@ -12017,6 +12019,7 @@ function openJoker(id) {
   const valid = (tileId) => currentView === "game" && canAssignJoker({ ...snapshot, tileId }, { gameId: game?.id, revision: game?.revision, editable: preview || canPlay(), path: selection, tiles: game?.state.tiles || [] });
   if (!valid(id)) return;
   jokerKeyboard.open({
+    side: seatOf(game, user?.id) === 2 ? "walnut" : "sage",
     tileId: id,
     tiles: game.state.tiles,
     path: [...selection],
