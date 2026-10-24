@@ -3314,7 +3314,7 @@ function createSnapshotCache(storage, { namespace = "", now = Date.now, ttl = 7 
 }
 
 // package.json
-var version = "0.16.1";
+var version = "0.16.2";
 
 // online/app.js
 init_dist();
@@ -10613,8 +10613,6 @@ function createBoardScoreMotion({ onComplete }) {
     el.classList.remove("owner0", "owner1", "owner2", "your-tile");
     el.classList.add(`owner${t.owner}`);
     el.classList.toggle("your-tile", t.owner === Number($("game-table").dataset.seat));
-    el.querySelector(".marker")?.remove();
-    if (t.owner) el.append(svg("circle", { cx: t.q * 64 + 20, cy: t.r * 64 - 19, r: 4.3, class: "marker" }));
   }
   function paint(tiles, plan) {
     const path = plan.path;
@@ -11987,8 +11985,6 @@ function drawBoard() {
     letterNode.setAttribute("y", p.y + (t.castle ? 1 : -2));
     letterNode.textContent = letter2;
     g.querySelector(".value").textContent = engine_default.letterValue(t.letter, config2);
-    if (t.owner && !g.querySelector(".marker")) g.append(svg("circle", { cx: p.x + 20, cy: p.y - 19, r: 4.3, class: "marker" }));
-    if (!t.owner) g.querySelector(".marker")?.remove();
     if (t.castle && !g.querySelector(".castle-pulse")) g.append(svg("title", {}, castleLabel(t, config2)), svg("circle", { cx: p.x, cy: p.y, r: 34, class: "castle-pulse", "aria-hidden": "true" }));
     if (t.castle) g.querySelector("title").textContent = castleLabel(t, config2);
     else {
@@ -12059,6 +12055,10 @@ function renderWord() {
 function renderSelection() {
   const error = engine_default.validatePath(game.state, selection, { ...config2, dictionaryEnabled: false }, true, null, jokers);
   renderWord();
+  const points = selection.reduce((sum2, id) => sum2 + engine_default.letterValue(game.state.tiles.find((t) => t.id === id).letter, config2), 0);
+  $("word-points").hidden = !selection.length;
+  $("word-points-value").textContent = points;
+  $("word-points").setAttribute("aria-label", `${points} letter points`);
   $("submit-word").disabled = !canPlay() || !!error;
   $("clear-word").disabled = !selection.length || busy || !!pending();
   $("word").scrollLeft = $("word").scrollWidth;
@@ -12131,7 +12131,7 @@ function renderGame() {
     const copy2 = node("span"), symbol = node("span", void 0, "recap-symbol");
     symbol.append(icon("history"));
     copy2.append(node("small", "LAST MOVE"), node("strong", last.word ? `${game.names[last.player - 1]} played ${last.word}` : activityText(last.action, game.names[last.player - 1])));
-    $("recap").replaceChildren(symbol, copy2, node("span", last.score ? `+${last.score.wordPoints}` : ""));
+    $("recap").replaceChildren(symbol, copy2);
   }
   drawBoard();
   renderSelection();
