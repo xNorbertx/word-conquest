@@ -245,8 +245,6 @@ function drawBoard(){
     g.querySelector('polygon').setAttribute('points',tilePoints(t));
     const letterNode=g.querySelector('text:not(.value)');letterNode.setAttribute('y',p.y+(t.castle?1:-2));letterNode.textContent=letter;
     g.querySelector('.value').textContent=Engine.letterValue(t.letter,config);
-    if(t.owner&&!g.querySelector('.marker'))g.append(svg('circle',{cx:p.x+20,cy:p.y-19,r:4.3,class:'marker'}));
-    if(!t.owner)g.querySelector('.marker')?.remove();
     if(t.castle&&!g.querySelector('.castle-pulse'))g.append(svg('title',{},castleLabel(t,config)),svg('circle',{cx:p.x,cy:p.y,r:34,class:'castle-pulse','aria-hidden':'true'}));
     if(t.castle)g.querySelector('title').textContent=castleLabel(t,config);
     else {g.querySelector('title')?.remove();g.querySelector('.castle-pulse')?.remove();}
@@ -279,7 +277,11 @@ function renderWord(){
 }
 function renderSelection(){
   const error=Engine.validatePath(game.state,selection,{...config,dictionaryEnabled:false},true,null,jokers);
-  renderWord();$('submit-word').disabled=!canPlay()||!!error;$('clear-word').disabled=!selection.length||busy||!!pending();
+  renderWord();
+  const points=selection.reduce((sum,id)=>sum+Engine.letterValue(game.state.tiles.find(t=>t.id===id).letter,config),0);
+  $('word-points').hidden=!selection.length;$('word-points-value').textContent=points;
+  $('word-points').setAttribute('aria-label',`${points} letter points`);
+  $('submit-word').disabled=!canPlay()||!!error;$('clear-word').disabled=!selection.length||busy||!!pending();
   $('word').scrollLeft=$('word').scrollWidth;
   $('submit-label').textContent=busy?'Saving…':'Play';
   $('pending').hidden=!pending();$('pending-message').textContent=busy?'Saving move…':'Move not confirmed. Reconnect and retry.';$('retry').disabled=busy;
@@ -314,7 +316,7 @@ function renderGame(){
 
   if(isFinished(game)){$('result-title').textContent=game.status==='completed'?gameStatus(game,user?.id):game.status==='abandoned'?'Game closed':game.status==='declined'?'Invitation declined':'Invitation cancelled';$('result-description').textContent=game.status==='completed'?`${totals[seat-1].total} – ${totals[seat===1?1:0].total}`:'No win or loss recorded.';}
   const last=history[0]?.recap;$('recap').hidden=!last;
-  if(last){const copy=node('span'),symbol=node('span',undefined,'recap-symbol');symbol.append(icon('history'));copy.append(node('small','LAST MOVE'),node('strong',last.word?`${game.names[last.player-1]} played ${last.word}`:activityText(last.action,game.names[last.player-1])));$('recap').replaceChildren(symbol,copy,node('span',last.score?`+${last.score.wordPoints}`:''));}
+  if(last){const copy=node('span'),symbol=node('span',undefined,'recap-symbol');symbol.append(icon('history'));copy.append(node('small','LAST MOVE'),node('strong',last.word?`${game.names[last.player-1]} played ${last.word}`:activityText(last.action,game.names[last.player-1])));$('recap').replaceChildren(symbol,copy);}
   drawBoard();renderSelection();
 }
 function choose(id){

@@ -1,5 +1,12 @@
 # Word Conquest
 
+### Board and word bar cleanup (0.16.2)
+
+Captured tiles use their ownership colors without dots. A compact live counter
+beside the selected word adds letter points only (jokers stay zero). The previous
+move row shows the word without its score and still opens Move history.
+See [release status and checks](docs/PROGRESS.md).
+
 ### Scoring controls and word warning (0.16.1)
 
 Tap anywhere to finish the current scoring section; double-tap to finish the

@@ -1,4 +1,4 @@
-import {$,node,svg,icon} from './ui.js';
+import {$,node,icon} from './ui.js';
 import {createScorePlayback,createScoreTap} from './score-playback.mjs';
 
 const signed=n=>n<0?'−'+Math.abs(n):'+'+n;
@@ -35,8 +35,6 @@ export function createBoardScoreMotion({onComplete}){
   function owner(el,t){
     el.classList.remove('owner0','owner1','owner2','your-tile');el.classList.add(`owner${t.owner}`);
     el.classList.toggle('your-tile',t.owner===Number($('game-table').dataset.seat));
-    el.querySelector('.marker')?.remove();
-    if(t.owner)el.append(svg('circle',{cx:t.q*64+20,cy:t.r*64-19,r:4.3,class:'marker'}));
   }
   function paint(tiles,plan){
     const path=plan.path;

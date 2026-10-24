@@ -1,5 +1,31 @@
 # Implementation and verification - updated 21 October 2026
 
+## Board and word bar cleanup — 0.16.2, 24 October 2026
+
+Removed ownership dot/ring generation from the online board and scoring animation,
+along with the matching light/dark styles. Ownership fills, castle shapes, selected
+path and accessible ownership labels remain. Score-card identity symbols are
+unchanged; the request concerns the board territories.
+
+Added a small letter-point output between the selected word and Undo. It fits
+the existing 44px control row, uses the player's color and tabular numerals, and
+hides when no tiles are selected. It reads the saved game's letter values;
+length/castle/territory bonuses are excluded. A joker remains zero even when
+assigned a high-value letter. Add/backtrack/clear/joker editing update immediately.
+No dictionary validation is implied by this preview; Play remains server checked.
+
+Removed the trailing score from the previous-move row, retaining the word and
+Move history action. Removed its obsolete score-specific CSS selector as well.
+No backend, rule, dictionary, dependency, permission or infrastructure change.
+
+32 actual production DOM scenarios cover both seats, English/Swedish/Dutch/legacy,
+live/final boards, selection/backtracking/clear/joker edits, counter reset, absence
+of markers after animation, scoreless recap, history and saved score totals.
+Rendered review was attempted using the computer-use skill, but opening Firefox
+timed out waiting for app access. No rendered phone approval is claimed.
+
+Publication and full regression result will be recorded after verification.
+
 ## Scoring sections and dictionary warning — 0.16.1, 21 October 2026
 
 Single click/tap immediately finishes the current section: word letters plus

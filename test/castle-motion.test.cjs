@@ -28,7 +28,7 @@ function setup({reduced=false,interrupt=false,skipAt,skipAll=false,restoreOnComp
   $('game-table').dataset.seat='1';
   const beforeTiles=[{id:'0,0',q:0,r:0,letter:'D',value:2,owner:2,castle:true}],afterTiles=[{...beforeTiles[0],owner:1}];
   const t=new Element('g');t.setAttribute('data-id','0,0');t.className='tile castle-tile owner2';
-  for(const [tag,cls]of [['polygon',''],['text',''],['text','value'],['circle','castle-pulse'],['circle','marker']]){const child=new Element(tag);child.className=cls;t.append(child);}$('board').append(t);
+  for(const [tag,cls]of [['polygon',''],['text',''],['text','value'],['circle','castle-pulse']]){const child=new Element(tag);child.className=cls;t.append(child);}$('board').append(t);
   const context={module:{exports:{}},exports:{},document,window,matchMedia:()=>media,DOMException,AbortController,performance:{now:()=>now},setTimeout:(fn)=>setTimeout(fn,0),clearTimeout,requestAnimationFrame:fn=>setTimeout(()=>{now+=200;fn(now);},0),cancelAnimationFrame:clearTimeout};
   vm.runInNewContext(source,context);motion=context.module.exports.createBoardScoreMotion({onComplete:()=>{completed++;if(restoreOnComplete){plan.totalsAfter.forEach((n,i)=>$('score-'+(i+1)).textContent=String(n));t.classes.delete('owner2');t.classes.add('owner1');}}});
   const plan={player:1,word:'D',path:['0,0'],beforeTiles,afterTiles,totalsBefore:[10,10],totalsAfter:[15,5],castleCaptures:['0,0'],events:[{kind:'territory',player:1,amount:5,sources:[{id:'0,0',amount:5}]},{kind:'loss',player:2,amount:-5,sources:[{id:'0,0',amount:-5}]}]};

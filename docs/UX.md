@@ -1,5 +1,13 @@
 # Autumn Sunday UX revision - 4 October 2026
 
+## Compact letter-point preview — 0.16.2
+
+Board ownership is conveyed by tile color and accessible labels; no small dot or
+ring on owned tiles, including during scoring. The word row has a compact numeric
+letter-point preview with a small “pts” label between the word and Undo. Keep it
+hidden for an empty selection; reserve no extra vertical space. The previous-move
+row keeps its text and history action without a trailing points figure.
+
 ## Scoring controls and word rejection — 0.16.1
 
 Single tap skips the current scoring section; double-tap skips all. Group word

@@ -1,5 +1,13 @@
 # Run, deploy and maintain
 
+## Word bar cleanup — 0.16.2
+
+Shared web/Capacitor client only. Run `npm test` and `npm run build`, deploy the
+normal `/online/` assets, then verify/publish the signed APK from existing CI.
+No Supabase deploy or migration. Letter preview must use the saved game config
+and raw tile letters (jokers zero), not assigned joker letters or length bonuses.
+Existing infrastructure and costs are unchanged.
+
 ## Scoring section controls — 0.16.1
 
 Client-only: run `npm test`, `npm run build`, publish `/online/` and build the

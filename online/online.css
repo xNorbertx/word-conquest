@@ -859,15 +859,6 @@ input:read-only {
 }
 .tile .castle-pulse {fill:none;stroke:#a98235;stroke-width:1.8;opacity:0;pointer-events:none;transform-box:fill-box;transform-origin:center}
 .tile.castle-tile {transform-box:fill-box;transform-origin:center}
-.tile .marker {
-  fill: #526747;
-  stroke: none;
-}
-.tile.owner2 .marker {
-  fill: none;
-  stroke: #765a43;
-  stroke-width: 1.7;
-}
 .tile .step {
   font: 9px sans-serif;
   fill: #2e4534;
@@ -956,10 +947,6 @@ input:read-only {
 .recap-row .icon {
   width: 17px;
   height: 17px;
-}
-.recap-row > span:last-child {
-  font: 21px var(--serif);
-  color: var(--green);
 }
 .pending-card {
   background: #f4ebd4;
@@ -1762,7 +1749,7 @@ input:read-only {
 @media(prefers-reduced-motion:reduce){.score-point{box-shadow:none}.is-scoring .tile>polygon:first-child{transition:none}}
 .is-scoring.score-reduced .tile>polygon:first-child{transition:none}
 
-/* Fortified castles retain player fills and ownership markers at every stage. */
+/* Fortified castles retain player fills at every stage. */
 .language-picker{display:flex;flex-direction:column;gap:8px;border:0;padding:0;margin:0 0 14px;min-width:0}
 .language-picker legend{font-size:13px;font-weight:650;padding:0;margin-bottom:10px}
 .language-picker label{position:relative;display:flex;align-items:center;gap:9px;flex:1;min-height:48px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;font-size:15px;cursor:pointer}
@@ -1836,6 +1823,9 @@ body.joker-picking { overflow:hidden; }
 .word-panel { display:flex; align-items:center; gap:6px; padding:8px; border-radius:16px; }
 #word { flex:1; min-width:0; min-height:44px; display:flex; flex-wrap:nowrap; align-items:center; gap:1px; overflow-x:auto; overflow-y:hidden; white-space:nowrap; margin:0; padding:0 5px; font-size:30px; line-height:44px; scrollbar-width:none; }
 #word::-webkit-scrollbar { display:none; }
+#word-points { flex:0 0 auto; min-width:28px; padding:0 3px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; color:var(--own-ink,var(--green)); font-variant-numeric:tabular-nums; }
+#word-points strong { font:650 18px/1.1 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+#word-points>span { color:var(--muted); font:11px/1.1 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
 #word>span,#word>.word-joker { flex-shrink:0; }
 #word .word-joker { height:38px; min-width:28px; margin:0 1px; }
 #clear-word { flex:0 0 44px; min-width:44px; width:44px; height:44px; }
@@ -1961,8 +1951,6 @@ body.joker-picking { overflow:hidden; }
 :root[data-theme="dark"] #board .tile.your-tile>polygon:first-child { stroke:var(--own-ink); }
 :root[data-theme="dark"] #board .tile text { fill:var(--ink); }
 :root[data-theme="dark"] #board .tile .value { fill:var(--night-values); }
-:root[data-theme="dark"] #board .tile .marker { fill:var(--green); }
-:root[data-theme="dark"] #board .tile.owner2 .marker { fill:none; stroke:var(--night-walnut); }
 :root[data-theme="dark"] #board .tile .step { fill:var(--ink); }
 :root[data-theme="dark"] #board .tile.last-move>polygon:first-child { stroke:var(--green); }
 :root[data-theme="dark"] #board .tile.castle-tile>polygon:first-child { stroke:var(--night-gold); }
