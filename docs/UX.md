@@ -1,5 +1,13 @@
 # Autumn Sunday UX revision - 4 October 2026
 
+## Joker ownership colour and supply width — 0.16.3
+
+Body-level joker controls must explicitly receive the playing side and use the
+same ownership palette as the table, including dark mode and the letter flight.
+Keep one visible player byline during scoring; do not repeat it below the word.
+The supply bar shares roughly half the turn row, fills its available width and
+caps at 220px. Retain room for the turn label and ellipsis for long player names.
+
 ## Compact letter-point preview — 0.16.2
 
 Board ownership is conveyed by tile color and accessible labels; no small dot or

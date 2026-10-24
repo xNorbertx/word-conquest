@@ -44,7 +44,7 @@ export function createJokerKeyboard(){
   function fly(letter,from,id){
     const to=target(id)?.getBoundingClientRect();
     if(!from?.width||!to?.width||typeof Element.prototype.animate!=='function'||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
-    const flying=node('span',letter,'joker-letter-flight');document.body.append(flying);
+    const flying=node('span',letter,'joker-letter-flight');flying.setAttribute('data-side',dialog.getAttribute('data-side'));document.body.append(flying);
     Object.assign(flying.style,{left:from.left+'px',top:from.top+'px',width:from.width+'px',height:from.height+'px'});
     flying.animate([{opacity:1,transform:'translate(0,0) scale(1)'},{opacity:0,transform:`translate(${to.left+to.width/2-from.left-from.width/2}px,${to.top+to.height/2-from.top-from.height/2}px) scale(.7)`}],{duration:230,easing:'cubic-bezier(.2,.8,.2,1)'}).finished.catch(()=>{}).finally(()=>flying.remove());
   }
@@ -98,6 +98,7 @@ export function createJokerKeyboard(){
   });
   function open(next){
     if(!next.valid(next.tileId)){close();return;}
+    dialog.setAttribute('data-side',next.side==='walnut'?'walnut':'sage');
     pointerStartedHere=false;session={...next,path:[...next.path],assignments:{...next.assignments}};
     paint();if(!dialog.open)dialog.showModal();lock(true);focusKey();
   }

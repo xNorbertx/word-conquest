@@ -1,5 +1,14 @@
 # Word Conquest — app roadmap
 
+## Player colour and game-screen refinements — 0.16.3
+
+- [x] Match joker placeholder, selected state and letter flight to the playing side.
+- [x] Remove the lower player label during scoring; preserve accessible attribution.
+- [x] Widen the letter-supply track responsively, keeping room for turn text.
+- [x] Regression suite and production board DOM checks.
+- [ ] Publish and verify web and signed Android APK.
+- [ ] Rendered phone review; in-app browser unavailable this session.
+
 ## Board and word bar cleanup — 0.16.2
 
 - [x] Remove filled/outlined ownership dots from board rendering and animations.

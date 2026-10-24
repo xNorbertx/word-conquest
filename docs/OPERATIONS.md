@@ -1,5 +1,13 @@
 # Run, deploy and maintain
 
+## Joker colour and game-screen refinements — 0.16.3
+
+Client-only release: `npm test`, `npm run build`, publish the normal web assets
+and signed Android pilot through existing CI. No Supabase deployment/migration.
+The joker dialog and letter-flight elements live outside `#game-table`; keep
+their explicit `data-side` and shared light/dark ownership variables. App refresh
+or APK update is required. Ongoing costs unchanged.
+
 ## Word bar cleanup — 0.16.2
 
 Shared web/Capacitor client only. Run `npm test` and `npm run build`, deploy the

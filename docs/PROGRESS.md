@@ -1,5 +1,29 @@
 # Implementation and verification - updated 24 October 2026
 
+## Joker colour and compact scoring caption — 0.16.3, 25 October 2026
+
+The joker picker is a body-level dialog, outside the game table's inherited
+player palette. The client now passes its own seat as the picker side on each
+open; the dialog and flying letter share the table's light/dark colour tokens.
+This covers blank/assigned/current slots, inline word jokers, selection accents
+and letter flights. Consecutive joker selections keep the side; reopening in
+another game resets it. The chosen joker's previous owner does not set the colour.
+
+Removed the lower scoring-animation recipient line and its styles. The existing
+“You played”/opponent byline stays. Phase attribution is retained in the accessible
+section label. Score amounts, income recipients and animation behavior are unchanged.
+
+Letter supply now takes a flexible 48% of the turn row (96px minimum, 220px maximum),
+with a 4px track filling its container. Turn text shares the rest and long opponent
+names keep ellipsis. This is about twice the former 76px width on typical phones,
+without adding a row. The remaining count and fill calculation are unchanged.
+
+258 Node tests plus engine/scoring/supply suites and build pass. Production DOM
+checks cover both seats, languages, live/final boards, scoring and picker-side
+transfer. An in-app rendered review was attempted, but IAB is unavailable; no
+rendered phone review is claimed. No backend, data, rule, dictionary, dependency,
+permission or cost change. Publication will be recorded after verification.
+
 ## Board and word bar cleanup — 0.16.2, 24 October 2026
 
 Removed ownership dot/ring generation from the online board and scoring animation,

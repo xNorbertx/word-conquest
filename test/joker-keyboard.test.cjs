@@ -22,7 +22,7 @@ function setup(alphabet='ABCDEFGHIJKLMNOPQRSTUVWXYZ',{two=false}={}){
  const main=new Element('dialog');main.id='sheet';body.append(main);const confirm=new Element('dialog');confirm.id='confirm-dialog';body.append(confirm);
  const controller=createJokerKeyboard(),find=name=>lookup(el=>el.className?.split(' ').includes(name)),dialog=find('joker-keyboard');
  let valid=true,accept=true;const saved={},tiles=[{id:'a',letter:'C'},{id:'j',letter:'?'},{id:'k',letter:two?'?':'T'}],path=['a','j','k'];
- const open=(tileId='j')=>controller.open({tileId,tiles,path,assignments:{...saved},alphabet,valid:()=>valid,onCommit:(id,value)=>{if(!accept)return false;saved[id]=value;return true;}});
+ const open=(tileId='j',side='sage')=>controller.open({side,tileId,tiles,path,assignments:{...saved},alphabet,valid:()=>valid,onCommit:(id,value)=>{if(!accept)return false;saved[id]=value;return true;}});
  const keys=()=>find('joker-keyboard-pad').children.flatMap(row=>row.children);
  return {controller,find,dialog,body,saved,open,keys,invalidate(){valid=false;},reject(){accept=false;},choose(letter){keys().find(key=>key.textContent===letter).onclick();}};
 }
@@ -144,4 +144,11 @@ test('fresh backdrop taps close the picker; cancelled gestures and old openers c
  f.dialog.emit('pointerdown');f.open();assert.equal(f.dialog.emit('click',{detail:1,clientX:100,clientY:100}).prevented,true);
  f.dialog.emit('pointerdown');f.dialog.emit('click',{detail:1,clientX:100,clientY:100});assert(!f.controller.active);
  f.open();f.dialog.emit('click',{detail:0,clientX:100,clientY:100});assert(!f.controller.active,'assistive click still works');
+});
+
+test('picker uses the playing side, retains it between jokers, and resets when opening another game',()=>{
+ const f=setup(undefined,{two:true});f.open('j','walnut');assert.equal(f.dialog.getAttribute('data-side'),'walnut');
+ f.choose('M');assert.equal(f.dialog.getAttribute('data-side'),'walnut');assert(f.controller.active);f.choose('T');
+ f.open('j','sage');assert.equal(f.dialog.getAttribute('data-side'),'sage');f.dialog.emit('cancel');
+ f.open('j','walnut');assert.equal(f.dialog.getAttribute('data-side'),'walnut');
 });

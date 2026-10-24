@@ -256,7 +256,7 @@ function openJoker(id){
   const snapshot={gameId:game?.id,revision:game?.revision};
   const valid=tileId=>currentView==='game'&&canAssignJoker({...snapshot,tileId},{gameId:game?.id,revision:game?.revision,editable:preview||canPlay(),path:selection,tiles:game?.state.tiles||[]});
   if(!valid(id))return;
-  jokerKeyboard.open({tileId:id,tiles:game.state.tiles,path:[...selection],assignments:{...jokers},alphabet:config.alphabet||LANGUAGES.en.alphabet,valid,
+  jokerKeyboard.open({side:seatOf(game,user?.id)===2?'walnut':'sage',tileId:id,tiles:game.state.tiles,path:[...selection],assignments:{...jokers},alphabet:config.alphabet||LANGUAGES.en.alphabet,valid,
     onCommit:(tileId,letter)=>{if(!valid(tileId))return false;jokers[tileId]=letter;drawBoard();renderSelection();return true;}
   });
 }

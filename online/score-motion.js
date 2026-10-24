@@ -160,7 +160,7 @@ export function createBoardScoreMotion({onComplete}){
           for(const el of $('board').querySelectorAll('.tile'))el.classList.remove('motion-source','motion-castle','motion-loss');
           const label={word:'Word points',castles:'Castle income',territory:'Territory gained','final-territory':'Final territory',loss:'Territory lost'}[e.kind];
           const player=e.player===seat?'You':names[e.player-1];
-          $('motion-label').textContent=label;$('motion-recipient').textContent=player;
+          $('motion-label').textContent=label;$('score-motion').setAttribute('aria-label',`${label} for ${player}`);
           $('motion-symbol').replaceChildren(icon({word:'book',castles:'castle',territory:'territory','final-territory':'territory',loss:'capture'}[e.kind]));
           $('motion-tally').textContent='+0';$('score-motion').dataset.side=e.player===1?'sage':'walnut';
           if(e.kind==='word'){await wordPoints(plan,e,balances,signal);continue;}

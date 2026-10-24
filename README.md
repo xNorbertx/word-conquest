@@ -1,5 +1,12 @@
 # Word Conquest
 
+### Player colour and game-screen refinements (0.16.3)
+
+Joker placeholders follow your playing colour in light and dark mode. Scoring
+animations omit the lower repeated player name. The remaining-letters bar now
+uses roughly half the turn row, instead of a fixed 76px.
+See [release status and checks](docs/PROGRESS.md).
+
 ### Board and word bar cleanup (0.16.2)
 
 Captured tiles use their ownership colors without dots. A compact live counter
