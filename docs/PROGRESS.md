@@ -1,4 +1,4 @@
-# Implementation and verification - updated 21 October 2026
+# Implementation and verification - updated 24 October 2026
 
 ## Board and word bar cleanup — 0.16.2, 24 October 2026
 
@@ -24,7 +24,21 @@ of markers after animation, scoreless recap, history and saved score totals.
 Rendered review was attempted using the computer-use skill, but opening Firefox
 timed out waiting for app access. No rendered phone approval is claimed.
 
-Publication and full regression result will be recorded after verification.
+Verified: **257/257** Node tests, original engine/scoring/supply suites and build
+passed. Final dark-mode styles passed the theme suite. Android CI passed too.
+
+Released on 24 October 2026:
+
+- Source `fc6a27ac6f179b2ce85959a3e5b4de2f89ca9694`; [web app](https://xnorbertx.github.io/word-conquest/online/) via
+  Pages `6f822c50fb470dbfadb3176932a7083d5ee237bb`. All ten public files match the tested build,
+  normalizing existing line endings. Original prototype and previews preserved.
+- [Android CI](https://github.com/xNorbertx/word-conquest/actions/runs/40136019608) succeeded. Signed APK
+  `0.16.2-fc6a27a`, code `25653098`; [download](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25653098/word-conquest-android.apk).
+  Stable signing certificate, package/manifest, bundled assets and anonymous
+  download verified. No fixture or private-key material included.
+- SHA-256 `73aea9c728df3b5d40789631bd9e8d05ba3ca71b8e21fe2e7b2b7ab961b5f389`; 5,008,347 bytes.
+- Refresh the web page or install the APK for the update. Costs unchanged.
+  Rendered phone acceptance remains open after the browser access timeout.
 
 ## Scoring sections and dictionary warning — 0.16.1, 21 October 2026
 

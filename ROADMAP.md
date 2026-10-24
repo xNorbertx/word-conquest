@@ -6,7 +6,7 @@
 - [x] Add letter-only points beside the selected word without another row.
 - [x] Remove previous-move points, retaining the word and history navigation.
 - [x] Verify selection, backtrack, clear, joker edits and reset using production DOM.
-- [ ] Publish and verify web and signed Android APK.
+- [x] Publish and verify web and signed Android APK.
 - [ ] Rendered phone review; native browser access approval timed out this session.
 
 ## Section skipping and invalid-word dialog — 0.16.1

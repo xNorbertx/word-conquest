@@ -5,6 +5,7 @@
 Captured tiles use their ownership colors without dots. A compact live counter
 beside the selected word adds letter points only (jokers stay zero). The previous
 move row shows the word without its score and still opens Move history.
+Refresh the [web app](https://xnorbertx.github.io/word-conquest/online/) or install [Android 0.16.2-fc6a27a](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25653098/word-conquest-android.apk).
 See [release status and checks](docs/PROGRESS.md).
 
 ### Scoring controls and word warning (0.16.1)
