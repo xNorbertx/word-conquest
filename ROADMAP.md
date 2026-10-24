@@ -6,7 +6,7 @@
 - [x] Remove the lower player label during scoring; preserve accessible attribution.
 - [x] Widen the letter-supply track responsively, keeping room for turn text.
 - [x] Regression suite and production board DOM checks.
-- [ ] Publish and verify web and signed Android APK.
+- [x] Publish and verify web and signed Android APK.
 - [ ] Rendered phone review; in-app browser unavailable this session.
 
 ## Board and word bar cleanup — 0.16.2

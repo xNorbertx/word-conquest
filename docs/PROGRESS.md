@@ -1,4 +1,4 @@
-# Implementation and verification - updated 24 October 2026
+# Implementation and verification - updated 25 October 2026
 
 ## Joker colour and compact scoring caption — 0.16.3, 25 October 2026
 
@@ -22,7 +22,18 @@ without adding a row. The remaining count and fill calculation are unchanged.
 checks cover both seats, languages, live/final boards, scoring and picker-side
 transfer. An in-app rendered review was attempted, but IAB is unavailable; no
 rendered phone review is claimed. No backend, data, rule, dictionary, dependency,
-permission or cost change. Publication will be recorded after verification.
+permission or cost change. Released on 25 October 2026:
+
+- Source `b519cbe37624b3f8c8a4bcdc6adca3c9a7ea6ec3`; [web app](https://xnorbertx.github.io/word-conquest/online/) via
+  Pages `4bd79d053e978e85703667f339f565fee37b20eb`. All ten public files match the tested build,
+  normalizing existing line endings; prototype and previews preserved.
+- [Android CI](https://github.com/xNorbertx/word-conquest/actions/runs/40138440178) passed. Signed APK
+  `0.16.3-b519cbe`, code `25655119`; [download](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25655119/word-conquest-android.apk).
+  Package/manifest, stable signing certificate, bundled UI and anonymous download
+  verified. No test fixture or private-key material included.
+- SHA-256 `af5b2be475a6a46ca7015a34ef414bac8bb83a6fdc4b9c13ecb37860a07181ce`; 5,008,375 bytes.
+- Refresh web or install the APK. Rendered phone review remains open because
+  the in-app browser is unavailable; behavioral verification is complete.
 
 ## Board and word bar cleanup — 0.16.2, 24 October 2026
 

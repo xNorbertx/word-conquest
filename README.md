@@ -5,6 +5,7 @@
 Joker placeholders follow your playing colour in light and dark mode. Scoring
 animations omit the lower repeated player name. The remaining-letters bar now
 uses roughly half the turn row, instead of a fixed 76px.
+Refresh the [web app](https://xnorbertx.github.io/word-conquest/online/) or install [Android 0.16.3-b519cbe](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25655119/word-conquest-android.apk).
 See [release status and checks](docs/PROGRESS.md).
 
 ### Board and word bar cleanup (0.16.2)
