@@ -27,8 +27,23 @@ dependencies, rules, migrations or ongoing costs.
 app fixtures at 390 × 844 and 320 × 568, including both player colours and dark
 mode. Checked closing/reopening, Escape/focus return, loss/draw, and a live final
 turn followed by double-tap skip: the final-tap guard completes before the result
-opens and confetti starts. Physical Safari/Seeker acceptance remains open.
-Publication details follow after verification.
+opens and confetti starts. Historical rules, reduced motion, quiet page refresh,
+short landscape scrolling and deliberately incomplete history/retry were also
+checked. No browser errors. Physical Safari/Seeker acceptance remains open.
+
+Released and verified:
+
+- Source `3e91c5ce0c3118b69604688f3c7f2df50b5b3949`; [web app](https://xnorbertx.github.io/word-conquest/online/) via Pages
+  `7b3d84e52289c44f7ea3aff66046507c815dddf1`. All ten app/prototype files match the tested build after
+  normalizing existing line endings; only the three changed app assets were
+  published. Original prototype and all preview galleries are preserved.
+- [Android CI](https://github.com/xNorbertx/word-conquest/actions/runs/40568731269) passed. Signed APK `0.17.0-3e91c5c`,
+  code `25903477`; [download](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25903477/word-conquest-android.apk). Package/version, stable signing
+  certificate, native resources and all bundled client assets verified; anonymous
+  download checksum matches. No fixture or private-key material included.
+- SHA-256 `6ddb8bd65aa03af09a26857ff2f21a511e5a7d4e6b9b3c52aab7fb158e8385a1`; 5,014,766 bytes.
+- Refresh the web page or install the APK over the current pilot. No backend
+  deployment, database migration or new ongoing costs.
 
 ## End-game prototypes — 27 October 2026
 

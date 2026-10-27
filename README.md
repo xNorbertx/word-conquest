@@ -7,6 +7,8 @@ points, length bonuses, castles, final territory and best word. A first win gets
 a brief confetti burst after scoring; reopening the result is quiet. The card
 follows your playing colour and light/dark setting. **View board** returns to the
 finished game; **View result** opens the same details again.
+Refresh the [web app](https://xnorbertx.github.io/word-conquest/online/) or install
+[Android 0.17.0-3e91c5c](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25903477/word-conquest-android.apk).
 See [release status and checks](docs/PROGRESS.md).
 
 ### Player colour and game-screen refinements (0.16.3)

@@ -9,7 +9,7 @@
 - [x] Wait for final scoring and its tap guard; celebrate each win once per device.
 - [x] Reopen the same details, including after app restart, without repeat confetti.
 - [x] Regression tests, small-phone layouts, both colours and dark mode.
-- [ ] Publish and verify normal web assets and signed Android pilot.
+- [x] Publish and verify normal web assets and signed Android pilot.
 - [ ] Physical iOS/Android acceptance on the owner's devices.
 
 ## End-game result designs — 27 October 2026
