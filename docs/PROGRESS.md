@@ -15,8 +15,15 @@ one burst on replay and no burst on reopen/loss/draw. CSS/JS parse checks pass;
 browser has no warnings/errors. Native Safari/physical-device feel is not claimed.
 The gallery uses fictional data, not live account or game details.
 
-Publication is pending final verification. Owner selection is required before
-implementing a design in the app. See [prototype notes](../design/endgame/README.md).
+Published [phone gallery](https://xnorbertx.github.io/word-conquest/previews/endgame/).
+All six public files match source `5bb089d`; Pages commit `160ec21`.
+Ten existing app/prototype/previous-gallery assets match the preceding deployment.
+The public gallery and an actual win popup were also opened and verified in the
+browser at phone size, including active confetti. Short landscape allows scrolling
+with no horizontal overflow. No new costs or APK build were needed.
+
+Owner selection is required before implementing a design in the app. See
+[prototype notes](../design/endgame/README.md).
 
 ## Joker colour and compact scoring caption — 0.16.3, 25 October 2026
 

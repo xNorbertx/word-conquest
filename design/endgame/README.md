@@ -48,4 +48,6 @@ Closing, resizing or hiding the page stops it immediately.
 
 Only `design/endgame/`, design documentation and the dedicated public preview path
 are changed. Production app, backend, rules, APK and existing previews are untouched.
-Publication verification is recorded in `docs/PROGRESS.md`.
+Published and verified: all six public files match source `5bb089d`; Pages commit
+`160ec21`. The public win screen was also visually checked at phone size.
+Existing app and prior preview assets are unchanged. See `docs/PROGRESS.md`.
