@@ -1906,11 +1906,13 @@ function showUnknownWord(word) {
   $("close-unknown-word").focus({ preventScroll: true });
 }
 function closeSheet() {
+  if ($("endgame-dialog")?.open) $("endgame-dialog").close();
   if ($("unknown-word-dialog")?.open) $("unknown-word-dialog").close();
   if ($("joker-keyboard")?.open) $("joker-keyboard").close();
   if ($("sheet").open) $("sheet").close();
 }
 function showSheet(title, content) {
+  if ($("endgame-dialog")?.open) $("endgame-dialog").close();
   if ($("joker-keyboard")?.open) $("joker-keyboard").close();
   $("sheet-title").textContent = title;
   $("sheet-content").replaceChildren(...Array.isArray(content) ? content : [content]);
@@ -1957,6 +1959,10 @@ function initUI() {
   });
 }
 function closeTopDialog() {
+  if ($("endgame-dialog")?.open) {
+    $("endgame-close").click();
+    return true;
+  }
   if ($("unknown-word-dialog")?.open) {
     $("unknown-word-dialog").close();
     return true;
@@ -1991,83 +1997,6 @@ function infoSections(sections) {
   }
   return box;
 }
-
-// online/analytics.js
-function renderAnalytics(root, data, { openGame: openGame2 }) {
-  const record = node("div", void 0, "analytics-record");
-  for (const [key, label] of [["wins", "Wins"], ["losses", "Losses"], ["draws", "Draws"]]) {
-    const item = node("div");
-    item.append(node("strong", data[key]), node("span", label));
-    record.append(item);
-  }
-  const records = node("div", void 0, "analytics-records");
-  const date = (value) => {
-    const d = new Date(value);
-    return value && !Number.isNaN(+d) ? d.toLocaleDateString(void 0, { day: "numeric", month: "short", year: "numeric" }) : "";
-  };
-  const entries = [
-    ["Best game", data.bestGame, "points", "award", data.bestGame ? date(data.bestGame.at) : ""],
-    ["Best word", data.bestWord, "points", "book", data.bestWord?.word],
-    ["Longest word", data.longestWord, "letters", "book", data.longestWord?.word],
-    ["Biggest capture", data.biggestCapture, "tiles", "territory", data.biggestCapture?.word],
-    ["Castles captured", { value: data.castlesCaptured }, "captures", "castle", ""]
-  ];
-  for (const [label, value, unit, symbol, detail] of entries) {
-    const item = value?.gameId ? button("", () => openGame2(value.gameId), "analytics-item") : node("div", void 0, "analytics-item");
-    item.replaceChildren();
-    const copy2 = node("div", void 0, "analytics-copy"), amount2 = node("div", void 0, "analytics-amount");
-    copy2.append(node("span", label, "analytics-label"));
-    if (detail) copy2.append(node("strong", detail, "analytics-detail"));
-    amount2.append(node("strong", value?.value ?? "\u2014"));
-    if (label !== "Castles captured") amount2.append(node("small", unit));
-    item.append(icon(symbol), copy2, amount2);
-    if (value?.gameId) item.setAttribute("aria-label", `${label}: ${value.value} ${unit}. ${detail || ""}. Open game`);
-    records.append(item);
-  }
-  root.replaceChildren(record, records, node("p", "Current rules only", "small-note analytics-scope"));
-  if (!data.games && !data.words) root.append(node("p", "No games recorded yet.", "small-note"));
-}
-
-// online/copy.mjs
-function rulesSections(rules2) {
-  const defended = rules2.scoringMode === "defended-final";
-  const bonus = rules2.wordScoring.lengthBonuses.map((points, length) => points ? `${length} \u2192 +${points}` : null).filter(Boolean).join(" \xB7 ");
-  const sections = [
-    ["Words", `Start on your territory and connect ${rules2.minimumWordLength}+ letters, including diagonals. Use each tile once. With no territory left, start anywhere.`],
-    ["Captures", Number.isFinite(rules2.maxEnemyTilesPerWord) ? `Your word claims its tiles. Capture up to ${rules2.maxEnemyTilesPerWord} opponent tiles per turn.` : "Your word claims every tile it uses. No capture limit."],
-    ["Word points", "Add the value on each letter. Jokers score 0."],
-    ["Length bonus", `Letters \u2192 bonus: ${bonus}. Each further letter adds ${rules2.wordScoring.extraLetterBonus} points.`]
-  ];
-  if (defended) {
-    sections.push(
-      ["Castles", `Side: +${rules2.castleIncome.side} \xB7 Centre: +${rules2.castleIncome.center}. Earn points for castles you hold through your opponent\u2019s word or refresh. Capturing alone earns nothing.`],
-      ["Final territory", `At game end, each tile you own adds ${rules2.finalTerritoryPoints} point. No capture deductions or extra castle bonus.`]
-    );
-  } else {
-    sections.push(["Territory", `Ordinary tiles: ${rules2.normalTerritoryPoints} \xB7 Side castles: ${rules2.castlePoints} \xB7 Centre: ${rules2.centerCastlePoints ?? rules2.castlePoints}. Points change with ownership.`]);
-    if (rules2.castleIncome) sections.push(["Castle income", `After both players move, held side castles add ${rules2.castleIncome.side} points and the centre adds ${rules2.castleIncome.center}, including the final round. Earned income stays yours.`]);
-  }
-  sections.push(
-    ["Letters", `Played letters are replaced; jokers stay. Refresh replaces your owned letters, except jokers, and uses your turn.`],
-    ["Game end", `${rules2.letterBudget} letters are shared. When they run out, the second player gets a final reply if needed. Highest score wins.${rules2.castleIncome ? " Starting player is random." : ""}`]
-  );
-  return sections;
-}
-
-// assets/monogram.json
-var monogram_default = {
-  viewBox: "0 0 108 108",
-  paths: [
-    {
-      d: "M76 33 C58 19 32 29 28 50 C23 74 49 89 72 77",
-      width: 6
-    },
-    {
-      d: "M43 43 L50 68 L59 48 L67 68 L75 43",
-      width: 5
-    }
-  ]
-};
 
 // server/versions/engine-v1.mjs
 var WordConquest = /* @__PURE__ */ (() => {
@@ -2843,6 +2772,327 @@ var engine_default = {
   castleIncomePerRound: (state, config3) => config3.castleIncome ? engine_v2_default.castleIncomePerRound(state, config3) : [0, 0]
 };
 
+// online/endgame.mjs
+function endgameSummary(game2, actor, config3, moves) {
+  const seat = game2?.players?.indexOf(actor) + 1;
+  if (!seat || game2.status !== "completed" || !["1", "2", "draw"].includes(game2.result)) return null;
+  const score = engine_default.scoreBreakdown(game2.state, config3)[seat - 1];
+  let words = 0, bonus = 0, best = null;
+  const unique = /* @__PURE__ */ new Map();
+  for (const move of moves || []) if (Number.isSafeInteger(move.revision) && move.revision <= game2.revision) unique.set(move.revision, move);
+  for (const { recap: r } of [...unique.values()].sort((a, b) => b.revision - a.revision)) {
+    if (r?.player !== seat || r.action !== "word") continue;
+    const s = r.score;
+    if (!s || ![s.letters, s.lengthBonus, s.wordPoints].every((n) => Number.isSafeInteger(n) && n >= 0) || s.letters + s.lengthBonus !== s.wordPoints || typeof r.word !== "string" || !r.word.length) return null;
+    words += s.letters;
+    bonus += s.lengthBonus;
+    if (!best || s.wordPoints > best.points) best = { word: r.word, letters: s.letters, bonus: s.lengthBonus, points: s.wordPoints };
+  }
+  if (words + bonus !== score.words) return null;
+  const legacy = config3.scoringMode !== "defended-final";
+  const heldCastles = legacy ? game2.state.tiles.filter((t) => t.owner === seat && t.castle).reduce((n, t) => n + (t.q === 0 && t.r === 0 ? config3.centerCastlePoints ?? config3.castlePoints : config3.castlePoints), 0) : 0;
+  const castles = (score.income || 0) + heldCastles, territory = score.territory - heldCastles;
+  if (words + bonus + castles + territory !== score.total) return null;
+  return { words, bonus, castles, territory, total: score.total, best, legacy };
+}
+function createEndgameStore(storage, { namespace = "", limit = 300 } = {}) {
+  const key = "wc-result-seen:v1:" + namespace, memory = /* @__PURE__ */ new Map(), summaries = /* @__PURE__ */ new Map();
+  function read() {
+    try {
+      const raw = storage?.getItem(key);
+      if (raw?.length < 1e5) {
+        const data = JSON.parse(raw);
+        for (const [k, v] of Object.entries(data || {})) if (Number.isSafeInteger(v) && v >= 0) memory.set(k, Math.max(memory.get(k) ?? -1, v));
+      }
+    } catch {
+    }
+  }
+  const id = (actor, game2) => actor + "/" + game2.id;
+  const stamp = (game2) => game2.rules_version + "/" + game2.revision;
+  return {
+    claim(actor, game2) {
+      if (!actor || game2?.status !== "completed" || !game2.players?.includes(actor) || !Number.isSafeInteger(game2.revision)) return false;
+      read();
+      const k = id(actor, game2), seen = memory.get(k) ?? -1;
+      memory.delete(k);
+      memory.set(k, Math.max(seen, game2.revision));
+      while (memory.size > limit) memory.delete(memory.keys().next().value);
+      try {
+        storage?.setItem(key, JSON.stringify(Object.fromEntries(memory)));
+      } catch {
+      }
+      return game2.revision > seen;
+    },
+    get(actor, game2) {
+      const value = summaries.get(id(actor, game2));
+      return value?.stamp === stamp(game2) ? value.summary : null;
+    },
+    save(actor, game2, summary) {
+      const k = id(actor, game2);
+      summaries.delete(k);
+      summaries.set(k, { stamp: stamp(game2), summary });
+      while (summaries.size > 12) summaries.delete(summaries.keys().next().value);
+    },
+    clear() {
+      summaries.clear();
+    }
+  };
+}
+
+// online/endgame.js
+function createEndgameResult({ getContext, getMoves, isAnimating, storage, namespace = "" }) {
+  const dialog = $("endgame-dialog"), store = createEndgameStore(storage, { namespace }), media = matchMedia("(prefers-reduced-motion: reduce)");
+  let shown = null, request = 0, frame = 0, timer = 0, confettiFrame = 0;
+  const identity = (c) => c?.actor && c.game ? `${c.actor}/${c.game.id}/${c.game.revision}` : null;
+  const eligible = (c) => c?.visible && !c.preview && c.game?.status === "completed" && c.game.players.includes(c.actor) && ["1", "2", "draw"].includes(c.game.result);
+  function stopConfetti() {
+    cancelAnimationFrame(confettiFrame);
+    confettiFrame = 0;
+    $("endgame-confetti").hidden = true;
+  }
+  function celebrate() {
+    stopConfetti();
+    if (media.matches || document.hidden) return;
+    const canvas = $("endgame-confetti"), ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const w = innerWidth, h = innerHeight, dpr = Math.min(devicePixelRatio || 1, 2);
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    canvas.hidden = false;
+    const colours = ["#b9cba4", "#d8c4a8", "#bf964e", "#fff6da", "#6a8660"];
+    const particles = Array.from({ length: 56 }, (_, i) => {
+      const side = i % 2 ? 1 : -1;
+      return { x: w * 0.5 + side * w * 0.28, y: h * 0.45, vx: -side * (70 + Math.random() * 160), vy: -(200 + Math.random() * 220), r: Math.random() * 6.28, spin: (Math.random() - 0.5) * 8, size: 4 + Math.random() * 4, colour: colours[i % colours.length], tile: i % 4 === 0 };
+    });
+    let start = 0, previous = 0;
+    const tick = (now) => {
+      if (!start) {
+        start = now;
+        previous = now;
+      }
+      const elapsed = (now - start) / 1e3, dt = Math.min((now - previous) / 1e3, 0.04);
+      previous = now;
+      if (elapsed > 3.4 || !dialog.open) {
+        stopConfetti();
+        return;
+      }
+      ctx.clearRect(0, 0, w, h);
+      ctx.globalAlpha = Math.min(1, (3.4 - elapsed) / 0.8);
+      for (const p of particles) {
+        p.vy += 170 * dt;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.r += p.spin * dt;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.r);
+        ctx.scale(1, Math.cos(elapsed * 4 + p.r) * 0.35 + 0.65);
+        ctx.fillStyle = p.colour;
+        if (p.tile) {
+          ctx.beginPath();
+          for (let n = 0; n < 8; n++) {
+            const a = Math.PI / 8 + n * Math.PI / 4, x = Math.cos(a) * p.size, y = Math.sin(a) * p.size;
+            n ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+          }
+          ctx.closePath();
+          ctx.fill();
+        } else ctx.fillRect(-p.size / 2, -p.size, p.size, p.size * 1.7);
+        ctx.restore();
+      }
+      confettiFrame = requestAnimationFrame(tick);
+    };
+    confettiFrame = requestAnimationFrame(tick);
+  }
+  const seal = svg("svg", { viewBox: "0 0 92 86", "aria-hidden": "true" });
+  seal.append(svg("path", { class: "endgame-rays", d: "M46 2v5M16 11l4 5M4 40h6M76 11l-4 5M82 40h6M17 68l4-4M75 68l-4-4" }), svg("path", { class: "endgame-seal-tile", d: "M30 12h32l14 14v32L62 72H30L16 58V26Z" }), svg("path", { class: "endgame-crown", d: "M30 56V32h8v8h5V26h7v14h5v-8h8v24H30Z" }), svg("path", { class: "endgame-door", d: "M42 56V47h10v9" }));
+  $("endgame-seal").append(seal);
+  function renderDetails(summary, config3) {
+    const rows = [["Words", "book", summary?.words], ["Length bonus", "arrow", summary?.bonus], ["Castles", "castle", summary?.castles], [config3.scoringMode === "defended-final" ? "Final territory" : "Territory", "territory", summary?.territory]];
+    const list = $("endgame-breakdown");
+    list.replaceChildren();
+    list.setAttribute("aria-busy", String(!summary));
+    for (const [label, symbol, amount2] of rows) {
+      const row2 = node("div"), term = node("dt"), value = node("dd", amount2 == null ? "\u2014" : String(amount2));
+      term.append(icon(symbol), node("span", label));
+      row2.append(term, value);
+      list.append(row2);
+    }
+    const best = summary?.best;
+    $("endgame-best-word").textContent = best?.word || (summary ? "No words played" : "\u2014");
+    $("endgame-best-points").textContent = best ? `${best.points} pts` : "";
+    $("endgame-best-detail").textContent = best ? `${best.letters} pts + ${best.bonus} bonus` : "";
+  }
+  async function details(c, stamp) {
+    const ticket = ++request, cached = store.get(c.actor, c.game);
+    renderDetails(cached, c.config);
+    $("endgame-status").hidden = !!cached;
+    $("endgame-status").textContent = "Loading scores\u2026";
+    $("endgame-retry").hidden = true;
+    if (cached) return;
+    try {
+      const moves = await getMoves();
+      if (ticket !== request || identity(getContext()) !== stamp || !dialog.open) return;
+      const summary = moves && endgameSummary(c.game, c.actor, c.config, moves);
+      if (!summary) throw Error("Incomplete score history");
+      store.save(c.actor, c.game, summary);
+      renderDetails(summary, c.config);
+      $("endgame-status").hidden = true;
+    } catch {
+      if (ticket !== request || identity(getContext()) !== stamp || !dialog.open) return;
+      $("endgame-breakdown").setAttribute("aria-busy", "false");
+      $("endgame-status").textContent = "Could not load detailed scores.";
+      $("endgame-status").hidden = false;
+      $("endgame-retry").hidden = false;
+    }
+  }
+  function show({ automatic = false } = {}) {
+    const c = getContext();
+    if (!eligible(c) || isAnimating()) return;
+    const seat = c.game.players.indexOf(c.actor) + 1, won = c.game.result === String(seat), stamp = identity(c);
+    const first = c.fresh && store.claim(c.actor, c.game);
+    shown = stamp;
+    closeSheet();
+    $("toast").hidden = true;
+    dialog.dataset.side = seat === 1 ? "sage" : "walnut";
+    dialog.dataset.outcome = won ? "win" : c.game.result === "draw" ? "draw" : "loss";
+    $("endgame-title").textContent = won ? "You won!" : c.game.result === "draw" ? "A draw." : "You lost.";
+    const totals = engine_default.scores(c.game.state, c.config);
+    $("endgame-own-score").textContent = totals[seat - 1];
+    $("endgame-other-score").textContent = totals[2 - seat];
+    $("endgame-opponent").textContent = c.game.names?.[2 - seat] || "Opponent";
+    void details(c, stamp);
+    if (!dialog.open) dialog.showModal();
+    dialog.scrollTop = 0;
+    $("endgame-title").focus({ preventScroll: true });
+    if (automatic && first && won) celebrate();
+  }
+  function close() {
+    ++request;
+    stopConfetti();
+    if (dialog.open) dialog.close();
+    if (getContext()?.visible) $("result-view")?.focus({ preventScroll: true });
+  }
+  function schedule() {
+    cancelAnimationFrame(frame);
+    clearTimeout(timer);
+    frame = requestAnimationFrame(() => {
+      const c = getContext();
+      if (!eligible(c) || !c.fresh || shown === identity(c) || isAnimating() || document.hidden || document.querySelector("dialog[open]")) return;
+      if (document.querySelector(".score-motion-dismiss")) {
+        timer = setTimeout(schedule, 450);
+        return;
+      }
+      show({ automatic: true });
+    });
+  }
+  $("endgame-close").onclick = $("endgame-board").onclick = close;
+  $("endgame-retry").onclick = () => {
+    const c = getContext();
+    if (eligible(c)) void details(c, identity(c));
+  };
+  dialog.addEventListener("cancel", (e) => {
+    e.preventDefault();
+    close();
+  });
+  dialog.addEventListener("close", () => {
+    ++request;
+    stopConfetti();
+  });
+  for (const d of document.querySelectorAll("dialog")) d.addEventListener("close", schedule);
+  media.addEventListener("change", stopConfetti);
+  window.addEventListener("resize", stopConfetti);
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) stopConfetti();
+    else schedule();
+  });
+  return { show, schedule, leave() {
+    ++request;
+    shown = null;
+    cancelAnimationFrame(frame);
+    clearTimeout(timer);
+    stopConfetti();
+    if (dialog.open) dialog.close();
+  }, clear: () => store.clear() };
+}
+
+// online/analytics.js
+function renderAnalytics(root, data, { openGame: openGame2 }) {
+  const record = node("div", void 0, "analytics-record");
+  for (const [key, label] of [["wins", "Wins"], ["losses", "Losses"], ["draws", "Draws"]]) {
+    const item = node("div");
+    item.append(node("strong", data[key]), node("span", label));
+    record.append(item);
+  }
+  const records = node("div", void 0, "analytics-records");
+  const date = (value) => {
+    const d = new Date(value);
+    return value && !Number.isNaN(+d) ? d.toLocaleDateString(void 0, { day: "numeric", month: "short", year: "numeric" }) : "";
+  };
+  const entries = [
+    ["Best game", data.bestGame, "points", "award", data.bestGame ? date(data.bestGame.at) : ""],
+    ["Best word", data.bestWord, "points", "book", data.bestWord?.word],
+    ["Longest word", data.longestWord, "letters", "book", data.longestWord?.word],
+    ["Biggest capture", data.biggestCapture, "tiles", "territory", data.biggestCapture?.word],
+    ["Castles captured", { value: data.castlesCaptured }, "captures", "castle", ""]
+  ];
+  for (const [label, value, unit, symbol, detail] of entries) {
+    const item = value?.gameId ? button("", () => openGame2(value.gameId), "analytics-item") : node("div", void 0, "analytics-item");
+    item.replaceChildren();
+    const copy2 = node("div", void 0, "analytics-copy"), amount2 = node("div", void 0, "analytics-amount");
+    copy2.append(node("span", label, "analytics-label"));
+    if (detail) copy2.append(node("strong", detail, "analytics-detail"));
+    amount2.append(node("strong", value?.value ?? "\u2014"));
+    if (label !== "Castles captured") amount2.append(node("small", unit));
+    item.append(icon(symbol), copy2, amount2);
+    if (value?.gameId) item.setAttribute("aria-label", `${label}: ${value.value} ${unit}. ${detail || ""}. Open game`);
+    records.append(item);
+  }
+  root.replaceChildren(record, records, node("p", "Current rules only", "small-note analytics-scope"));
+  if (!data.games && !data.words) root.append(node("p", "No games recorded yet.", "small-note"));
+}
+
+// online/copy.mjs
+function rulesSections(rules2) {
+  const defended = rules2.scoringMode === "defended-final";
+  const bonus = rules2.wordScoring.lengthBonuses.map((points, length) => points ? `${length} \u2192 +${points}` : null).filter(Boolean).join(" \xB7 ");
+  const sections = [
+    ["Words", `Start on your territory and connect ${rules2.minimumWordLength}+ letters, including diagonals. Use each tile once. With no territory left, start anywhere.`],
+    ["Captures", Number.isFinite(rules2.maxEnemyTilesPerWord) ? `Your word claims its tiles. Capture up to ${rules2.maxEnemyTilesPerWord} opponent tiles per turn.` : "Your word claims every tile it uses. No capture limit."],
+    ["Word points", "Add the value on each letter. Jokers score 0."],
+    ["Length bonus", `Letters \u2192 bonus: ${bonus}. Each further letter adds ${rules2.wordScoring.extraLetterBonus} points.`]
+  ];
+  if (defended) {
+    sections.push(
+      ["Castles", `Side: +${rules2.castleIncome.side} \xB7 Centre: +${rules2.castleIncome.center}. Earn points for castles you hold through your opponent\u2019s word or refresh. Capturing alone earns nothing.`],
+      ["Final territory", `At game end, each tile you own adds ${rules2.finalTerritoryPoints} point. No capture deductions or extra castle bonus.`]
+    );
+  } else {
+    sections.push(["Territory", `Ordinary tiles: ${rules2.normalTerritoryPoints} \xB7 Side castles: ${rules2.castlePoints} \xB7 Centre: ${rules2.centerCastlePoints ?? rules2.castlePoints}. Points change with ownership.`]);
+    if (rules2.castleIncome) sections.push(["Castle income", `After both players move, held side castles add ${rules2.castleIncome.side} points and the centre adds ${rules2.castleIncome.center}, including the final round. Earned income stays yours.`]);
+  }
+  sections.push(
+    ["Letters", `Played letters are replaced; jokers stay. Refresh replaces your owned letters, except jokers, and uses your turn.`],
+    ["Game end", `${rules2.letterBudget} letters are shared. When they run out, the second player gets a final reply if needed. Highest score wins.${rules2.castleIncome ? " Starting player is random." : ""}`]
+  );
+  return sections;
+}
+
+// assets/monogram.json
+var monogram_default = {
+  viewBox: "0 0 108 108",
+  paths: [
+    {
+      d: "M76 33 C58 19 32 29 28 50 C23 74 49 89 72 77",
+      width: 6
+    },
+    {
+      d: "M43 43 L50 68 L59 48 L67 68 L75 43",
+      width: 5
+    }
+  ]
+};
+
 // server/versions/rules-v1.mjs
 var GAME_CONFIG = Object.freeze({
   boardRadius: 4,
@@ -3314,7 +3564,7 @@ function createSnapshotCache(storage, { namespace = "", now = Date.now, ttl = 7 
 }
 
 // package.json
-var version = "0.16.3";
+var version = "0.17.0";
 
 // online/app.js
 init_dist();
@@ -11019,7 +11269,16 @@ function createMoveHistoryCache(fetchPage, { maxGames = 6 } = {}) {
     if (e.topRevision < e.revision) return load(actor, id);
     return snapshot(e);
   }
-  return { seed, load, read: (actor, id) => {
+  async function all(actor, id) {
+    let state = await load(actor, id);
+    while (state?.hasMore) {
+      const e = entry(actor, id), before = e?.cursor;
+      state = await load(actor, id, { older: true });
+      if (state?.hasMore && entry(actor, id)?.cursor === before) throw Error("History page did not advance");
+    }
+    return state?.moves ?? null;
+  }
+  return { seed, load, all, read: (actor, id) => {
     const e = entry(actor, id);
     return e ? snapshot(e) : null;
   }, reset() {
@@ -11104,7 +11363,12 @@ function createMoveHistory({ api: api2, getUser, getGame, getMoves, isPreview, s
     showSheet("Move history", content);
     if (!isPreview() && state.needsTop) void load();
   }
-  return { warm, show, reset: () => cache.reset() };
+  return { warm, show, all() {
+    const actor = getUser()?.id, game2 = getGame();
+    if (!actor || !game2 || isPreview()) return Promise.resolve(null);
+    cache.seed(actor, game2, getMoves());
+    return cache.all(actor, game2.id);
+  }, reset: () => cache.reset() };
 }
 
 // online/board-geometry.mjs
@@ -11480,6 +11744,7 @@ var moveHistory = createMoveHistory({
   canReplay: () => !preview && gameFresh && !!scoreMotionPlan(game, history[0], config2),
   replay: () => animateScore(null, { replay: true })
 });
+var endgame = createEndgameResult({ getContext: () => ({ game, actor: user?.id, config: config2, fresh: gameFresh, preview, visible: currentView === "game" }), getMoves: () => moveHistory.all(), isAnimating: () => scoreMotion.active, storage: localStorage, namespace: cfg.supabaseUrl + (cfg.cacheScope || "") });
 var jokerKeyboard = createJokerKeyboard();
 var boardViewport = createBoardViewport({
   viewport: $("board-scroll"),
@@ -11503,6 +11768,7 @@ var boardViewport = createBoardViewport({
   }
 });
 function screen(name, { route = true, replace = false } = {}) {
+  endgame.leave();
   scoreMotion.cancel(false);
   closeSheet();
   currentView = name;
@@ -12128,6 +12394,9 @@ function renderGame() {
     $("result-title").textContent = game.status === "completed" ? gameStatus(game, user?.id) : game.status === "abandoned" ? "Game closed" : game.status === "declined" ? "Invitation declined" : "Invitation cancelled";
     $("result-description").textContent = game.status === "completed" ? `${totals[seat - 1].total} \u2013 ${totals[seat === 1 ? 1 : 0].total}` : "No win or loss recorded.";
   }
+  const completed = game.status === "completed";
+  $("result-view").hidden = !completed;
+  for (const id of ["result-title", "result-description", "result-home"]) $(id).hidden = completed;
   const last = history[0]?.recap;
   $("recap").hidden = !last;
   if (last) {
@@ -12138,6 +12407,7 @@ function renderGame() {
   }
   drawBoard();
   renderSelection();
+  endgame.schedule();
 }
 function choose(id) {
   if (!canPlay() && !preview || !id || id === selection.at(-1)) return;
@@ -12677,6 +12947,7 @@ $("game-menu").onclick = showGameMenu;
 $("share-invite").onclick = () => run(shareInvite);
 $("copy-invite").onclick = () => run(copyInvite);
 $("cancel-invite").onclick = () => run(quitGame);
+$("result-view").onclick = () => endgame.show();
 $("player-score-1").onclick = () => {
   scoreMotion.cancel();
   showScore(1);
@@ -12949,6 +13220,8 @@ function handleAuthState(event, session) {
     cancelAppEntry();
     recovering = false;
     if (previousUser || !user) snapshots.clear();
+    endgame.leave();
+    endgame.clear();
     moveHistory.reset();
     analyticsData = null;
     analyticsActor = null;
