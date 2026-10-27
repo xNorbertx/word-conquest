@@ -1,5 +1,14 @@
 # Word Conquest — app roadmap
 
+## End-game result designs — 27 October 2026
+
+- [x] Create three isolated, interactive result-screen prototypes with confetti.
+- [x] Include word letters, length bonuses, total castles, final territory and best word.
+- [x] Preserve the same stats when reopening; no repeated confetti.
+- [x] Review phone layouts and player colours, including dark mode.
+- [ ] Publish and verify the dedicated preview gallery.
+- [ ] Owner selection, then implementation using authoritative game receipts.
+
 ## Player colour and game-screen refinements — 0.16.3
 
 - [x] Match joker placeholder, selected state and letter flight to the playing side.

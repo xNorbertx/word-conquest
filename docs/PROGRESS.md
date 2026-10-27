@@ -1,4 +1,22 @@
-# Implementation and verification - updated 25 October 2026
+# Implementation and verification - updated 27 October 2026
+
+## End-game prototypes — 27 October 2026
+
+Three independently styled concepts in `design/endgame/`: Victory seal, Final
+board and The tally. All use the same fictional score breakdown and show your
+best word. A native modal keeps the board inert. Brief canvas confetti plays only
+for a first win reveal; reopen keeps the stats without motion. Review tools cover
+player colour, dark mode, loss/draw and explicit celebration replay. No app,
+backend, game-rule, dependency or Android changes.
+
+Rendered all three at 390 × 844 and 320 × 568; tightened short-height spacing after
+inspection. Checked dark brown appearance and modal focus/close/reopen, confirmed
+one burst on replay and no burst on reopen/loss/draw. CSS/JS parse checks pass;
+browser has no warnings/errors. Native Safari/physical-device feel is not claimed.
+The gallery uses fictional data, not live account or game details.
+
+Publication is pending final verification. Owner selection is required before
+implementing a design in the app. See [prototype notes](../design/endgame/README.md).
 
 ## Joker colour and compact scoring caption — 0.16.3, 25 October 2026
 
