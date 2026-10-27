@@ -1,5 +1,35 @@
 # Implementation and verification - updated 27 October 2026
 
+## Victory seal implementation — 0.17.0, 27 October 2026
+
+Selected prototype 1 is now the native result modal in the shared web/Android
+client. It opens after the final scoring sequence and click guard, with a castle
+seal, both final scores, four compact scoring categories and the player's best
+word. View board closes it; View result reopens it. Win/loss/draw uses the server's
+result, including resignation, instead of inferring the winner from point totals.
+
+Word letters and length bonuses come from the complete saved move receipts,
+fetched through the existing paginated/coalesced history cache. Castle income and
+final territory come from the saved game state. The breakdown must reconcile to
+the authoritative total before it is shown. Missing/failed history shows a retry,
+never a fabricated zero. Best word means letters plus length bonus. Older rules
+retain their held-castle/territory values; no past game is rescored.
+
+Confetti plays only on the first confirmed win reveal for this account/game on
+this installation, and is suppressed by reduced-motion preferences. The bounded
+seen ledger survives app restart/sign-out; clearing browser/app storage, using a
+new device, or revisiting a result outside its 300-game window can celebrate again.
+Summary data is account-scoped and memory-only; sign-out clears it. Close, page
+backgrounding and resize stop the animation. No new backend, permissions,
+dependencies, rules, migrations or ongoing costs.
+
+270 Node tests plus original engine/scoring/supply suites pass. Rendered actual
+app fixtures at 390 × 844 and 320 × 568, including both player colours and dark
+mode. Checked closing/reopening, Escape/focus return, loss/draw, and a live final
+turn followed by double-tap skip: the final-tap guard completes before the result
+opens and confetti starts. Physical Safari/Seeker acceptance remains open.
+Publication details follow after verification.
+
 ## End-game prototypes — 27 October 2026
 
 Three independently styled concepts in `design/endgame/`: Victory seal, Final
@@ -22,7 +52,7 @@ The public gallery and an actual win popup were also opened and verified in the
 browser at phone size, including active confetti. Short landscape allows scrolling
 with no horizontal overflow. No new costs or APK build were needed.
 
-Owner selection is required before implementing a design in the app. See
+The owner selected Victory seal; see the implementation above and
 [prototype notes](../design/endgame/README.md).
 
 ## Joker colour and compact scoring caption — 0.16.3, 25 October 2026

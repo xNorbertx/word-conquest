@@ -80,7 +80,7 @@
     <div class="game-aside"><section id="score-motion" aria-label="Scoring the saved move" hidden><p id="motion-byline" class="eyebrow"></p><h2 id="motion-word"></h2><div class="motion-caption"><span id="motion-symbol"></span><span id="motion-label"></span><strong id="motion-tally"></strong></div></section><section id="composer" class="word-panel" aria-label="Your word"><h2 id="word" aria-label="Selected word" tabindex="0"></h2><output id="word-points" aria-label="Letter points" aria-live="off" title="Letter points" hidden><strong id="word-points-value">0</strong><span aria-hidden="true">pts</span></output><button id="clear-word" class="icon-button" aria-label="Clear selected word" data-icon="undo" disabled></button><button id="submit-word" class="primary" disabled><span id="submit-label">Play</span></button></section>
 
     <button id="recap" class="recap-row" hidden></button>
-    <div id="game-result" class="result-card" hidden><h2 id="result-title"></h2><p id="result-description"></p><button id="result-home" class="primary full">Back to games<span data-icon="arrow"></span></button></div>
+    <div id="game-result" class="result-card" hidden><h2 id="result-title"></h2><p id="result-description"></p><button id="result-view" class="primary full" hidden>View result<span data-icon="arrow"></span></button><button id="result-home" class="primary full">Back to games<span data-icon="arrow"></span></button></div>
     </div></div>
   </div>
 </section>
@@ -91,6 +91,12 @@
 <dialog id="sheet" class="sheet" aria-labelledby="sheet-title"><div class="sheet-header"><h2 id="sheet-title"></h2><button id="close-sheet" class="icon-button" aria-label="Close" data-icon="close"></button></div><div id="sheet-content" class="sheet-content"></div></dialog>
 <dialog id="confirm-dialog" class="sheet confirm-sheet" aria-labelledby="confirm-title"><div class="sheet-content"><h2 id="confirm-title"></h2><p id="confirm-message" class="muted"></p><div class="confirm-actions"><button id="confirm-cancel" class="secondary">Cancel</button><button id="confirm-ok" class="primary"></button></div></div></dialog>
 <dialog id="unknown-word-dialog" class="word-warning" aria-labelledby="unknown-word-title" aria-describedby="unknown-word"><h2 id="unknown-word-title">Not in the dictionary</h2><p id="unknown-word" class="warning-word"></p><button id="close-unknown-word" type="button" class="primary full" autofocus>Close</button></dialog>
+<dialog id="endgame-dialog" class="endgame-dialog" aria-labelledby="endgame-title">
+  <button id="endgame-close" class="icon-button endgame-close" type="button" aria-label="Close result" data-icon="close"></button>
+  <header class="endgame-hero"><div id="endgame-seal" class="endgame-seal" aria-hidden="true"></div><h2 id="endgame-title" tabindex="-1"></h2><div class="endgame-scores"><div class="endgame-self"><strong id="endgame-own-score"></strong><span>You</span></div><span class="endgame-divider" aria-hidden="true"></span><div class="endgame-other"><strong id="endgame-other-score"></strong><span id="endgame-opponent"></span></div></div></header>
+  <div class="endgame-details"><dl id="endgame-breakdown" aria-label="Your points"></dl><p id="endgame-status" class="endgame-status" role="status" hidden></p><button id="endgame-retry" type="button" class="text-button" hidden>Retry</button><section class="endgame-best" aria-label="Your best word"><div class="endgame-best-head"><span>Best word</span><strong id="endgame-best-points"></strong></div><p id="endgame-best-word"></p><p id="endgame-best-detail"></p></section></div>
+  <footer class="endgame-actions"><button id="endgame-board" type="button" class="primary full">View board<span data-icon="arrow"></span></button></footer><canvas id="endgame-confetti" aria-hidden="true" hidden></canvas>
+</dialog>
 <noscript>Enable JavaScript to play.</noscript>
 <p id="motion-status" class="motion-sr-only" role="status" aria-live="polite"></p>
 </body></html>

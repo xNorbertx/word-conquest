@@ -25,8 +25,9 @@ export function showUnknownWord(word){
   if(!$('unknown-word-dialog').open)$('unknown-word-dialog').showModal();
   $('close-unknown-word').focus({preventScroll:true});
 }
-export function closeSheet(){if($('unknown-word-dialog')?.open)$('unknown-word-dialog').close();if($('joker-keyboard')?.open)$('joker-keyboard').close();if($('sheet').open)$('sheet').close();}
+export function closeSheet(){if($('endgame-dialog')?.open)$('endgame-dialog').close();if($('unknown-word-dialog')?.open)$('unknown-word-dialog').close();if($('joker-keyboard')?.open)$('joker-keyboard').close();if($('sheet').open)$('sheet').close();}
 export function showSheet(title,content){
+  if($('endgame-dialog')?.open)$('endgame-dialog').close();
   if($('joker-keyboard')?.open)$('joker-keyboard').close();
   $('sheet-title').textContent=title;$('sheet-content').replaceChildren(...(Array.isArray(content)?content:[content]));hydrateIcons($('sheet-content'));
   if(!$('sheet').open)$('sheet').showModal();$('sheet-content').scrollTop=0;
@@ -37,6 +38,6 @@ export function ask({title,message='',label='Confirm',cancel='Cancel',danger=fal
 }
 function finishConfirm(answer){$('confirm-dialog').close();const resolve=confirmResolve;confirmResolve=null;resolve?.(answer);}
 export function initUI(){hydrateIcons();$('close-unknown-word').onclick=()=>$('unknown-word-dialog').close();$('close-sheet').onclick=closeSheet;$('dismiss-toast').onclick=()=>$('toast').hidden=true;$('confirm-cancel').onclick=()=>finishConfirm(false);$('confirm-ok').onclick=()=>finishConfirm(true);$('confirm-dialog').addEventListener('cancel',e=>{e.preventDefault();finishConfirm(false);});for(const d of [$('sheet'),$('confirm-dialog')])d.addEventListener('click',e=>{if(e.target!==d)return;const r=d.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom){if(d===$('sheet'))closeSheet();else finishConfirm(false);}});}
-export function closeTopDialog(){if($('unknown-word-dialog')?.open){$('unknown-word-dialog').close();return true;}if($('joker-keyboard')?.open){$('joker-keyboard').close();return true;}if($('confirm-dialog').open){finishConfirm(false);return true;}if($('sheet').open){closeSheet();return true;}return false;}
+export function closeTopDialog(){if($('endgame-dialog')?.open){$('endgame-close').click();return true;}if($('unknown-word-dialog')?.open){$('unknown-word-dialog').close();return true;}if($('joker-keyboard')?.open){$('joker-keyboard').close();return true;}if($('confirm-dialog').open){finishConfirm(false);return true;}if($('sheet').open){closeSheet();return true;}return false;}
 export function emptyState(title,copy='',symbol='grid'){const box=node('div',undefined,'empty-state'),art=node('div',undefined,'empty-art');art.append(icon(symbol));box.append(art,node('h2',title));if(copy)box.append(node('p',copy));return box;}
 export function infoSections(sections){const box=node('div',undefined,'info-sections');for(const [title,copy]of sections){const section=node('section');section.append(node('h3',title),node('p',copy));box.append(section);}return box;}

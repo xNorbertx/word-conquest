@@ -1,5 +1,19 @@
 # Autumn Sunday UX revision - 4 October 2026
 
+## Victory seal result — 0.17.0
+
+Use the approved first concept: one centred result card, castle seal, short
+outcome title, two prominent scores, four quiet scoring rows and best word.
+The player's own score/seal/action follow their side in both themes. Display
+letters separately from length bonuses; best word includes both. Keep the
+opponent's name below their score and use “You” for the player.
+
+Show the modal after final scoring. A first win gets brief confetti; subsequent
+opens, losses, draws and reduced-motion settings do not. View board and a 44px
+close control dismiss it; View result on the board reopens it. Native dialog
+semantics block background interaction and support Escape/Android Back. Smaller
+screens compress spacing; short landscape permits scrolling without clipping.
+
 ## Joker ownership colour and supply width — 0.16.3
 
 Body-level joker controls must explicitly receive the playing side and use the

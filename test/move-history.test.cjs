@@ -63,3 +63,11 @@ test('Older moves waits for a top refresh and then loads the requested older pag
  const d=deferred();let calls=0;const cache=cacheFor(async()=>++calls===1?d.promise:page([2]));cache.seed('a',{id:'g',revision:4},[move(4)]);
  const top=cache.load('a','g'),older=cache.load('a','g',{older:true});d.resolve(page([4,3],true));await Promise.all([top,older]);assert.equal(calls,2);assert.deepEqual(cache.read('a','g').moves.map(m=>m.revision),[4,3,2]);
 });
+
+test('complete result history fetches every page, coalesces prefetch and reuses completion',async()=>{
+ const d=deferred();let calls=0;const cache=cacheFor(async()=>++calls===1?d.promise:page([2,1]));cache.seed('a',{id:'g',revision:4});const warm=cache.load('a','g'),all=cache.all('a','g');d.resolve(page([4,3],true));await warm;assert.deepEqual((await all).map(m=>m.revision),[4,3,2,1]);assert.equal(calls,2);await cache.all('a','g');assert.equal(calls,2);
+});
+test('complete history aborts on account reset and rejects stalled pagination',async()=>{
+ const d=deferred(),cache=cacheFor(()=>d.promise);cache.seed('a',{id:'g',revision:4});const all=cache.all('a','g');cache.reset();d.resolve(page([4]));assert.equal(await all,null);
+ const stalled=cacheFor(async()=>page([4,3],true));stalled.seed('a',{id:'g',revision:4});await assert.rejects(()=>stalled.all('a','g'),/did not advance/);
+});

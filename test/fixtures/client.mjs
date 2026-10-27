@@ -12,11 +12,11 @@ let randomSeed=981;function random(){randomSeed=(Math.imul(randomSeed,1664525)+1
 const date=minutes=>new Date(now-minutes*60000).toISOString();
 const scenario=new URLSearchParams(location.search).get('fixture')||'home';
 window.WC_CONFIG.cacheScope=scenario;
-if(scenario==='motion_reduced'){
+if(['motion_reduced','endgame_reduced'].includes(scenario)){
  const originalMedia=window.matchMedia.bind(window);
  window.matchMedia=query=>query==='(prefers-reduced-motion: reduce)'?{matches:true,addEventListener(){},removeEventListener(){}}:originalMedia(query);
 }
-const secondSeat=['walnut','walnut_waiting','motion_walnut'].includes(scenario);
+const secondSeat=['walnut','walnut_waiting','motion_walnut','endgame_brown'].includes(scenario);
 const self={id:secondSeat?B:A,email:'demo@example.invalid'},profile={id:self.id,display_name:secondSeat?'Mara':'Norbert',email_notifications:false};
 profile.username=scenario==='onboarding'?(sessionStorage.getItem('wc-design-username')||null):profile.display_name;
 if(scenario==='onboarding')profile.display_name=profile.username||'Player';
@@ -51,12 +51,28 @@ if(scenario==='compact'){games[0].names[1]='Alexandra with a very long username'
 if(scenario==='longnames'){profile.display_name='Norbert with a very long display name';games[0].names[0]=profile.display_name;games[0].names[1]='Alexandra with a rather long surname';}
 const recap={action:'word',player:2,at:date(24),word:'MEADOW',path:games[0].state.tiles.slice(15,21).map(t=>t.id),score:{letters:12,lengthBonus:3,wordPoints:15,territoryGain:4,enemyLoss:2,totalGain:19},changed:games[0].state.tiles.slice(15,21).map((t,i)=>({id:t.id,before:{...t,letter:'MEADOW'[i],owner:i<3?0:1},after:{...t,owner:2}}))};
 const history={[ids[0]]:[{revision:10,recap}], [ids[2]]:[{revision:10,recap:{...recap,word:'GARDENS',score:{...recap.score,wordPoints:19},player:1}}]};
+let finalFixture=null;
+if(scenario.startsWith('endgame')){
+ const version=scenario==='endgame_legacy'?'autumn-v4':RULES_VERSION,strong=scenario==='endgame_loss'?2:secondSeat?2:1;
+ let g=newGame(ids[0],'Alex',version);g.revision=scenario==='endgame_live'?Math.floor(Date.now()/1000):0;history[g.id]=[];
+ g.state.tiles.filter(t=>t.castle).forEach((t,i)=>t.owner=i%2?3-strong:strong);
+ let before,previous;
+ while(!g.state.over){
+  const word=g.state.player===strong?'CONQUEST':'GARDENS',path=[...word].map((letter,i)=>{const id=`${i-4},0`;Object.assign(g.state.tiles.find(t=>t.id===id),{letter,...(i===0?{owner:g.state.player}:{})});return id;});
+  before=structuredClone(g);previous=[...history[g.id]];
+  const result=applyCommand(g,g.players[g.state.player-1],{action:'word',revision:g.revision,operationId:crypto.randomUUID(),path},dictionary,g.dictionary_version,random);
+  g=result.next;history[g.id].unshift({revision:g.revision,recap:result.recap});
+ }
+ if(scenario==='endgame_draw')g.result='draw';
+ if(scenario==='endgame_live'){finalFixture={game:g,history:history[g.id]};games[0]=before;history[g.id]=previous;}else games[0]=g;
+}
 if(scenario==='history'){games[0].revision=62;history[ids[0]]=Array.from({length:62},(_,i)=>({revision:62-i,recap:{...recap,word:i%2?'GARDENS':'MEADOW',at:date(i*15)}}));}
 const notifications=[{id:'1',game_id:ids[0],kind:'word',read_at:null,created_at:date(24)},{id:'2',game_id:ids[1],kind:'invitation accepted',read_at:null,created_at:date(160)},{id:'3',game_id:ids[2],kind:'game complete',read_at:date(1500),created_at:date(1700)}];
 const receipts=new Map();
 const initialGames=scenario==='empty'?[]:games;
 const sceneGame={swedish:ids[0],history:ids[0],game:ids[0],income:ids[0],capture:ids[0],legacy_capture:ids[0],walnut:ids[0],walnut_waiting:ids[0],reentry:ids[0],joker:ids[0],waiting:ids[1],finished:ids[2],invitation:ids[3],longnames:ids[0],draw:ids[0]};
 for(const s of ['motion','motion_walnut','motion_incoming','motion_final','motion_reduced'])sceneGame[s]=ids[0];
+if(scenario.startsWith('endgame'))sceneGame[scenario]=ids[0];
 if(scenario==='draw')games[0].draw_by=B;
 if(sceneGame[scenario]){const url=new URL(location.href);url.searchParams.set('game',sceneGame[scenario]);window.history.replaceState(null,'',url);}
 const social={people:scenario==='empty'?[]:[{id:B,display_name:'Mara',status:'accepted',request_id:ids[1],requested_by:A},{id:C,display_name:'Jules',status:'pending',request_id:ids[2],requested_by:C}],invitations:[],outgoing:[],blocked:[]};
@@ -100,10 +116,11 @@ function session(){return user?{user,access_token:'local-design-fixture'}:null;}
 export function createClient(){return {rpc:async(name,args)=>({data:name==='wc_username_available'&&!['norbert','mara'].includes(args.p_username.toLowerCase())}),auth:{getSession:async()=>({data:{session:session()}}),onAuthStateChange:fn=>{authListener=fn;setTimeout(()=>fn('INITIAL_SESSION',session()),0);},signInWithPassword:async()=>{user=self;authListener?.('SIGNED_IN',session());return {data:{session:session()}};},signUp:async()=>{profile.username=null;profile.display_name='Player';return {data:{session:null}};},resetPasswordForEmail:async()=>({}),updateUser:async()=>({}),signOut:async()=>{user=null;authListener?.('SIGNED_OUT',null);return {};},},realtime:{setAuth:async()=>{}},channel:()=>{const channel={on:(_a,_b,fn)=>{channelListener=fn;return channel;},subscribe:fn=>{setTimeout(()=>fn('SUBSCRIBED'),0);return {};}};return channel;},removeChannel:async()=>{}};}
 const controls=document.createElement('div');controls.id='fixture-controls';controls.style.cssText='position:fixed;right:8px;top:0;z-index:70;font:10px system-ui;background:#eee7c9;color:#504f3c;padding:2px 6px;border-radius:0 0 6px 6px;';
 const select=document.createElement('select');select.setAttribute('aria-label','Design test scenario');select.style.cssText='font:10px system-ui;background:transparent;border:0;width:80px';
-for(const value of ['home','compact','swedish','swedish_home','swedish_invitation','friends','game','history','income','motion','motion_walnut','motion_incoming','motion_final','motion_reduced','capture','legacy_capture','walnut','walnut_waiting','reentry','waiting','finished','invitation','empty','auth','onboarding','joker','draw','longnames','push_off','push_blocked','push_error']){const option=document.createElement('option');option.value=value;option.textContent=value;select.append(option);}select.value=scenario;select.onchange=()=>{location.href=location.pathname+'?fixture='+select.value;};
+for(const value of ['endgame','endgame_brown','endgame_loss','endgame_draw','endgame_legacy','endgame_live','home','compact','swedish','swedish_home','swedish_invitation','friends','game','history','income','motion','motion_walnut','motion_incoming','motion_final','motion_reduced','capture','legacy_capture','walnut','walnut_waiting','reentry','waiting','finished','invitation','empty','auth','onboarding','joker','draw','longnames','push_off','push_blocked','push_error']){const option=document.createElement('option');option.value=value;option.textContent=value;select.append(option);}select.value=scenario;select.onchange=()=>{location.href=location.pathname+'?fixture='+select.value;};
 let painted='';const marker=document.createElement('span');function updateMarker(){marker.textContent=`Test data · ${commits} saved · ${homeRequests} home · ${gameRequests} game · ${historyRequests} history ${painted}`;}updateMarker();controls.append(marker,select);
 const paintWatch=new MutationObserver(()=>{for(const name of ['game','home'])if(!document.getElementById(name).hidden){painted=`· ${name} shown ${Math.round(performance.now())}ms `;updateMarker();paintWatch.disconnect();break;}});for(const name of ['game','home'])paintWatch.observe(document.getElementById(name),{attributes:true,attributeFilter:['hidden']});
 for(const [label,handler]of [['Lose reply',()=>{failNext=true;}],['Stale',()=>{staleNext=true;}],['Other turn',()=>{games[0].state.player=2;games[0].revision++;channelListener?.();}]]){const b=document.createElement('button');b.textContent=label;b.style.cssText='font:9px system-ui;background:none;border:0;padding:3px;color:#504f3c';b.onclick=handler;controls.append(b);}document.body.append(controls);document.querySelector('.app-shell').style.paddingTop='24px';
+if(finalFixture){const finish=document.createElement('button');finish.textContent='Finish game';finish.onclick=()=>{games[0]=finalFixture.game;history[games[0].id]=finalFixture.history;finish.disabled=true;channelListener?.();};controls.append(finish);}
 if(scenario==='motion_incoming'){
  const incoming=document.createElement('button');incoming.textContent='Incoming word';incoming.onclick=()=>{
   const g=games[0],update=applyCommand(g,g.players[g.state.player-1],{action:'word',revision:g.revision,operationId:crypto.randomUUID(),path:[...'GARDENS'].map((_,i)=>`${i-3},0`)},dictionary,dictionaryMeta.version,random);

@@ -1,5 +1,17 @@
 # Word Conquest — app roadmap
 
+## Victory seal results — 0.17.0
+
+- [x] Implement selected prototype 1 as the finished-game modal.
+- [x] Reconcile complete saved receipts to authoritative final totals; separate
+  letters, length bonuses, castle income and final territory, plus best word.
+- [x] Preserve versioned legacy scoring; wins/losses/draws follow the saved result.
+- [x] Wait for final scoring and its tap guard; celebrate each win once per device.
+- [x] Reopen the same details, including after app restart, without repeat confetti.
+- [x] Regression tests, small-phone layouts, both colours and dark mode.
+- [ ] Publish and verify normal web assets and signed Android pilot.
+- [ ] Physical iOS/Android acceptance on the owner's devices.
+
 ## End-game result designs — 27 October 2026
 
 - [x] Create three isolated, interactive result-screen prototypes with confetti.
@@ -7,7 +19,7 @@
 - [x] Preserve the same stats when reopening; no repeated confetti.
 - [x] Review phone layouts and player colours, including dark mode.
 - [x] Publish and verify the dedicated preview gallery.
-- [ ] Owner selection, then implementation using authoritative game receipts.
+- [x] Owner selected Victory seal; implementation uses authoritative game receipts.
 
 ## Player colour and game-screen refinements — 0.16.3
 

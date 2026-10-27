@@ -1,13 +1,13 @@
 # Approved visual direction: Autumn Sunday
 
-## End-game results — 27 October 2026, concepts for review
+## End-game results — Victory seal approved, 27 October 2026
 
 The [end-game gallery](endgame/index.html) presents Victory seal, Final board and
 The tally. Each shows a win modal with a brief confetti burst, the four scoring
 categories and best word. Reopening the result retains the stats without confetti.
 Brown/green, light/dark and win/loss/draw are available as preview controls.
-See [prototype notes](endgame/README.md). Selection and production implementation
-are pending; this does not change the live game.
+The owner selected **1 — Victory seal**, now implemented for app version 0.17.0.
+See [prototype notes](endgame/README.md) and [release status](../docs/PROGRESS.md).
 
 ## Copy direction — 20 October 2026
 

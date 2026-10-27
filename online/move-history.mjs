@@ -61,5 +61,14 @@ export function createMoveHistoryCache(fetchPage,{maxGames=6}={}){
     if(e.topRevision<e.revision)return load(actor,id);
     return snapshot(e);
   }
-  return{seed,load,read:(actor,id)=>{const e=entry(actor,id);return e?snapshot(e):null;},reset(){epoch++;entries.clear();}};
+  async function all(actor,id){
+    let state=await load(actor,id);
+    while(state?.hasMore){
+      const e=entry(actor,id),before=e?.cursor;
+      state=await load(actor,id,{older:true});
+      if(state?.hasMore&&entry(actor,id)?.cursor===before)throw Error('History page did not advance');
+    }
+    return state?.moves??null;
+  }
+  return{seed,load,all,read:(actor,id)=>{const e=entry(actor,id);return e?snapshot(e):null;},reset(){epoch++;entries.clear();}};
 }

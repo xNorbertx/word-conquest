@@ -43,5 +43,5 @@ export function createMoveHistory({api,getUser,getGame,getMoves,isPreview,stopMo
     showSheet('Move history',content);
     if(!isPreview()&&state.needsTop)void load();
   }
-  return {warm,show,reset:()=>cache.reset()};
+  return {warm,show,all(){const actor=getUser()?.id,game=getGame();if(!actor||!game||isPreview())return Promise.resolve(null);cache.seed(actor,game,getMoves());return cache.all(actor,game.id);},reset:()=>cache.reset()};
 }

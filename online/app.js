@@ -1,3 +1,4 @@
+import {createEndgameResult} from './endgame.js';
 import {renderAnalytics} from './analytics.js';
 import {rulesSections} from './copy.mjs';
 import monogram from '../assets/monogram.json';
@@ -55,6 +56,7 @@ const scoreLedger=createScoreLedger(localStorage);
 const scoreMotion=createBoardScoreMotion({onComplete:()=>{if(game&&currentView==='game')renderGame();}});
 const moveHistory=createMoveHistory({api,getUser:()=>user,getGame:()=>game,getMoves:()=>history,isPreview:()=>preview,
   stopMotion:()=>scoreMotion.cancel(),canReplay:()=>!preview&&gameFresh&&!!scoreMotionPlan(game,history[0],config),replay:()=>animateScore(null,{replay:true})});
+const endgame=createEndgameResult({getContext:()=>({game,actor:user?.id,config,fresh:gameFresh,preview,visible:currentView==='game'}),getMoves:()=>moveHistory.all(),isAnimating:()=>scoreMotion.active,storage:localStorage,namespace:cfg.supabaseUrl+(cfg.cacheScope||'')});
 const jokerKeyboard=createJokerKeyboard();
 const boardViewport=createBoardViewport({viewport:$('board-scroll'),board:$('board'),button:$('zoom'),icon,
   stamp:()=>currentView+'/'+game?.id+'/'+game?.revision,enabled:()=>currentView==='game'&&!scoreMotion.active,
@@ -62,7 +64,7 @@ const boardViewport=createBoardViewport({viewport:$('board-scroll'),board:$('boa
   onTap:id=>{if(!canPlay()&&!preview)return;const edit=selection.includes(id)&&game.state.tiles.find(t=>t.id===id)?.letter==='?';if(edit)openJoker(id);else{choose(id);openPendingJoker();}}
 });
 function screen(name,{route=true,replace=false}={}){
-  scoreMotion.cancel(false);
+  endgame.leave();scoreMotion.cancel(false);
   closeSheet();currentView=name;for(const id of screens)$(id).hidden=id!==name;
   const inGame=name==='game';document.body.classList.toggle('auth-view',name==='auth');document.body.classList.toggle('game-view',inGame);if(!inGame)boardViewport.setZoom(false);
   $('back').hidden=!inGame;$('game-heading').hidden=!inGame;$('game-menu').hidden=!inGame;$('help-button').hidden=inGame;
@@ -315,9 +317,11 @@ function renderGame(){
   $('composer').hidden=(!myTurn()&&!preview)||isFinished(game)||!!pending()&&!busy;$('game-result').hidden=!isFinished(game);
 
   if(isFinished(game)){$('result-title').textContent=game.status==='completed'?gameStatus(game,user?.id):game.status==='abandoned'?'Game closed':game.status==='declined'?'Invitation declined':'Invitation cancelled';$('result-description').textContent=game.status==='completed'?`${totals[seat-1].total} – ${totals[seat===1?1:0].total}`:'No win or loss recorded.';}
+  const completed=game.status==='completed';
+  $('result-view').hidden=!completed;for(const id of ['result-title','result-description','result-home'])$(id).hidden=completed;
   const last=history[0]?.recap;$('recap').hidden=!last;
   if(last){const copy=node('span'),symbol=node('span',undefined,'recap-symbol');symbol.append(icon('history'));copy.append(node('small','LAST MOVE'),node('strong',last.word?`${game.names[last.player-1]} played ${last.word}`:activityText(last.action,game.names[last.player-1])));$('recap').replaceChildren(symbol,copy);}
-  drawBoard();renderSelection();
+  drawBoard();renderSelection();endgame.schedule();
 }
 function choose(id){
   if((!canPlay()&&!preview)||!id||id===selection.at(-1))return;
@@ -493,6 +497,7 @@ $('push-prompt-enable').onclick=()=>run(async()=>{if(push.snapshot().state==='bl
 $('new-game').onclick=showNewGame;$('blocked-players').onclick=()=>run(showBlockedPlayers);$('edit-profile').onclick=editProfile;$('push-settings').onclick=showPush;
 $('help-button').onclick=showRules;for(const b of document.querySelectorAll('[data-sheet]'))b.onclick=()=>b.dataset.sheet==='rules'?showRules():showPrivacy();
 $('game-menu').onclick=showGameMenu;$('share-invite').onclick=()=>run(shareInvite);$('copy-invite').onclick=()=>run(copyInvite);$('cancel-invite').onclick=()=>run(quitGame);
+$('result-view').onclick=()=>endgame.show();
 $('player-score-1').onclick=()=>{scoreMotion.cancel();showScore(1);};$('player-score-2').onclick=()=>{scoreMotion.cancel();showScore(2);};$('recap').onclick=showHistory;
 
 async function confirmSignOut(){
@@ -586,7 +591,7 @@ function handleAuthState(event,session){
   setTimeout(()=>run(()=>connectLiveUpdates(session)),0);
   if(previousUser!==user?.id||!user){
     cancelAppEntry();recovering=false;if(previousUser||!user)snapshots.clear();
-    moveHistory.reset();analyticsData=null;analyticsActor=null;gameRequests.reset();gameFresh=false;game=null;homeRequests.reset();
+    endgame.leave();endgame.clear();moveHistory.reset();analyticsData=null;analyticsActor=null;gameRequests.reset();gameFresh=false;game=null;homeRequests.reset();
     authReady=false;homeData=null;$('setup-username').value='';friends.reset();++navigation;++gameLoad;++homeLoad;
   }
   if(event==='PASSWORD_RECOVERY'){cancelAppEntry();++navigation;++gameLoad;++homeLoad;gameFresh=false;authReady=false;recovering=true;screen('recovery',{route:false});return;}

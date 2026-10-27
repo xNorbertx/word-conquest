@@ -1,5 +1,20 @@
 # Run, deploy and maintain
 
+## Victory seal results — 0.17.0
+
+Shared-client release only: `npm test`, `npm run build`, publish `/online/`, and
+verify/publish the signed Android pilot from the existing CI. No Supabase change.
+`online/endgame.mjs` reconciles stored receipts with the saved game rules/state;
+`online/endgame.js` manages the modal and celebration. Reuse the history cache
+and fetch all pages before summing words. Never re-score old spellings, convert
+old rules, or infer a resignation winner from the final point totals.
+
+The local `wc-result-seen:v1:` ledger stores account/game IDs and revisions only
+(bounded to 300 games). Clearing app/browser storage resets celebration memory;
+different devices have separate ledgers. Full summaries stay in memory only and
+clear at account changes. Network failures retain final scores and expose Retry
+for the breakdown. No new services or ongoing costs.
+
 ## Joker colour and game-screen refinements — 0.16.3
 
 Client-only release: `npm test`, `npm run build`, publish the normal web assets

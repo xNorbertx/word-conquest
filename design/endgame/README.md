@@ -1,6 +1,9 @@
 # End-game result concepts — 27 October 2026
 
-Three isolated HTML/CSS/JS prototypes, awaiting owner selection before app implementation.
+Three isolated HTML/CSS/JS prototypes. The owner selected **1 — Victory seal** on
+27 October 2026; it is implemented in the shared app client for 0.17.0. The gallery
+remains available for comparison. See `docs/PROGRESS.md` for implementation checks
+and publication details.
 
 [Phone gallery](https://xnorbertx.github.io/word-conquest/previews/endgame/)
 
@@ -46,8 +49,8 @@ Closing, resizing or hiding the page stops it immediately.
 - Portrait and short landscape layouts allow modal scrolling instead of clipping.
   Native iOS Safari and physical Android touch feel are not independently tested.
 
-Only `design/endgame/`, design documentation and the dedicated public preview path
-are changed. Production app, backend, rules, APK and existing previews are untouched.
+The original prototype release changed only `design/endgame/`, design documentation and the dedicated public preview path.
+That prototype release left the production app, backend, rules, APK and existing previews untouched.
 Published and verified: all six public files match source `5bb089d`; Pages commit
 `160ec21`. The public win screen was also visually checked at phone size.
 Existing app and prior preview assets are unchanged. See `docs/PROGRESS.md`.

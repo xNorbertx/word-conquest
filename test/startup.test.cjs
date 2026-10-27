@@ -11,7 +11,7 @@ function setup({cached=false,actualEntry=true}={}){
  const c={console,Promise,Error,JSON,user:null,currentView:'loading',recovering:false,authReady:false,gameFresh:false,game:null,homeData:null,analyticsData:null,analyticsActor:null,navigation:0,gameLoad:0,homeLoad:0,entering:false,entryEpoch:0,entryTimer:null,startupTimer:null,notificationGame:null,launchGame:null,params:new URLSearchParams(),navigator:{onLine:true},
   setTimeout:(fn,ms)=>{const id=++serial;timers.set(id,{fn,ms});return id;},clearTimeout:id=>timers.delete(id),
   db:{auth:{onAuthStateChange:fn=>callback=fn,getSession:async()=>({data:{session:session()}})}},
-  snapshots:{clear:()=>calls.clears++,home:id=>cached&&id===A?snapshot:null},moveHistory:{reset:noop},gameRequests:{reset:noop},homeRequests:{reset:noop},friends:{reset:noop},renderPush:noop,
+  snapshots:{clear:()=>calls.clears++,home:id=>cached&&id===A?snapshot:null},moveHistory:{reset:noop},endgame:{leave:noop,clear:noop},gameRequests:{reset:noop},homeRequests:{reset:noop},friends:{reset:noop},renderPush:noop,
   $:id=>{if(!elements.has(id))elements.set(id,{hidden:false,value:'',textContent:'',querySelector:()=>c.$(id+'-spinner')});return elements.get(id);},
   screen:name=>c.currentView=name,connectLiveUpdates:noop,renderHome:()=>calls.renders++,offlineNotice:(show,message)=>calls.notice={show,message},
   fetchHome:()=>{calls.reads++;return wait.promise;},showInvite:async()=>false,openNotification:noop,showFriends:noop,account:noop,showAnalytics:noop,localStorage:{getItem:()=>null},
