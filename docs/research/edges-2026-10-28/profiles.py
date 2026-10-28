@@ -31,4 +31,4 @@ for lang, filename in [('en','dictionary-v1'),('sv','dictionary-sv-v2'),('nl','d
     profiles[lang] = {'dictionarySha256':hashlib.sha256(raw).hexdigest(),'words':len(vocabulary),'utility':utility,'pairs':compatibility}
     (out/f'{lang}-words.json').write_text(json.dumps(vocabulary,ensure_ascii=False),encoding='utf-8')
     print(lang,len(vocabulary), ' '.join(f'{a}:{counts[a]}' for a in sorted(alphabet,key=lambda a:-counts[a])[:12]))
-(out/'profiles.json').write_text(json.dumps(profiles,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+(out/'profiles.json').write_bytes((json.dumps(profiles,ensure_ascii=False,indent=2)+'\n').encode('utf-8'))
