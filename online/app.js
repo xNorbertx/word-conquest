@@ -2839,10 +2839,69 @@ function createEndgameStore(storage, { namespace = "", limit = 300 } = {}) {
   };
 }
 
+// online/presentation.mjs
+var seatOf = (game2, userId) => game2.players.indexOf(userId) + 1;
+var isFinished = (game2) => !["active", "invited"].includes(game2.status);
+function opponentName(game2, userId) {
+  const seat = seatOf(game2, userId);
+  return game2.status === "invited" ? "Waiting for opponent" : ["cancelled", "declined"].includes(game2.status) ? "Game invitation" : game2.names?.[seat === 2 ? 0 : 1] || "Opponent";
+}
+function gameStatus(game2, userId) {
+  if (game2.status === "active") return game2.players[game2.state.player - 1] === userId ? "Your turn" : "Their turn";
+  if (game2.status === "invited") return "Invitation sent";
+  if (game2.status === "completed") return game2.result === "draw" ? "Draw" : Number(game2.result) === seatOf(game2, userId) ? "You won" : "You lost";
+  return game2.status === "abandoned" ? "Closed" : game2.status === "cancelled" ? "Cancelled" : game2.status === "declined" ? "Declined" : game2.status;
+}
+function visibleGames(games, userId, filter2 = "active") {
+  return games.filter((g) => isFinished(g) === (filter2 === "finished")).sort((a, b) => {
+    const mine = (g) => g.status === "active" && g.players[g.state.player - 1] === userId;
+    return Number(mine(b)) - Number(mine(a)) || Date.parse(b.updated_at) - Date.parse(a.updated_at);
+  });
+}
+function timeAgo(value, now = Date.now()) {
+  const timestamp = Date.parse(value);
+  if (!Number.isFinite(timestamp)) return "";
+  const minutes = Math.max(0, Math.floor((now - timestamp) / 6e4));
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return "Yesterday";
+  if (days < 7) return `${days}d ago`;
+  return new Date(timestamp).toLocaleDateString(void 0, { month: "short", day: "numeric" });
+}
+function invitationToken(value) {
+  let token = value.trim();
+  try {
+    if (/^https?:/i.test(token)) token = new URL(token).searchParams.get("invite") || "";
+  } catch {
+    return null;
+  }
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(token) ? token : null;
+}
+function activityText(kind, name) {
+  if (kind === "invitation received") return `${name} invited you to play`;
+  const labels = { word: `${name} played a word`, refresh: `${name} refreshed their letters`, resign: `${name} left the game`, offer_draw: `${name} offered a draw`, accept_draw: "Game drawn", abandon: "Game closed", "game complete": "Game finished", "invitation accepted": `Your game with ${name} is ready`, "invitation accept": `Your game with ${name} is ready`, "invitation decline": "Your invitation was declined", "invitation cancel": "Your invitation was cancelled", "invitation declined": "Your invitation was declined", "invitation cancelled": "Your invitation was cancelled" };
+  return labels[kind] || "Game updated";
+}
+var isUnknownWordError = (error) => error?.code === "illegal_move" && error.message === "That word is not in the dictionary.";
+function friendlyError(error) {
+  if (error.code === "client_update_required") return "Update Word Conquest or open the latest web app to continue.";
+  if (error.code === "username_taken") return "Username taken. Try another.";
+  if (error.code === "username_required") return "Choose a username to continue.";
+  const social = { friend_stale: "This friend request has changed. Refresh Friends and try again.", friend_unavailable: "This player is unavailable.", friend_cooldown: "You can send another request tomorrow.", friend_limit: "Request limit reached. Try again later.", invitation_pending: "Invitation already sent. Find it in Games." };
+  if (social[error.code]) return social[error.code];
+  const messages = { client_update_required: "Update Word Conquest or open the latest web app to play this game.", stale: "Board updated. Choose your move again.", not_your_turn: "It is your opponent's turn.", invitation_unavailable: "This invitation is no longer available.", cannot_accept_own_invitation: "This is your invitation. Share it with a friend.", rate_limit: "Too many requests. Try again shortly.", unauthorized: "Sign in again to continue.", not_found: "This game is no longer available.", dictionary_unavailable: "Word checking is unavailable. Your turn has not been used.", version_unavailable: "This game\u2019s rules are temporarily unavailable. Try again later.", ended: "This game has already ended." };
+  if (messages[error.code]) return messages[error.code];
+  if (["TimeoutError", "AbortError", "TypeError"].includes(error.name)) return "Could not connect. Please try again.";
+  return error.message || "Something went wrong. Please try again.";
+}
+
 // online/endgame.js
-function createEndgameResult({ getContext, getMoves, isAnimating, storage, namespace = "" }) {
+function createEndgameResult({ getContext, getMoves, isAnimating, storage, namespace = "", rematch: rematch2, openRematch }) {
   const dialog = $("endgame-dialog"), store = createEndgameStore(storage, { namespace }), media = matchMedia("(prefers-reduced-motion: reduce)");
-  let shown = null, request = 0, frame = 0, timer = 0, confettiFrame = 0;
+  let shown = null, request = 0, frame = 0, timer = 0, confettiFrame = 0, rematchRequest = 0;
   const identity = (c) => c?.actor && c.game ? `${c.actor}/${c.game.id}/${c.game.revision}` : null;
   const eligible = (c) => c?.visible && !c.preview && c.game?.status === "completed" && c.game.players.includes(c.actor) && ["1", "2", "draw"].includes(c.game.result);
   function stopConfetti() {
@@ -2954,6 +3013,11 @@ function createEndgameResult({ getContext, getMoves, isAnimating, storage, names
     shown = stamp;
     closeSheet();
     $("toast").hidden = true;
+    ++rematchRequest;
+    $("endgame-rematch").hidden = !rematch2 || c.game.players.length !== 2 || !c.game.players.every(Boolean);
+    $("endgame-rematch").disabled = false;
+    $("endgame-rematch-label").textContent = "Rematch";
+    $("endgame-rematch-error").hidden = true;
     dialog.dataset.side = seat === 1 ? "sage" : "walnut";
     dialog.dataset.outcome = won ? "win" : c.game.result === "draw" ? "draw" : "loss";
     $("endgame-title").textContent = won ? "You won!" : c.game.result === "draw" ? "A draw." : "You lost.";
@@ -2969,10 +3033,37 @@ function createEndgameResult({ getContext, getMoves, isAnimating, storage, names
   }
   function close() {
     ++request;
+    ++rematchRequest;
     stopConfetti();
     if (dialog.open) dialog.close();
     if (getContext()?.visible) $("result-view")?.focus({ preventScroll: true });
   }
+  $("endgame-rematch").onclick = async () => {
+    const c = getContext();
+    if (!eligible(c) || $("endgame-rematch").disabled) return;
+    const stamp = identity(c), ticket = ++rematchRequest;
+    const current = () => ticket === rematchRequest && identity(getContext()) === stamp && dialog.open;
+    $("endgame-rematch").disabled = true;
+    $("endgame-rematch-label").textContent = "Inviting\u2026";
+    $("endgame-rematch-error").hidden = true;
+    try {
+      const result = await rematch2(c.actor, c.game.id);
+      if (current()) {
+        close();
+        openRematch(result.game.id);
+      }
+    } catch (error) {
+      if (current()) {
+        $("endgame-rematch-error").textContent = error.code === "rematch_unavailable" ? "Rematch unavailable." : friendlyError(error);
+        $("endgame-rematch-error").hidden = false;
+      }
+    } finally {
+      if (current()) {
+        $("endgame-rematch").disabled = false;
+        $("endgame-rematch-label").textContent = "Rematch";
+      }
+    }
+  };
   function schedule() {
     cancelAnimationFrame(frame);
     clearTimeout(timer);
@@ -2997,6 +3088,7 @@ function createEndgameResult({ getContext, getMoves, isAnimating, storage, names
   });
   dialog.addEventListener("close", () => {
     ++request;
+    ++rematchRequest;
     stopConfetti();
   });
   for (const d of document.querySelectorAll("dialog")) d.addEventListener("close", schedule);
@@ -3014,6 +3106,36 @@ function createEndgameResult({ getContext, getMoves, isAnimating, storage, names
     stopConfetti();
     if (dialog.open) dialog.close();
   }, clear: () => store.clear() };
+}
+
+// online/rematch.mjs
+function createRematchSender({ api: api2, storage, namespace = "", uuid: uuid3 = () => crypto.randomUUID() }) {
+  const pending2 = /* @__PURE__ */ new Map(), ids = /* @__PURE__ */ new Map();
+  return (actor, sourceGameId) => {
+    const key = `wc-rematch:${namespace}:${actor}:${sourceGameId}`;
+    if (pending2.has(key)) return pending2.get(key);
+    let id = ids.get(key);
+    try {
+      id ??= storage?.getItem(key);
+    } catch {
+    }
+    if (!/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(id || "")) id = uuid3();
+    ids.set(key, id);
+    try {
+      storage?.setItem(key, id);
+    } catch {
+    }
+    const request = Promise.resolve().then(() => api2({ action: "rematch", sourceGameId, gameId: id }, actor)).then((result) => {
+      ids.delete(key);
+      try {
+        storage?.removeItem(key);
+      } catch {
+      }
+      return result;
+    }).finally(() => pending2.delete(key));
+    pending2.set(key, request);
+    return request;
+  };
 }
 
 // online/analytics.js
@@ -3564,7 +3686,7 @@ function createSnapshotCache(storage, { namespace = "", now = Date.now, ttl = 7 
 }
 
 // package.json
-var version = "0.17.0";
+var version = "0.17.1";
 
 // online/app.js
 init_dist();
@@ -11126,65 +11248,6 @@ function createBoardScoreMotion({ onComplete }) {
   } };
 }
 
-// online/presentation.mjs
-var seatOf = (game2, userId) => game2.players.indexOf(userId) + 1;
-var isFinished = (game2) => !["active", "invited"].includes(game2.status);
-function opponentName(game2, userId) {
-  const seat = seatOf(game2, userId);
-  return game2.status === "invited" ? "Waiting for opponent" : ["cancelled", "declined"].includes(game2.status) ? "Game invitation" : game2.names?.[seat === 2 ? 0 : 1] || "Opponent";
-}
-function gameStatus(game2, userId) {
-  if (game2.status === "active") return game2.players[game2.state.player - 1] === userId ? "Your turn" : "Their turn";
-  if (game2.status === "invited") return "Invitation sent";
-  if (game2.status === "completed") return game2.result === "draw" ? "Draw" : Number(game2.result) === seatOf(game2, userId) ? "You won" : "You lost";
-  return game2.status === "abandoned" ? "Closed" : game2.status === "cancelled" ? "Cancelled" : game2.status === "declined" ? "Declined" : game2.status;
-}
-function visibleGames(games, userId, filter2 = "active") {
-  return games.filter((g) => isFinished(g) === (filter2 === "finished")).sort((a, b) => {
-    const mine = (g) => g.status === "active" && g.players[g.state.player - 1] === userId;
-    return Number(mine(b)) - Number(mine(a)) || Date.parse(b.updated_at) - Date.parse(a.updated_at);
-  });
-}
-function timeAgo(value, now = Date.now()) {
-  const timestamp = Date.parse(value);
-  if (!Number.isFinite(timestamp)) return "";
-  const minutes = Math.max(0, Math.floor((now - timestamp) / 6e4));
-  if (minutes < 1) return "Just now";
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days === 1) return "Yesterday";
-  if (days < 7) return `${days}d ago`;
-  return new Date(timestamp).toLocaleDateString(void 0, { month: "short", day: "numeric" });
-}
-function invitationToken(value) {
-  let token = value.trim();
-  try {
-    if (/^https?:/i.test(token)) token = new URL(token).searchParams.get("invite") || "";
-  } catch {
-    return null;
-  }
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(token) ? token : null;
-}
-function activityText(kind, name) {
-  if (kind === "invitation received") return `${name} invited you to play`;
-  const labels = { word: `${name} played a word`, refresh: `${name} refreshed their letters`, resign: `${name} left the game`, offer_draw: `${name} offered a draw`, accept_draw: "Game drawn", abandon: "Game closed", "game complete": "Game finished", "invitation accepted": `Your game with ${name} is ready`, "invitation accept": `Your game with ${name} is ready`, "invitation decline": "Your invitation was declined", "invitation cancel": "Your invitation was cancelled", "invitation declined": "Your invitation was declined", "invitation cancelled": "Your invitation was cancelled" };
-  return labels[kind] || "Game updated";
-}
-var isUnknownWordError = (error) => error?.code === "illegal_move" && error.message === "That word is not in the dictionary.";
-function friendlyError(error) {
-  if (error.code === "client_update_required") return "Update Word Conquest or open the latest web app to continue.";
-  if (error.code === "username_taken") return "Username taken. Try another.";
-  if (error.code === "username_required") return "Choose a username to continue.";
-  const social = { friend_stale: "This friend request has changed. Refresh Friends and try again.", friend_unavailable: "This player is unavailable.", friend_cooldown: "You can send another request tomorrow.", friend_limit: "Request limit reached. Try again later.", invitation_pending: "Invitation already sent. Find it in Games." };
-  if (social[error.code]) return social[error.code];
-  const messages = { client_update_required: "Update Word Conquest or open the latest web app to play this game.", stale: "Board updated. Choose your move again.", not_your_turn: "It is your opponent's turn.", invitation_unavailable: "This invitation is no longer available.", cannot_accept_own_invitation: "This is your invitation. Share it with a friend.", rate_limit: "Too many requests. Try again shortly.", unauthorized: "Sign in again to continue.", not_found: "This game is no longer available.", dictionary_unavailable: "Word checking is unavailable. Your turn has not been used.", version_unavailable: "This game\u2019s rules are temporarily unavailable. Try again later.", ended: "This game has already ended." };
-  if (messages[error.code]) return messages[error.code];
-  if (["TimeoutError", "AbortError", "TypeError"].includes(error.name)) return "Could not connect. Please try again.";
-  return error.message || "Something went wrong. Please try again.";
-}
-
 // online/move-history.mjs
 var amount = (n) => Number.isSafeInteger(n) ? n : 0;
 var actions = { refresh: "Letters refreshed", resign: "Resigned", offer_draw: "Draw offered", accept_draw: "Draw accepted", abandon: "Game closed" };
@@ -11744,7 +11807,11 @@ var moveHistory = createMoveHistory({
   canReplay: () => !preview && gameFresh && !!scoreMotionPlan(game, history[0], config2),
   replay: () => animateScore(null, { replay: true })
 });
-var endgame = createEndgameResult({ getContext: () => ({ game, actor: user?.id, config: config2, fresh: gameFresh, preview, visible: currentView === "game" }), getMoves: () => moveHistory.all(), isAnimating: () => scoreMotion.active, storage: localStorage, namespace: cfg.supabaseUrl + (cfg.cacheScope || "") });
+var rematch = createRematchSender({ api: (body, actor) => {
+  if (actor !== user?.id) throw Error("Sign in again to continue.");
+  return api(body);
+}, storage: localStorage, namespace: cfg.supabaseUrl + (cfg.cacheScope || "") });
+var endgame = createEndgameResult({ getContext: () => ({ game, actor: user?.id, config: config2, fresh: gameFresh, preview, visible: currentView === "game" }), getMoves: () => moveHistory.all(), isAnimating: () => scoreMotion.active, storage: localStorage, namespace: cfg.supabaseUrl + (cfg.cacheScope || ""), rematch, openRematch: (id) => void run(() => openGame(id)) });
 var jokerKeyboard = createJokerKeyboard();
 var boardViewport = createBoardViewport({
   viewport: $("board-scroll"),
@@ -11822,6 +11889,7 @@ async function readSession() {
   }
 }
 async function api(body) {
+  const rematchActor = body.action === "rematch" ? user?.id : null;
   if (!db) throw new Error("Online play is not connected yet.");
   const { data: { session }, error } = await readSession();
   if (error) throw error;
@@ -11840,6 +11908,7 @@ async function api(body) {
     screen("auth", { route: false });
     throw apiError("Sign in to continue.", "unauthorized", 401);
   }
+  if (body.action === "rematch" && (!rematchActor || session.user.id !== rematchActor || user?.id !== rematchActor)) throw Error("Sign in again to continue.");
   const response = await fetch(`${cfg.supabaseUrl}/functions/v1/game-api`, { method: "POST", signal: AbortSignal.timeout(2e4), headers: { "Content-Type": "application/json", apikey: cfg.supabaseAnonKey, Authorization: `Bearer ${session.access_token}` }, body: JSON.stringify({ ...body, supportedRules: SUPPORTED_RULES, supportsFriends: true, supportsUsernameOnboarding: true, supportsGameSummaries: true, supportsFastReads: true }) });
   const result = await response.json();
   if (!response.ok) {
