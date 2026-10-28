@@ -1044,3 +1044,33 @@ Creative Commons Notice
     this trademark restriction does not form part of this License.
 
     Creative Commons may be contacted at https://creativecommons.org/.
+
+
+Language-specific edge placement profiles, version 1 (28 October 2026).
+edge-profiles-v1.json is an adaptation of wordfreq 3.1.1 frequency data,
+intersected with Word Conquest's pinned English, Swedish and Dutch dictionaries.
+Profile data and published research measurements: CC BY-SA 4.0.
+https://creativecommons.org/licenses/by-sa/4.0/
+Changes: 3-7-letter legal forms, frequency threshold Zipf 3.5, accent normalization,
+per-word letter/pair counts and normalized undirected pair strengths. Swedish
+retains A-Z/Å/Ä/Ö; Dutch uses I + J. The accepted game dictionaries are unchanged.
+
+wordfreq: Copyright 2022 Robyn Speer. Code Apache-2.0; data CC BY-SA 4.0.
+https://github.com/rspeer/wordfreq
+https://github.com/rspeer/wordfreq/blob/master/NOTICE.md
+Sources credited by wordfreq include Google Books Ngrams, Leeds Internet Corpus,
+Wikipedia, ParaCrawl, OPUS OpenSubtitles 2018 / OpenSubtitles, and SUBTLEX by
+Marc Brysbaert et al. SUBTLEX is freely available data:
+http://crr.ugent.be/programs-data/subtitle-frequencies
+http://books.google.com/ngrams
+http://corpus.leeds.ac.uk/list.html
+https://www.wikipedia.org/
+https://paracrawl.eu/
+https://opus.nlpl.eu/OpenSubtitles.php
+https://www.opensubtitles.org/
+
+Pinned profile data and reproducible research:
+https://github.com/xNorbertx/word-conquest/tree/codex/async-friend-play/docs/research/edges-2026-10-28
+https://github.com/xNorbertx/word-conquest/blob/codex/async-friend-play/server/versions/edge-profiles-v1.json
+See the accompanying dictionary notices for Letterpress, Martin Lindhe's Swedish
+list, SALDO morphology and OpenTaal. No word-frequency library runs in the app.
