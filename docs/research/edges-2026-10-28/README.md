@@ -28,7 +28,7 @@ It does not promise to make every individual board or turn easier.
 |---|---:|---:|---:|
 | English | 23.13 → 26.63 | +15.2% | +12.2% |
 | Swedish | 19.09 → 21.47 | +12.5% | +10.5% |
-| Dutch | 18.65 → 21.38 | +14.7% | +11.8% |
+| Dutch | 18.65 → 21.38 | +14.6% | +11.8% |
 
 The solver counts unique words, at most one joker, no repeated tiles. Edge
 starts exclude joker tiles and consider each perimeter tile as a potential

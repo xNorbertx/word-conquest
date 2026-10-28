@@ -5,7 +5,7 @@
 Implemented separately researched English/Swedish/Dutch pair profiles and a
 same-category arrangement pass for openings and replacements. New versions are
 `autumn-v6`, `autumn-sv-v5`, `autumn-nl-v2`; existing versions remain immutable.
-Held-out edge-starting options improved 15.2%, 12.5%, 14.7% respectively. Whole
+Held-out edge-starting options improved 15.2%, 12.5%, 14.6% respectively. Whole
 boards also improved. The 72-game stress test was mixed for Swedish (-2.1% mean
 per-turn options); these are solver proxies, not human speed measurements.
 
@@ -16,8 +16,27 @@ layouts, selection and joker assignment. 285 Node tests plus original
 engine/scoring/supply checks pass. Build integrity verifies all old snapshots.
 
 Research, raw measurements and reproduction:
-[edge placement](research/edges-2026-10-28/README.md). Standalone report prepared;
-deployment and Desktop delivery are being verified. No new services/costs.
+[edge placement](research/edges-2026-10-28/README.md). Standalone report copied and checksum-verified at
+`C:\Users\Norbert\Desktop\Word Conquest - Letter Distribution\index.html`.
+It works offline and is not included in the app or Pages publication. Reviewed at
+desktop and phone widths; language switching, pairing exploration and before/after
+boards work. The report contains primary-source links and data attribution.
+
+Released and verified:
+
+- Source `da821cb45b5239d74ed15c9352ea614580161a63`; [web app](https://xnorbertx.github.io/word-conquest/online/) via Pages `3fb53ab24d03529a7de182fb4b51b146e086f34d`.
+  All ten public app/prototype assets match after normalizing existing line endings.
+  The root prototype and previous design galleries are preserved.
+- Backend `game-api` version 25 ACTIVE; correct web-origin preflight and anonymous
+  401 verified. No schema migration, retained test games or notifications required.
+- [Android CI](https://github.com/xNorbertx/word-conquest/actions/runs/40782250996) successful. Signed `0.18.0-da821cb`, code `26001901`;
+  [download](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-26001901/word-conquest-android.apk). Package, bundled web assets, native resources, existing
+  signing certificate and absence of fixtures/private-key material checked.
+- Anonymous download verified: SHA-256 `382369f711150e93129ffd7f5442b4b916a88b5e1bc34eb2c0277d0d30ed5650`; 5,030,379 bytes.
+- Refresh web/install APK on both players' devices, then start a new game for the
+  new letter placement. Existing games retain their original generation/replacement
+  rules; the visual hints also work there. Physical handset acceptance remains open.
+- No new infrastructure, subscriptions, mobile permissions or ongoing charges.
 
 ## Result rematch — 0.17.1, 28 October 2026
 

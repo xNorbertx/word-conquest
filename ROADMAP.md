@@ -8,7 +8,7 @@
 - [x] Outline legal starts/next tiles in the player's colour, respecting saved rules and non-playable states.
 - [x] Regression checks and narrow-phone light/dark visual review, including joker selection.
 - [x] Create a standalone interactive explanation, with measured results and limitations.
-- [ ] Verify backend/web/signed Android publication and Desktop delivery.
+- [x] Verify backend/web/signed Android publication and Desktop delivery.
 - [ ] Owner playtest: whether edge words feel easier to spot; no human timing claim.
 
 ## Rematch — 0.17.1

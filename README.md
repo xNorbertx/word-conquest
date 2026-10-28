@@ -5,6 +5,7 @@
 New English, Swedish and Dutch games arrange their sampled letters using separate
 language profiles. Exact letter counts, category positions, scoring and joker
 layout stay unchanged. Available starts/next tiles are outlined in your colour.
+[Web app](https://xnorbertx.github.io/word-conquest/online/) · [Android 0.18.0-da821cb](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-26001901/word-conquest-android.apk).
 See [research and reproduction](docs/research/edges-2026-10-28/README.md) and
 [release status](docs/PROGRESS.md). A standalone interactive explanation is saved
 on the owner's Desktop; it is not part of the deployed app.
