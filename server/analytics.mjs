@@ -2,7 +2,7 @@ import {Engine,configFor} from './domain.mjs';
 
 // Deliberate starting point: records from the current defended-castle scoring.
 // Older scoring totals are not comparable and require no migration/backfill.
-export const ANALYTICS_RULES=Object.freeze(['autumn-v5','autumn-sv-v4','autumn-nl-v1']);
+export const ANALYTICS_RULES=Object.freeze(['autumn-v5','autumn-sv-v4','autumn-nl-v1','autumn-v6','autumn-sv-v5','autumn-nl-v2']);
 const integer=n=>Number.isSafeInteger(n)&&n>=0;
 export function analytics(games,actor){
   const result={games:0,wins:0,losses:0,draws:0,bestGame:null,bestWord:null,longestWord:null,biggestCapture:null,castlesCaptured:0,words:0};

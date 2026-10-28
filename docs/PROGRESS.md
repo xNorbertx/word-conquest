@@ -1,5 +1,24 @@
 # Implementation and verification - updated 28 October 2026
 
+## 28 October 2026 — 0.18.0 edge playability
+
+Implemented separately researched English/Swedish/Dutch pair profiles and a
+same-category arrangement pass for openings and replacements. New versions are
+`autumn-v6`, `autumn-sv-v5`, `autumn-nl-v2`; existing versions remain immutable.
+Held-out edge-starting options improved 15.2%, 12.5%, 14.7% respectively. Whole
+boards also improved. The 72-game stress test was mixed for Swedish (-2.1% mean
+per-turn options); these are solver proxies, not human speed measurements.
+
+Available next tiles receive an inset outline in the current player's colour;
+other tiles quieten only while selecting. Ownership/castles remain visible.
+Scoring playback hides hints. UI tests cover both colours, narrow light/dark
+layouts, selection and joker assignment. 285 Node tests plus original
+engine/scoring/supply checks pass. Build integrity verifies all old snapshots.
+
+Research, raw measurements and reproduction:
+[edge placement](research/edges-2026-10-28/README.md). Standalone report prepared;
+deployment and Desktop delivery are being verified. No new services/costs.
+
 ## Result rematch — 0.17.1, 28 October 2026
 
 The result card now places Rematch beside View board. Sending disables the action

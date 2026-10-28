@@ -22,6 +22,7 @@ if(fs.existsSync('server/versions/LETTERPRESS-LICENSE.txt'))fs.appendFileSync('d
 fs.appendFileSync('dist/online/dictionary-license.txt','\n\nSwedish dictionary: martinlindhe/wordlist_swedish\n'+swedish.sourceUrl+'\nFiltered to lowercase NFC words of 3–69 letters in A–Z/Å/Ä/Ö.\n\n'+fs.readFileSync('server/versions/SWEDISH-LICENSE.txt','utf8'));
 fs.appendFileSync('dist/online/dictionary-license.txt','\n\n'+fs.readFileSync('server/versions/SWEDISH-EXPANDED-NOTICE.txt','utf8')+'\n'+fs.readFileSync('server/versions/CC-BY-4.0.txt','utf8'));
 fs.appendFileSync('dist/online/dictionary-license.txt','\n\n'+fs.readFileSync('server/versions/DUTCH-NOTICE.txt','utf8')+'\n'+fs.readFileSync('server/versions/DUTCH-LICENSE.txt','utf8'));
+fs.appendFileSync('dist/online/dictionary-license.txt','\n\n'+fs.readFileSync('server/versions/EDGE-LETTERS-NOTICE.txt','utf8'));
 Promise.all([
   esbuild.build({entryPoints:['online/app.js'],bundle:true,format:'esm',platform:'browser',target:'es2022',define:{module:'undefined'},outfile:'dist/online/app.js',minify:false}),
   esbuild.build({entryPoints:['server/api.mjs'],bundle:true,format:'esm',platform:'neutral',target:'es2022',define:{module:'undefined'},plugins:[compressedDictionaries],outfile:'supabase/functions/_shared/api.mjs'}),

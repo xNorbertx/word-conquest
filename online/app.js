@@ -19,6 +19,7 @@ import {scoreMotionPlan,createScoreLedger} from './score-motion.mjs';
 import {createBoardScoreMotion} from './score-motion.js';
 import {createMoveHistory} from './move-history.js';
 import {tilePoints,castleLabel} from './board-geometry.mjs';
+import {availableTiles} from './available-tiles.mjs';
 import {createJokerKeyboard,canAssignJoker} from './joker-keyboard.mjs';
 import {createBoardViewport} from './board-viewport.mjs';
 import {LANGUAGES,languageFor,languageLabel} from '../server/languages.mjs';
@@ -239,6 +240,8 @@ function myTurn(){return game?.status==='active'&&game.players[game.state.player
 function canPlay(){return !preview&&gameFresh&&myTurn()&&!busy&&!pending()&&!scoreMotion.active;}
 function drawBoard(){
   const board=$('board');board.setAttribute('viewBox','-295 -295 590 590');
+  const available=availableTiles(game.state,selection,config,canPlay()||preview);
+  board.classList.toggle('is-choosing',available.size>0&&selection.length>0);
   // Keep the hit targets connected throughout a touch gesture. Replacing SVG
   // children on pointerdown can interrupt implicit capture in touch WebViews.
   const existing=new Map([...board.querySelectorAll('.tile')].map(tile=>[tile.dataset.id,tile]));
@@ -247,8 +250,15 @@ function drawBoard(){
   for(const t of game.state.tiles){const p=pos(t),step=selection.indexOf(t.id),letter=t.letter==='?'?(step>=0?jokers[t.id]||'':''):t.letter;
     const attrs={'data-id':t.id,role:'button',tabindex:t.id===focusTile?0:-1,'aria-pressed':step>=0,'aria-disabled':!canPlay()&&!preview,'aria-label':`${t.letter==='?'?'Joker'+(letter?', '+letter:''):letter}, ${t.owner===seat?'yours':t.owner?'opponent':'neutral'}, ${Engine.letterValue(t.letter,config)} letter points${t.castle?', '+castleLabel(t,config):''}`,class:`tile owner${t.owner}${t.letter==='?'?' joker-tile':''}${t.castle?' castle-tile'+(t.q===0&&t.r===0?' centre-castle':''):''}${t.owner===seat?' your-tile':''}${step>=0?' selected':''}${highlightLast&&last?.path?.includes(t.id)?' last-move':''}`};
     const g=existing.get(t.id)||svg('g');for(const [key,value]of Object.entries(attrs))g.setAttribute(key,String(value));
+    g.classList.toggle('available-next',available.has(t.id));
+    if(available.has(t.id))g.setAttribute('aria-label',attrs['aria-label']+(selection.length?', available next':', available start'));
     if(!existing.has(t.id)){g.append(svg('polygon',{points:tilePoints(t)}),svg('text',{x:p.x,y:p.y+(t.castle?1:-2)},letter),svg('text',{x:p.x,y:p.y+19,class:'value'},Engine.letterValue(t.letter,config)));board.append(g);}
     g.querySelector('polygon').setAttribute('points',tilePoints(t));
+    let outline=g.querySelector('.next-outline');
+    if(available.has(t.id)){
+      if(!outline){outline=svg('polygon',{class:'next-outline','aria-hidden':'true'});g.append(outline);}
+      outline.setAttribute('points',tilePoints(t));outline.setAttribute('transform',`translate(${p.x} ${p.y}) scale(.88) translate(${-p.x} ${-p.y})`);
+    }else outline?.remove();
     const letterNode=g.querySelector('text:not(.value)');letterNode.setAttribute('y',p.y+(t.castle?1:-2));letterNode.textContent=letter;
     g.querySelector('.value').textContent=Engine.letterValue(t.letter,config);
     if(t.castle&&!g.querySelector('.castle-pulse'))g.append(svg('title',{},castleLabel(t,config)),svg('circle',{cx:p.x,cy:p.y,r:34,class:'castle-pulse','aria-hidden':'true'}));

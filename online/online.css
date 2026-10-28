@@ -877,6 +877,12 @@ input:read-only {
   stroke-width: 2.5;
   stroke: #6c7d5b;
 }
+.tile .next-outline {fill:none;stroke:var(--own-ink);stroke-width:2;opacity:.8;pointer-events:none}
+#game-table:not(.is-scoring) #board.is-choosing .tile:not(.selected):not(.available-next) > polygon:first-child {opacity:.62}
+#game-table:not(.is-scoring) #board.is-choosing .tile:not(.selected):not(.available-next) > text {opacity:.62}
+.tile.available-next > text:not(.value) {font-weight:700}
+.is-scoring .tile .next-outline {display:none}
+.is-scoring .tile.available-next > text:not(.value) {font-weight:400}
 .path {
   fill: none;
   stroke: #385340;

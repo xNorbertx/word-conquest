@@ -17,5 +17,12 @@
   "rules-sv-v4.mjs": "7793f14002d919bcf672a615e53458190a775cbd6c486c55f211285a2ad1df07",
   "engine-v3.mjs": "34401d93334676506bd53840c87f02992897c484ab9e19bea978f0d83715c115",
   "rules-nl-v1.mjs": "c44af5f608abc13943c3a80a4e0186fad66db30b11189e8db38a7ff4744e6c88",
-  "dictionary-nl-v1.meta.json": "5ee3fa0d97be930d2fe4c3849b971b4f2f5a41dcbc42ee2bbb59e3ad5d782e43"
+  "dictionary-nl-v1.meta.json": "5ee3fa0d97be930d2fe4c3849b971b4f2f5a41dcbc42ee2bbb59e3ad5d782e43",
+  "letter-placement-v1.mjs": "ee9403a7ff2d9275b6e07741d4db39775e8b3ab420a0530e4d50b802922d3f34",
+  "edge-profiles-v1.json": "4a05ee320e8668c52e9125e9db4e608786a3386da1cc1b6819867c71b4d690f1",
+  "engine-v4.mjs": "35bff94ba4babb3dd0fbfcaa69a6f9f0fd273abde5fe1bf9aea96399be2cc2c3",
+  "opening-v5.mjs": "1ca0f46dcb792a1a313989ffb2996fbe926a35de69a85f3bf8b1dfa3d5308473",
+  "rules-v6.mjs": "ffbf718df63ea7ddf9239b5fe818eaafbdffaa11fabae1ac8f3d052488ddf370",
+  "rules-sv-v5.mjs": "1fd12b2f03cdf5a405a9540778e0e9ec6a6d6e4412f67b8c8b8157ec0f1c998e",
+  "rules-nl-v2.mjs": "31ef27ad975474640c5043f738de2cc7a2e461138b43da2ffbe3de21ce83b523"
 }

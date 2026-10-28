@@ -1,5 +1,16 @@
 # Word Conquest — app roadmap
 
+## Edge playability and next-tile hints — 0.18.0
+
+- [x] Research three language profiles from pinned legal dictionaries and familiar-word frequencies.
+- [x] Compare eight placement candidates and validate on 768 held-out boards, 192 stricter-vocabulary boards and 72 complete simulated games.
+- [x] Version openings/replacements; preserve counts, vowel positions, scoring, castles and existing games.
+- [x] Outline legal starts/next tiles in the player's colour, respecting saved rules and non-playable states.
+- [x] Regression checks and narrow-phone light/dark visual review, including joker selection.
+- [x] Create a standalone interactive explanation, with measured results and limitations.
+- [ ] Verify backend/web/signed Android publication and Desktop delivery.
+- [ ] Owner playtest: whether edge words feel easier to spot; no human timing claim.
+
 ## Rematch — 0.17.1
 
 - [x] Compact Rematch action beside View board on the finished-game popup.

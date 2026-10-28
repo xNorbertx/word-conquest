@@ -19,7 +19,7 @@ test('obsolete English/Swedish creation is rejected for links and friends, even 
    const response=await x.call({rulesVersion:v,language:language.code,friendId});assert.equal(response.status,409);assert.equal(response.code,'client_update_required');
   }
  }
- assert.equal((await x.call({supportedRules:undefined})).code,'client_update_required');assert.equal(x.reads(),15);assert.equal(x.calls.length,0);assert.equal(x.saved.size,0);
+ assert.equal((await x.call({supportedRules:undefined})).code,'client_update_required');assert.equal(x.reads(),2*(d.SUPPORTED_RULES.length-Object.keys(l.LANGUAGES).length)+1);assert.equal(x.calls.length,0);assert.equal(x.saved.size,0);
 });
 test('current creation in all three languages is authoritative and has no extra saved-game read',async()=>{
  const x=fixture();

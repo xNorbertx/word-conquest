@@ -83,9 +83,10 @@ test('old clients must update before opening, joining or moving in v2; v1 remain
 });
 
 test('current creation uses server state and older clients still cannot join, open or submit v3',async()=>{
+ const d=await import('../server/domain.mjs');
  const x=await apiFixture('autumn-v3'),supportedRules=['autumn-v1','autumn-v2','autumn-v3'];
- const created=await x.send({action:'create',gameId:crypto.randomUUID(),rulesVersion:'autumn-v5',supportedRules:[...supportedRules,'autumn-v5'],startingPlayer:99,state:{player:99,castleIncome:[999,999]}});
- assert.equal(created.status,200);const g=(await created.json()).game;assert.equal(g.rules_version,'autumn-v5');assert.ok([1,2].includes(g.state.player));assert.equal(g.state.player,g.state.startingPlayer);assert.deepEqual(g.state.castleIncome,[0,0]);
+ const created=await x.send({action:'create',gameId:crypto.randomUUID(),rulesVersion:d.RULES_VERSION,supportedRules:[...supportedRules,d.RULES_VERSION],startingPlayer:99,state:{player:99,castleIncome:[999,999]}});
+ assert.equal(created.status,200);const g=(await created.json()).game;assert.equal(g.rules_version,d.RULES_VERSION);assert.ok([1,2].includes(g.state.player));assert.equal(g.state.player,g.state.startingPlayer);assert.deepEqual(g.state.castleIncome,[0,0]);
  for(const body of [{action:'game',gameId:G},{action:'invitation',choice:'accept',token:T},{action:'turn',gameId:G,command:command(x.g,['-3,0','-2,0','-1,0'])}]){
   const r=await x.send({...body,supportedRules:['autumn-v1','autumn-v2']});assert.equal(r.status,409);assert.equal((await r.json()).code,'client_update_required');
  }

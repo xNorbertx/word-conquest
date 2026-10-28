@@ -20,7 +20,7 @@ function pathFor(g,word='GARDENS',owner=3-g.state.player){return [...word].map((
 function plan(result,c){return m.scoreMotionPlan(result.next,{revision:result.next.revision,recap:result.recap},c);}
 const income=(s,defender)=>s.tiles.reduce((n,t)=>n+(t.castle&&t.owner===defender?(t.id==='0,0'?5:3):0),0);
 test('new games start at zero and pin English/Swedish versions without changing old dictionaries or letter values',()=>{
- assert.equal(d.RULES_VERSION,'autumn-v5');assert.equal(l.LANGUAGES.sv.rulesVersion,'autumn-sv-v4');
+ assert.equal(d.RULES_VERSION,'autumn-v6');assert.equal(l.LANGUAGES.sv.rulesVersion,'autumn-sv-v5');
  for(const v of ['autumn-v5','autumn-sv-v4'])for(const starter of [1,2]){const g=game(starter,v);assert.equal(g.state.player,starter);assert.deepEqual(d.Engine.scores(g.state,d.configFor(v)),[0,0]);assert.equal(g.state.finalTerritory,null);assert.deepEqual(d.Engine.scoreBreakdown(g.state,d.configFor(v)).map(s=>s.pendingTerritory),[3,3]);}
  assert.deepEqual(d.configFor('autumn-sv-v4').wordScoring.letterGroups,d.configFor('autumn-sv-v3').wordScoring.letterGroups);
  assert.equal(l.languageForRules('autumn-sv-v4').dictionary.version,l.languageForRules('autumn-sv-v3').dictionary.version);

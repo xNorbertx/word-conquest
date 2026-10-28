@@ -68,6 +68,7 @@ test('Dutch cards, account records and saved language survive restarting the cli
  assert.equal(analytics([g],A).bestWord.language,'nl');assert.equal(analytics([g],A).bestWord.word,'IJS');
 });
 test('API creates the selected language on the server, preserves retries and rejects older clients',async()=>{
+ const version=l.LANGUAGES.nl.rulesVersion;
  const {createHandler}=await import('../server/api.mjs');const saved=new Map();let calls=0;
  const mock={auth:{getUser:async()=>({data:{user:{id:A}}})},from:table=>({select:()=>({eq:()=>({single:async()=>({data:{id:A,username:'Noor'}})}),in:async()=>({data:[{id:A,display_name:'Noor'}]})})}),rpc:async(name,args)=>{
   if(name==='wc_rate_limit')return{data:true};calls++;assert.ok(['wc_create','wc_create_friend'].includes(name));

@@ -1,5 +1,14 @@
 # Word Conquest
 
+### Better edge letters and available-tile hints (0.18.0)
+
+New English, Swedish and Dutch games arrange their sampled letters using separate
+language profiles. Exact letter counts, category positions, scoring and joker
+layout stay unchanged. Available starts/next tiles are outlined in your colour.
+See [research and reproduction](docs/research/edges-2026-10-28/README.md) and
+[release status](docs/PROGRESS.md). A standalone interactive explanation is saved
+on the owner's Desktop; it is not part of the deployed app.
+
 ### Rematch from results (0.17.1)
 
 Tap **Rematch** on a finished game's result to invite the same opponent in the

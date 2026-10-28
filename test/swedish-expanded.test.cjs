@@ -29,7 +29,7 @@ test('expanded dictionary is pinned, preserves existing vocabulary and includes 
  assert.match(fs.readFileSync('server/versions/SWEDISH-EXPANDED-NOTICE.txt','utf8'),/Språkbanken \(2017\)/);
 });
 test('old Swedish games retain their dictionary and new versions keep identical openings and replacements',async()=>{
- assert.equal(l.LANGUAGES.sv.rulesVersion,'autumn-sv-v4');
+ assert.equal(l.LANGUAGES.sv.rulesVersion,'autumn-sv-v5');
  for(const v of ['autumn-sv-v1','autumn-sv-v2'])assert.equal(l.languageForRules(v).dictionary.version,oldMeta.version);
  assert.equal(l.languageForRules('autumn-sv-v3').dictionary.version,meta.version);assert.equal(l.languageForRules('missing'),null);
  const {dictionaryFor}=await import('../server/dictionaries.mjs');
@@ -68,13 +68,13 @@ test('API pins the right dictionary on creation and retry, and gates clients mis
   if(!saved.has(args.p_id))saved.set(args.p_id,{id:args.p_id,players:[actor,null],rules_version:args.p_rules,dictionary_version:args.p_dictionary,state:args.p_state,status:'invited',revision:0});
   return{data:saved.get(args.p_id)};
  }};
- const handler=createHandler(db),oldRules=d.SUPPORTED_RULES.filter(v=>v!=='autumn-sv-v4');
+ const handler=createHandler(db),oldRules=d.SUPPORTED_RULES.filter(v=>v!==l.LANGUAGES.sv.rulesVersion);
  async function create(id,rulesVersion,supported=d.SUPPORTED_RULES){const r=await handler(new Request('https://example.invalid',{method:'POST',headers:{Authorization:'Bearer test'},body:JSON.stringify({action:'create',gameId:id,language:'sv',rulesVersion,supportedRules:supported,dictionaryVersion:'client-forgery'})}));return{status:r.status,...await r.json()};}
- const id=crypto.randomUUID(),first=await create(id,'autumn-sv-v4');assert.equal(first.status,200);assert.equal(first.game.dictionary_version,meta.version);assert.deepEqual((await create(id,'autumn-sv-v4')).game,first.game);
+ const id=crypto.randomUUID(),first=await create(id,l.LANGUAGES.sv.rulesVersion);assert.equal(first.status,200);assert.equal(first.game.dictionary_version,meta.version);assert.deepEqual((await create(id,l.LANGUAGES.sv.rulesVersion)).game,first.game);
  const legacyId=crypto.randomUUID();saved.set(legacyId,{...first.game,id:legacyId,rules_version:'autumn-sv-v2',dictionary_version:oldMeta.version,state:d.Engine.newGame(d.configFor('autumn-sv-v2'))});
  assert.equal((await create(legacyId,'autumn-sv-v2',oldRules)).game.dictionary_version,oldMeta.version);
  assert.equal((await create(legacyId,'autumn-sv-v3')).game.dictionary_version,oldMeta.version);
- assert.equal((await create(crypto.randomUUID(),'autumn-sv-v4',oldRules)).code,'client_update_required');
+ assert.equal((await create(crypto.randomUUID(),l.LANGUAGES.sv.rulesVersion,oldRules)).code,'client_update_required');
 });
 test('compressed expanded dictionary inflates to the exact verified word set',async()=>{
  const {dictionaryWords}=await import('../server/dictionaries.mjs'),raw=fs.readFileSync('server/versions/dictionary-sv-v2.json');
