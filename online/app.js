@@ -1,4 +1,5 @@
 import {createEndgameResult} from './endgame.js';
+import {createRematchSender} from './rematch.mjs';
 import {renderAnalytics} from './analytics.js';
 import {rulesSections} from './copy.mjs';
 import monogram from '../assets/monogram.json';
@@ -56,7 +57,8 @@ const scoreLedger=createScoreLedger(localStorage);
 const scoreMotion=createBoardScoreMotion({onComplete:()=>{if(game&&currentView==='game')renderGame();}});
 const moveHistory=createMoveHistory({api,getUser:()=>user,getGame:()=>game,getMoves:()=>history,isPreview:()=>preview,
   stopMotion:()=>scoreMotion.cancel(),canReplay:()=>!preview&&gameFresh&&!!scoreMotionPlan(game,history[0],config),replay:()=>animateScore(null,{replay:true})});
-const endgame=createEndgameResult({getContext:()=>({game,actor:user?.id,config,fresh:gameFresh,preview,visible:currentView==='game'}),getMoves:()=>moveHistory.all(),isAnimating:()=>scoreMotion.active,storage:localStorage,namespace:cfg.supabaseUrl+(cfg.cacheScope||'')});
+const rematch=createRematchSender({api:(body,actor)=>{if(actor!==user?.id)throw Error('Sign in again to continue.');return api(body);},storage:localStorage,namespace:cfg.supabaseUrl+(cfg.cacheScope||'')});
+const endgame=createEndgameResult({getContext:()=>({game,actor:user?.id,config,fresh:gameFresh,preview,visible:currentView==='game'}),getMoves:()=>moveHistory.all(),isAnimating:()=>scoreMotion.active,storage:localStorage,namespace:cfg.supabaseUrl+(cfg.cacheScope||''),rematch,openRematch:id=>void run(()=>openGame(id))});
 const jokerKeyboard=createJokerKeyboard();
 const boardViewport=createBoardViewport({viewport:$('board-scroll'),board:$('board'),button:$('zoom'),icon,
   stamp:()=>currentView+'/'+game?.id+'/'+game?.revision,enabled:()=>currentView==='game'&&!scoreMotion.active,
@@ -86,8 +88,10 @@ async function readSession(){
   finally{clearTimeout(timer);}
 }
 async function api(body){
+  const rematchActor=body.action==='rematch'?user?.id:null;
   if(!db)throw new Error('Online play is not connected yet.');
   const {data:{session},error}=await readSession();if(error)throw error;if(!session){snapshots.clear();moveHistory.reset();analyticsData=null;analyticsActor=null;gameFresh=false;authReady=false;homeData=null;game=null;++navigation;++gameLoad;++homeLoad;screen('auth',{route:false});throw apiError('Sign in to continue.','unauthorized',401);}
+  if(body.action==='rematch'&&(!rematchActor||session.user.id!==rematchActor||user?.id!==rematchActor))throw Error('Sign in again to continue.');
   const response=await fetch(`${cfg.supabaseUrl}/functions/v1/game-api`,{method:'POST',signal:AbortSignal.timeout(20000),headers:{'Content-Type':'application/json',apikey:cfg.supabaseAnonKey,Authorization:`Bearer ${session.access_token}`},body:JSON.stringify({...body,supportedRules:SUPPORTED_RULES,supportsFriends:true,supportsUsernameOnboarding:true,supportsGameSummaries:true,supportsFastReads:true})});
   const result=await response.json();if(!response.ok){if(user?.id===session.user.id){if(result.code==='username_required')showUsernameSetup();else if(['unauthorized','account_deleting'].includes(result.code)){snapshots.clear();moveHistory.reset();analyticsData=null;analyticsActor=null;gameFresh=false;game=null;homeData=null;authReady=false;++navigation;++gameLoad;++homeLoad;screen('auth',{route:false});}}throw apiError(result.error||'Request failed.',result.code,response.status,result.requestId);}return result;
 }

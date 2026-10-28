@@ -1,5 +1,13 @@
 # Word Conquest
 
+### Rematch from results (0.17.1)
+
+Tap **Rematch** on a finished game's result to invite the same opponent in the
+same language. It works for opponents met through a link too. An existing
+rematch/invitation opens again instead of sending another. New games use the
+current rules and dictionary for that language, with a fresh random starting player.
+See [release status](docs/PROGRESS.md).
+
 ### Victory seal results (0.17.0)
 
 Finished games show the approved result card with both final scores, your word

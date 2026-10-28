@@ -1,5 +1,13 @@
 # Autumn Sunday UX revision - 4 October 2026
 
+## Rematch — 0.17.1
+
+Keep View board and Rematch on one row at the bottom of the result card. Rematch
+is the primary action with a small refresh icon; no explanation or language picker.
+While sending, show Inviting and disable repeat taps. Keep errors inside the popup.
+Success opens the addressed invitation in the existing flow. Closing while sending
+must prevent the response from unexpectedly navigating away from the finished board.
+
 ## Victory seal result — 0.17.0
 
 Use the approved first concept: one centred result card, castle seal, short

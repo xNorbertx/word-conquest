@@ -10,7 +10,7 @@ const serverRandom=()=>crypto.getRandomValues(new Uint32Array(1))[0]/4294967296;
 function unwrap(result) {
   if (result.error) {
     if(result.error.code==='23505'&&result.error.message.includes('profiles_username_key'))throw new Fault('username_taken','That username is already taken. Try another.',409);
-    const code = ['not_found','username_required','invalid_username','friend_stale','friend_unavailable','friend_cooldown','friend_limit','invitation_pending','stale','idempotency_conflict','ended','forbidden','invitation_unavailable','cannot_accept_own_invitation','game_limit','account_deleting']
+    const code = ['not_found','rematch_unavailable','username_required','invalid_username','friend_stale','friend_unavailable','friend_cooldown','friend_limit','invitation_pending','stale','idempotency_conflict','ended','forbidden','invitation_unavailable','cannot_accept_own_invitation','game_limit','account_deleting']
       .find(c => result.error.message.includes(c));
     if (code) throw new Fault(code, code.replaceAll('_',' '), code==='not_found'?404:code==='forbidden'?403:409);
     throw new Fault('service_unavailable','The service could not complete this request. Retry with the same operation.',503);
@@ -152,6 +152,17 @@ export function createHandler(db, settings={}) {
           const game=unwrap(await db.rpc(input.friendId?'wc_create_friend':'wc_create',{p_actor:actor,...(input.friendId?{p_friend:input.friendId}:{}),p_id:input.gameId,p_token:crypto.randomUUID(),
             p_state:Engine.newGame(config,serverRandom),p_rules:version,p_dictionary:language.dictionary.version}));
           requireRules(game);if(input.friendId)wakePush();return reply({game:await decorate(game)});
+        }
+        case 'rematch': {
+          if(!uuid(input.gameId))throw new Fault('invalid_id','A saved game ID is required.');
+          const source=await gameForActor(input.sourceGameId);
+          if(source.status!=='completed'||source.players.length!==2||!source.players.every(Boolean)||source.players[0]===source.players[1])throw new Fault('rematch_unavailable','Rematch unavailable.',409);
+          const previous=languageForRules(source.rules_version),language=previous&&languageFor(previous.code);
+          if(!language)throw new Fault('version_unavailable','This game’s language is unavailable.',409);
+          requireRules({rules_version:language.rulesVersion});
+          const game=unwrap(await db.rpc('wc_rematch',{p_actor:actor,p_source:source.id,p_id:input.gameId,p_token:crypto.randomUUID(),
+            p_state:Engine.newGame(configFor(language.rulesVersion),serverRandom),p_rules:language.rulesVersion,p_dictionary:language.dictionary.version}));
+          requireRules(game);wakePush();return reply({game:await decorate(game)});
         }
         case 'invitation': {
           if(!uuid(input.token))throw new Fault('invalid_invite','Invalid invitation code.');

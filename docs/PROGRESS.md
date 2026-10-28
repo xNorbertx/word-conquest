@@ -1,4 +1,34 @@
-# Implementation and verification - updated 27 October 2026
+# Implementation and verification - updated 28 October 2026
+
+## Result rematch — 0.17.1, 28 October 2026
+
+The result card now places Rematch beside View board. Sending disables the action
+and shows Inviting; failures stay inside the popup with a retryable action. Success
+opens the addressed invitation. Closing/navigating while a request is pending
+prevents its late reply from navigating the user. Cached results can send a request,
+but the server always verifies eligibility. Missing opponent accounts hide the action.
+
+`rematch` derives the opponent and language from the authenticated player's completed
+source game. It creates a fresh board using the current version for that language
+and random starting player; legacy scores are never carried into a new game.
+The service-only `wc_rematch` function and private `rematches` receipt table reuse
+an existing result's rematch, including across devices and lost replies. Matching
+outstanding invitations in either direction are reused. A crossed request opens
+the normal accept/decline invitation, without auto-accepting. Other-language pending
+invitations are not silently substituted. Existing blocks, account/username guards,
+game limits and notification delivery remain in force. No friendship is created.
+
+280 regression tests plus original engine/scoring/supply suites pass. Tests cover
+all saved English/Swedish/Dutch versions, server-chosen current language rules,
+non-friend invitations, retries/crossed requests, one notification, recipient-only
+acceptance, unavailable opponents, source access, limits and browser-role denial.
+Actual app fixtures reviewed at 390 × 844 and 320 × 568, light/dark, brown/green;
+checked sending, repeat opening, lost reply/retry and closing during sending.
+Backend deployed to the existing dedicated `aumiyyjsdqdazzmdmprl` project. A live
+transaction verified creation, retry, crossed requests, one notification,
+recipient-only invitation and acceptance, then rolled back all test records.
+App publication verification follows. No new services, permissions or ongoing costs.
+
 
 ## Victory seal implementation — 0.17.0, 27 October 2026
 

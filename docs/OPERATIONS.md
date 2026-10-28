@@ -1,5 +1,20 @@
 # Run, deploy and maintain
 
+## Rematch — 0.17.1
+
+Apply `202610280001_rematches.sql` to the dedicated Word Conquest project, then
+build/deploy `game-api` before publishing the shared client and Android APK. Run
+`npm test` and `npm run build`; review `supabase db push --dry-run` first. The
+migration adds one private receipt table and service-only transaction function;
+it does not rewrite games, relationships or rules. Reuse existing push delivery.
+
+Rematch language/opponent come from the saved source on the server. New games use
+the current language version; the old game's scoring stays untouched. The receipt
+associates one source/player with its rematch to prevent repeat invitations across
+devices. It also reuses outstanding invitations between the players in either
+direction. A rematch can be followed by another from that next game's result.
+If rolling back the UI/API, leave the additive migration and receipts intact.
+
 ## Victory seal results — 0.17.0
 
 Shared-client release only: `npm test`, `npm run build`, publish `/online/`, and

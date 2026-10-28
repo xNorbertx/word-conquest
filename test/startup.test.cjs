@@ -106,3 +106,12 @@ test('returning to the app retries a stranded loading view and keeps a fresh gam
  h.c.resume();assert.equal(retries,1);assert.equal(polls,0);h.c.entering=true;h.c.resume();assert.equal(retries,1);
  h.c.currentView='game';h.c.game={id:'game'};h.c.gameFresh=true;h.c.resume();assert.equal(h.c.gameFresh,false);assert.equal(renders,1);
 });
+
+test('a rematch awaiting auth cannot send an invitation after the account changes',async()=>{
+ for(const tokenActor of [A,B]){
+  const h=setup(),wait=deferred();h.c.user=session().user;h.c.db.auth.getSession=()=>wait.promise;let sent=0;h.c.fetch=()=>sent++;
+  vm.runInContext(fragment('async function api(body)','async function run('),h.c);
+  const request=h.c.api({action:'rematch',sourceGameId:'test-game'}),failed=assert.rejects(request,/Sign in again/);
+  h.c.user=session(B).user;wait.resolve({data:{session:session(tokenActor)}});await failed;assert.equal(sent,0);
+ }
+});

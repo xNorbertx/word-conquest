@@ -1,10 +1,11 @@
 import {$,node,icon,svg,closeSheet} from './ui.js';
 import Engine from '../server/engine.mjs';
 import {endgameSummary,createEndgameStore} from './endgame.mjs';
+import {friendlyError} from './presentation.mjs';
 
-export function createEndgameResult({getContext,getMoves,isAnimating,storage,namespace=''}){
+export function createEndgameResult({getContext,getMoves,isAnimating,storage,namespace='',rematch,openRematch}){
   const dialog=$('endgame-dialog'),store=createEndgameStore(storage,{namespace}),media=matchMedia('(prefers-reduced-motion: reduce)');
-  let shown=null,request=0,frame=0,timer=0,confettiFrame=0;
+  let shown=null,request=0,frame=0,timer=0,confettiFrame=0,rematchRequest=0;
   const identity=c=>c?.actor&&c.game?`${c.actor}/${c.game.id}/${c.game.revision}`:null;
   const eligible=c=>c?.visible&&!c.preview&&c.game?.status==='completed'&&c.game.players.includes(c.actor)&&['1','2','draw'].includes(c.game.result);
   function stopConfetti(){cancelAnimationFrame(confettiFrame);confettiFrame=0;$('endgame-confetti').hidden=true;}
@@ -60,6 +61,8 @@ export function createEndgameResult({getContext,getMoves,isAnimating,storage,nam
     // claim a celebration. Claim before playback to survive background/close.
     const first=c.fresh&&store.claim(c.actor,c.game);
     shown=stamp;closeSheet();$('toast').hidden=true;
+    ++rematchRequest;$('endgame-rematch').hidden=!rematch||c.game.players.length!==2||!c.game.players.every(Boolean);
+    $('endgame-rematch').disabled=false;$('endgame-rematch-label').textContent='Rematch';$('endgame-rematch-error').hidden=true;
     dialog.dataset.side=seat===1?'sage':'walnut';dialog.dataset.outcome=won?'win':c.game.result==='draw'?'draw':'loss';
     $('endgame-title').textContent=won?'You won!':c.game.result==='draw'?'A draw.':'You lost.';
     const totals=Engine.scores(c.game.state,c.config);
@@ -68,7 +71,16 @@ export function createEndgameResult({getContext,getMoves,isAnimating,storage,nam
     if(!dialog.open)dialog.showModal();dialog.scrollTop=0;$('endgame-title').focus({preventScroll:true});
     if(automatic&&first&&won)celebrate();
   }
-  function close(){++request;stopConfetti();if(dialog.open)dialog.close();if(getContext()?.visible)$('result-view')?.focus({preventScroll:true});}
+  function close(){++request;++rematchRequest;stopConfetti();if(dialog.open)dialog.close();if(getContext()?.visible)$('result-view')?.focus({preventScroll:true});}
+  $('endgame-rematch').onclick=async()=>{
+    const c=getContext();if(!eligible(c)||$('endgame-rematch').disabled)return;
+    const stamp=identity(c),ticket=++rematchRequest;
+    const current=()=>ticket===rematchRequest&&identity(getContext())===stamp&&dialog.open;
+    $('endgame-rematch').disabled=true;$('endgame-rematch-label').textContent='Inviting…';$('endgame-rematch-error').hidden=true;
+    try{const result=await rematch(c.actor,c.game.id);if(current()){close();openRematch(result.game.id);}}
+    catch(error){if(current()){$('endgame-rematch-error').textContent=error.code==='rematch_unavailable'?'Rematch unavailable.':friendlyError(error);$('endgame-rematch-error').hidden=false;}}
+    finally{if(current()){$('endgame-rematch').disabled=false;$('endgame-rematch-label').textContent='Rematch';}}
+  };
   function schedule(){
     cancelAnimationFrame(frame);clearTimeout(timer);
     frame=requestAnimationFrame(()=>{
@@ -81,7 +93,7 @@ export function createEndgameResult({getContext,getMoves,isAnimating,storage,nam
   $('endgame-close').onclick=$('endgame-board').onclick=close;
   $('endgame-retry').onclick=()=>{const c=getContext();if(eligible(c))void details(c,identity(c));};
   dialog.addEventListener('cancel',e=>{e.preventDefault();close();});
-  dialog.addEventListener('close',()=>{++request;stopConfetti();});
+  dialog.addEventListener('close',()=>{++request;++rematchRequest;stopConfetti();});
   for(const d of document.querySelectorAll('dialog'))d.addEventListener('close',schedule);
   media.addEventListener('change',stopConfetti);window.addEventListener('resize',stopConfetti);
   document.addEventListener('visibilitychange',()=>{if(document.hidden)stopConfetti();else schedule();});
