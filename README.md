@@ -6,6 +6,7 @@ Tap **Rematch** on a finished game's result to invite the same opponent in the
 same language. It works for opponents met through a link too. An existing
 rematch/invitation opens again instead of sending another. New games use the
 current rules and dictionary for that language, with a fresh random starting player.
+[Web app](https://xnorbertx.github.io/word-conquest/online/) · [Android 0.17.1-ab2f24c](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25999603/word-conquest-android.apk).
 See [release status](docs/PROGRESS.md).
 
 ### Victory seal results (0.17.0)

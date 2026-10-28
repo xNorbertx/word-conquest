@@ -7,7 +7,7 @@
 - [x] Stable retries, shared outstanding invites, crossed requests and once-only notification.
 - [x] Preserve blocks, account availability, private RPCs and game/invitation limits.
 - [x] Regression suite, small-phone layout and lost-response UI checks.
-- [ ] Deploy and verify migration/API, web and signed Android pilot.
+- [x] Deploy and verify migration/API, web and signed Android pilot.
 
 ## Victory seal results — 0.17.0
 

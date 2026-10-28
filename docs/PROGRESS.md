@@ -27,7 +27,20 @@ checked sending, repeat opening, lost reply/retry and closing during sending.
 Backend deployed to the existing dedicated `aumiyyjsdqdazzmdmprl` project. A live
 transaction verified creation, retry, crossed requests, one notification,
 recipient-only invitation and acceptance, then rolled back all test records.
-App publication verification follows. No new services, permissions or ongoing costs.
+Released and verified:
+
+- Source `ab2f24c696789bac245b383386a482bd8479152e`; [web app](https://xnorbertx.github.io/word-conquest/online/) via Pages
+  `40222dc919b9f5d921bbf3f5893642a4b846add7`. All ten public app/prototype files match the tested build
+  after normalizing existing line endings. Only three app assets changed;
+  original prototype and preview galleries remain available.
+- Backend `game-api` version 24 active. Live checks confirm private rematch RPC
+  access and zero retained rematch test records. Anonymous API calls return 401.
+- [Android CI](https://github.com/xNorbertx/word-conquest/actions/runs/40777295732) passed. Signed `0.17.1-ab2f24c`, code `25999603`;
+  [download](https://github.com/xNorbertx/word-conquest/releases/download/android-pilot-25999603/word-conquest-android.apk). Stable signing certificate, package/version, native
+  resources and bundled client assets verified. Anonymous download checksum matches.
+- SHA-256 `902dc95fb10025d238ff78b5316908aa6014c80fa1997357e262af45edf0a228`; 5,015,720 bytes. No test fixtures or private-key material.
+- Refresh the web app or install the APK. Physical handset acceptance remains open.
+  No new services, mobile permissions or ongoing costs.
 
 
 ## Victory seal implementation — 0.17.0, 27 October 2026
